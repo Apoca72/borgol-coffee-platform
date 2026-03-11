@@ -41,17 +41,30 @@ public class MenuService {
     // ── CRUD үйлдлүүд ────────────────────────────────────────────────────────
 
     /**
-     * Шинэ цэсний зүйл нэмнэ.
+     * Шинэ цэсний зүйл нэмнэ (available горимыг тодорхойлж болно).
      * @throws IllegalArgumentException  нэр хоосон эсвэл үнэ сөрөг бол
      */
-    public MenuDto addItem(String name, MenuCategory category, double price) {
+    public MenuDto addItem(String name, MenuCategory category, double price, boolean available) {
         validateInput(name, price);
         int nextId = repository.findAll().stream()
                 .mapToInt(MenuItem::getId).max().orElse(0) + 1;
-        MenuItem item = new MenuItem(nextId, name, category, price, true);
+        MenuItem item = new MenuItem(nextId, name, category, price, available);
         repository.save(item);
         observers.forEach(o -> o.onItemAdded(item));
         return toDto(item);
+    }
+
+    /** Backward-compatible: available default нь true. */
+    public MenuDto addItem(String name, MenuCategory category, double price) {
+        return addItem(name, category, price, true);
+    }
+
+    /** Ангилалаар шүүж буцаана (server-side filtering). */
+    public List<MenuDto> getItemsByCategory(MenuCategory category) {
+        return repository.findAll().stream()
+                .filter(item -> item.getCategory() == category)
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
     /**

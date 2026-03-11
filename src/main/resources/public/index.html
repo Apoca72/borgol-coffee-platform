@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyCafé ☕ Menu Manager</title>
+  <style>
+    /* ── Design tokens ─────────────────────────────────────────────────────── */
+    :root {
+      --espresso  : #1C0F09;
+      --roast     : #4A2512;
+      --caramel   : #C68642;
+      --caramel-lt: #E8A84F;
+      --cream     : #F5E6C8;
+      --milk-foam : #FAF6EF;
+      --border    : #E8D8C4;
+      --text      : #1A1108;
+      --text-muted: #8B7355;
+      --success   : #2E7D32;
+      --danger    : #C62828;
+      --radius    : 10px;
+      --shadow    : 0 2px 16px rgba(28,15,9,.10);
+    }
+
+    /* ── Reset ─────────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--milk-foam); color: var(--text); }
+
+    /* ── Header ────────────────────────────────────────────────────────────── */
+    header {
+      background: var(--espresso);
+      color: var(--cream);
+      padding: 0 28px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 3px 12px rgba(0,0,0,.35);
+      position: sticky; top: 0; z-index: 100;
+    }
+    header .logo { font-size: 26px; }
+    header h1   { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
+    header .tagline { font-size: 12px; color: var(--caramel-lt); margin-left: auto; }
+
+    /* ── Stats bar ─────────────────────────────────────────────────────────── */
+    .stats-bar {
+      background: var(--roast);
+      color: var(--cream);
+      padding: 7px 28px;
+      display: flex;
+      gap: 28px;
+      font-size: 13px;
+    }
+    .stat strong { color: var(--caramel-lt); }
+
+    /* ── App layout ────────────────────────────────────────────────────────── */
+    .layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      height: calc(100vh - 88px);
+    }
+
+    /* ── Sidebar ───────────────────────────────────────────────────────────── */
+    .sidebar {
+      background: #fff;
+      border-right: 1.5px solid var(--border);
+      padding: 24px 20px;
+      overflow-y: auto;
+    }
+    .sidebar-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--roast);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Form fields */
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 5px;
+    }
+    .field input, .field select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--milk-foam);
+      transition: border-color .18s, box-shadow .18s;
+    }
+    .field input:focus, .field select:focus {
+      outline: none;
+      border-color: var(--caramel);
+      box-shadow: 0 0 0 3px rgba(198,134,66,.18);
+      background: #fff;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .toggle-row label { font-size: 14px; color: var(--text); margin: 0; }
+    input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--caramel); cursor: pointer; }
+
+    /* Buttons */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .18s;
+      margin-bottom: 8px;
+    }
+    .btn-save   { background: var(--roast); color: #fff; }
+    .btn-save:hover   { background: var(--espresso); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(74,37,18,.3); }
+    .btn-clear  { background: var(--cream); color: var(--roast); }
+    .btn-clear:hover  { background: #ecd9bc; }
+
+    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+    /* ── Main panel ────────────────────────────────────────────────────────── */
+    .main { overflow: auto; padding: 22px 28px; }
+
+    /* Filter chips */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .chip {
+      padding: 5px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      background: #fff;
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all .15s;
+      font-weight: 500;
+    }
+    .chip:hover { border-color: var(--caramel); color: var(--roast); }
+    .chip.active { background: var(--roast); color: #fff; border-color: var(--roast); }
+
+    /* Table card */
+    .table-card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: var(--espresso); }
+    th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--cream);
+    }
+    th:last-child { text-align: center; }
+
+    tbody tr {
+      border-bottom: 1px solid #F2E9DE;
+      transition: background .12s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover   { background: #FDF7F0; }
+    tbody tr.editing { background: #FFF8EC; }
+
+    td {
+      padding: 12px 16px;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+    .td-id    { color: var(--text-muted); font-size: 12px; font-weight: 600; }
+    .td-name  { font-weight: 600; }
+    .td-price { font-weight: 700; color: var(--roast); }
+    .td-actions { text-align: center; }
+
+    /* Category badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+    }
+    .badge-COFFEE   { background: #E8D5C4; color: #5C3317; }
+    .badge-TEA      { background: #C8E6C9; color: #1B5E20; }
+    .badge-SMOOTHIE { background: #E1BEE7; color: #4A148C; }
+    .badge-FOOD     { background: #FFF9C4; color: #795548; }
+    .badge-DESSERT  { background: #FFCDD2; color: #B71C1C; }
+
+    /* Status pill */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .pill-on  { background: #E8F5E9; color: #2E7D32; }
+    .pill-off { background: #F5F5F5; color: #9E9E9E; }
+
+    /* Action icon buttons */
+    .actions { display: flex; gap: 6px; justify-content: center; }
+    .icon-btn {
+      width: 32px; height: 32px;
+      border: none; border-radius: 8px;
+      cursor: pointer; font-size: 15px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .15s;
+    }
+    .btn-edit   { background: #FFF3E0; color: #E65100; }
+    .btn-edit:hover   { background: #E65100; color: #fff; }
+    .btn-delete { background: #FFEBEE; color: #C62828; }
+    .btn-delete:hover { background: #C62828; color: #fff; }
+
+    /* Empty / loading state */
+    .state-row td {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .state-icon { font-size: 42px; margin-bottom: 10px; }
+    .state-msg  { font-size: 15px; }
+
+    /* ── Toast ─────────────────────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      padding: 13px 20px;
+      border-radius: var(--radius);
+      color: #fff;
+      font-size: 14px; font-weight: 600;
+      z-index: 9999;
+      max-width: 320px;
+      opacity: 0; transform: translateY(14px);
+      transition: opacity .25s, transform .25s;
+      pointer-events: none;
+      display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.2);
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.ok  { background: var(--success); }
+    .toast.err { background: var(--danger); }
+
+    /* ── Responsive ────────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { border-right: none; border-bottom: 1.5px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────────── -->
+<header>
+  <span class="logo">☕</span>
+  <h1>MyCafé — Menu Manager</h1>
+  <span class="tagline">Hexagonal Architecture · Java 21 · REST API</span>
+</header>
+
+<!-- ── Stats bar ───────────────────────────────────────────────────────────── -->
+<div class="stats-bar">
+  <div class="stat">Items: <strong id="s-total">—</strong></div>
+  <div class="stat">Available: <strong id="s-avail">—</strong></div>
+  <div class="stat">Categories: <strong id="s-cats">—</strong></div>
+</div>
+
+<!-- ── App layout ──────────────────────────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- Sidebar: Add / Edit form -->
+  <aside class="sidebar">
+    <div class="sidebar-title" id="form-title">✏️ Add New Item</div>
+
+    <input type="hidden" id="f-id" />
+
+    <div class="field">
+      <label for="f-name">Item Name</label>
+      <input id="f-name" type="text" placeholder="e.g. Flat White" autocomplete="off" />
+    </div>
+
+    <div class="field">
+      <label for="f-category">Category</label>
+      <select id="f-category">
+        <option value="COFFEE">☕  Coffee</option>
+        <option value="TEA">🍵  Tea</option>
+        <option value="SMOOTHIE">🥤  Smoothie</option>
+        <option value="FOOD">🥐  Food</option>
+        <option value="DESSERT">🍰  Dessert</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="f-price">Price ($)</label>
+      <input id="f-price" type="number" min="0" step="0.25" placeholder="0.00" />
+    </div>
+
+    <div class="toggle-row">
+      <input id="f-available" type="checkbox" checked />
+      <label for="f-available">Available for order</label>
+    </div>
+
+    <button class="btn btn-save"  onclick="saveItem()">💾 Save Item</button>
+    <button class="btn btn-clear" onclick="clearForm()">✕  Clear Form</button>
+    <hr class="divider" />
+
+    <!-- Quick-add shortcuts -->
+    <div class="sidebar-title" style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">
+      Quick Add ↓
+    </div>
+    <button class="btn btn-clear" onclick="quickAdd('Espresso','COFFEE',3.50)">☕ Espresso $3.50</button>
+    <button class="btn btn-clear" onclick="quickAdd('Matcha Latte','TEA',4.00)">🍵 Matcha Latte $4.00</button>
+    <button class="btn btn-clear" onclick="quickAdd('Tiramisu','DESSERT',5.50)">🍰 Tiramisu $5.50</button>
+  </aside>
+
+  <!-- Main: Table -->
+  <main class="main">
+
+    <!-- Category filter chips -->
+    <div class="filters">
+      <button class="chip active" data-f="ALL"      onclick="setFilter(this)">All</button>
+      <button class="chip"        data-f="COFFEE"   onclick="setFilter(this)">☕ Coffee</button>
+      <button class="chip"        data-f="TEA"      onclick="setFilter(this)">🍵 Tea</button>
+      <button class="chip"        data-f="SMOOTHIE" onclick="setFilter(this)">🥤 Smoothie</button>
+      <button class="chip"        data-f="FOOD"     onclick="setFilter(this)">🥐 Food</button>
+      <button class="chip"        data-f="DESSERT"  onclick="setFilter(this)">🍰 Dessert</button>
+    </div>
+
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr class="state-row"><td colspan="6">
+            <div class="state-icon">⏳</div>
+            <div class="state-msg">Loading menu…</div>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<!-- ── JavaScript ───────────────────────────────────────────────────────────── -->
+<script>
+  /* ── State ──────────────────────────────────────────────────────────────── */
+  let allItems    = [];
+  let activeFilter = 'ALL';
+
+  const CAT_ICON = { COFFEE:'☕', TEA:'🍵', SMOOTHIE:'🥤', FOOD:'🥐', DESSERT:'🍰' };
+
+  /* ── Fetch helpers ──────────────────────────────────────────────────────── */
+  const api = (url, opts = {}) =>
+    fetch(url, { headers: { 'Content-Type': 'application/json' }, ...opts })
+      .then(async r => { const d = await r.json().catch(() => null); if (!r.ok) throw new Error(d?.error || r.statusText); return d; });
+
+  /* ── Load ───────────────────────────────────────────────────────────────── */
+  async function loadItems() {
+    try {
+      allItems = await api('/api/menu');
+      updateStats();
+      renderTable();
+    } catch (e) { toast('Failed to load: ' + e.message, 'err'); }
+  }
+
+  /* ── Save (Create or Update) ────────────────────────────────────────────── */
+  async function saveItem() {
+    const id        = document.getElementById('f-id').value;
+    const name      = document.getElementById('f-name').value.trim();
+    const category  = document.getElementById('f-category').value;
+    const priceRaw  = document.getElementById('f-price').value;
+    const available = document.getElementById('f-available').checked;
+
+    if (!name)             { toast('Name is required', 'err'); return; }
+    const price = parseFloat(priceRaw);
+    if (isNaN(price) || price < 0) { toast('Enter a valid price ≥ 0', 'err'); return; }
+
+    const body = JSON.stringify({ name, category, price, available });
+    try {
+      if (!id) {
+        await api('/api/menu', { method: 'POST', body });
+        toast('✓ Item added', 'ok');
+      } else {
+        await api(`/api/menu/${id}`, { method: 'PUT', body });
+        toast('✓ Item updated', 'ok');
+      }
+      clearForm();
+      loadItems();
+    } catch (e) { toast(e.message, 'err'); }
+  }
+
+  /* ── Delete ─────────────────────────────────────────────────────────────── */
+  async function deleteItem(id, name) {
+    if (!confirm(`Delete "${name}"?\nThis cannot be undone.`)) return;
+    try {
+      await fetch(`/api/menu/${id}`, { method: 'DELETE' });
+      toast(`✓ "${name}" deleted`, 'ok');
+      if (document.getElementById('f-id').value == id) clearForm();
+      loadItems();
+    } catch (e) { toast('Error deleting: ' + e.message, 'err'); }
+  }
+
+  /* ── Edit (fill form) ───────────────────────────────────────────────────── */
+  function editItem(item) {
+    document.getElementById('f-id').value          = item.id;
+    document.getElementById('f-name').value        = item.name;
+    document.getElementById('f-category').value    = item.category;
+    document.getElementById('f-price').value       = item.price.toFixed(2);
+    document.getElementById('f-available').checked = item.available;
+    document.getElementById('form-title').textContent = '✏️ Edit Item  #' + item.id;
+    document.querySelectorAll('tr.editing').forEach(r => r.classList.remove('editing'));
+    const row = document.querySelector(`tr[data-id="${item.id}"]`);
+    if (row) { row.classList.add('editing'); row.scrollIntoView({ block: 'nearest' }); }
+    document.getElementById('f-name').focus();
+  }
+
+  /* ── Clear form ─────────────────────────────────────────────────────────── */
+  function clearForm() {
+    document.getElementById('f-id').value           = '';
+    document.getElementById('f-name').value         = '';
+    document.getElementById('f-category').value     = 'COFFEE';
+    document.getElementById('f-price').value        = '';
+    document.getElementById('f-available').checked  = true;
+    document.getElementById('form-title').textContent = '✏️ Add New Item';
+    document.querySelectorAll('tr.editing').forEach(r => r.classList.remove('editing'));
+  }
+
+  /* ── Quick add ──────────────────────────────────────────────────────────── */
+  async function quickAdd(name, category, price) {
+    try {
+      await api('/api/menu', { method:'POST', body: JSON.stringify({ name, category, price, available: true }) });
+      toast(`✓ "${name}" added`, 'ok');
+      loadItems();
+    } catch (e) { toast(e.message, 'err'); }
+  }
+
+  /* ── Filter ─────────────────────────────────────────────────────────────── */
+  function setFilter(btn) {
+    document.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.f;
+    renderTable();
+  }
+
+  /* ── Render table ───────────────────────────────────────────────────────── */
+  function renderTable() {
+    const items = activeFilter === 'ALL'
+      ? allItems
+      : allItems.filter(i => i.category === activeFilter);
+
+    const tbody = document.getElementById('tbody');
+
+    if (items.length === 0) {
+      tbody.innerHTML = `<tr class="state-row"><td colspan="6">
+        <div class="state-icon">${activeFilter === 'ALL' ? '☕' : CAT_ICON[activeFilter] || '🔍'}</div>
+        <div class="state-msg">No items found</div>
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = items.map(item => `
+      <tr data-id="${item.id}">
+        <td class="td-id">#${item.id}</td>
+        <td class="td-name">${esc(item.name)}</td>
+        <td><span class="badge badge-${item.category}">${CAT_ICON[item.category] || ''} ${item.category}</span></td>
+        <td class="td-price">$${item.price.toFixed(2)}</td>
+        <td>${item.available
+          ? '<span class="pill pill-on">✓ Available</span>'
+          : '<span class="pill pill-off">✗ Unavailable</span>'}</td>
+        <td class="td-actions">
+          <div class="actions">
+            <button class="icon-btn btn-edit"   title="Edit"   onclick='editItem(${JSON.stringify(item)})'>✏️</button>
+            <button class="icon-btn btn-delete" title="Delete" onclick="deleteItem(${item.id},'${esc(item.name)}')">🗑</button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  /* ── Stats ──────────────────────────────────────────────────────────────── */
+  function updateStats() {
+    document.getElementById('s-total').textContent = allItems.length;
+    document.getElementById('s-avail').textContent = allItems.filter(i => i.available).length;
+    document.getElementById('s-cats').textContent  = new Set(allItems.map(i => i.category)).size;
+  }
+
+  /* ── Toast ──────────────────────────────────────────────────────────────── */
+  let toastTimer;
+  function toast(msg, type = 'ok') {
+    const el = document.getElementById('toast');
+    clearTimeout(toastTimer);
+    el.textContent = msg;
+    el.className   = `toast ${type} show`;
+    toastTimer     = setTimeout(() => el.className = 'toast', 3200);
+  }
+
+  /* ── Keyboard shortcut: Enter to save ─────────────────────────────────── */
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && ['f-name','f-price'].includes(e.target.id)) saveItem();
+    if (e.key === 'Escape') clearForm();
+  });
+
+  /* ── Escape HTML ────────────────────────────────────────────────────────── */
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  /* ── Boot ───────────────────────────────────────────────────────────────── */
+  loadItems();
+</script>
+</body>
+</html>
