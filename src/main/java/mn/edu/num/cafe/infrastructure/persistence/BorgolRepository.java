@@ -1,0 +1,776 @@
+package mn.edu.num.cafe.infrastructure.persistence;
+
+import mn.edu.num.cafe.core.domain.*;
+import mn.edu.num.cafe.infrastructure.config.DatabaseConnection;
+
+import java.sql.*;
+import java.util.*;
+
+/**
+ * Single repository for all Borgol platform data access.
+ * Handles: Users, Recipes, Cafes, Social (follows, likes, comments).
+ *
+ * Also initializes all required database tables on construction.
+ */
+public class BorgolRepository {
+
+    private final DatabaseConnection db;
+
+    public BorgolRepository(DatabaseConnection db) {
+        this.db = db;
+        initSchema();
+    }
+
+    // ── Schema initialization ─────────────────────────────────────────────────
+
+    private void initSchema() {
+        try (Statement s = conn().createStatement()) {
+            s.execute("""
+                CREATE TABLE IF NOT EXISTS borgol_users (
+                    id              INT PRIMARY KEY AUTO_INCREMENT,
+                    username        VARCHAR(50)  UNIQUE NOT NULL,
+                    email           VARCHAR(100) UNIQUE NOT NULL,
+                    password_hash   VARCHAR(255) NOT NULL,
+                    bio             VARCHAR(500) DEFAULT '',
+                    avatar_url      VARCHAR(255) DEFAULT '',
+                    expertise_level VARCHAR(20)  DEFAULT 'BEGINNER',
+                    created_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+                )""");
+            s.execute("""
+                CREATE TABLE IF NOT EXISTS user_flavor_prefs (
+                    user_id INT,
+                    flavor  VARCHAR(30),
+                    PRIMARY KEY (user_id, flavor),
+                    FOREIGN KEY (user_id) REFERENCES borgol_users(id) ON DELETE CASCADE
+                )""");
+            s.execute("""
+                CREATE TABLE IF NOT EXISTS user_follows (
+                    follower_id  INT,
+                    following_id INT,
+                    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (follower_id, following_id),
+                    FOREIGN KEY (follower_id)  REFERENCES borgol_users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (following_id) REFERENCES borgol_users(id) ON DELETE CASCADE
+                )""");
+            s.execute("""
+                CREATE TABLE IF NOT EXISTS recipes (
+                    id            INT PRIMARY KEY AUTO_INCREMENT,
+                    author_id     INT          NOT NULL,
+                    title         VARCHAR(100) NOT NULL,
+                    description   VARCHAR(2000) DEFAULT '',
+                    drink_type    VARCHAR(30)  DEFAULT 'COFFEE',
+                    ingredients   TEXT         DEFAULT '',
+                    instructions  TEXT         DEFAULT '',
+                    brew_time     INT          DEFAULT 0,
+                    difficulty    VARCHAR(20)  DEFAULT 'MEDIUM',
+                    image_url     VARCHAR(255) DEFAULT '',
+                    likes_count   INT          DEFAULT 0,
+                    comment_count INT          DEFAULT 0,
+                    created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (author_id) REFERENCES borgol_users(id) ON DELETE CASCADE
+                )""");
+            s.execute("""
+                CREATE TABLE IF NOT EXISTS recipe_flavor_tags (
+                    recipe_id INT,
+                    flavor    VARCHAR(30),
+                    PRIMARY KEY (recipe_id, flavor),
+                    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+                )""");
+            s.execute("""
+                CREATE TABLE IF NOT EXISTS recipe_likes (
+                    user_id    INT,
+                    recipe_id  INT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (user_id, recipe_id),
+                    FOREIGN KEY (user_id)   REFERENCES borgol_users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (recipe_id) REFERENCES recipes(id)      ON DELETE CASCADE
+                )""");
+            s.execute("""
+                CREATE TABLE IF NOT EXISTS recipe_comments (
+                    id         INT PRIMARY KEY AUTO_INCREMENT,
+                    recipe_id  INT  NOT NULL,
+                    author_id  INT  NOT NULL,
+                    content    TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (recipe_id) REFERENCES recipes(id)      ON DELETE CASCADE,
+                    FOREIGN KEY (author_id) REFERENCES borgol_users(id) ON DELETE CASCADE
+                )""");
+            s.execute("""
+                CREATE TABLE IF NOT EXISTS cafes (
+                    id             INT PRIMARY KEY AUTO_INCREMENT,
+                    name           VARCHAR(100)  NOT NULL,
+                    address        VARCHAR(255)  DEFAULT '',
+                    district       VARCHAR(100)  DEFAULT '',
+                    city           VARCHAR(100)  DEFAULT 'Ulaanbaatar',
+                    phone          VARCHAR(50)   DEFAULT '',
+                    description    VARCHAR(2000) DEFAULT '',
+                    hours          VARCHAR(255)  DEFAULT '',
+                    avg_rating     DOUBLE        DEFAULT 0,
+                    rating_count   INT           DEFAULT 0,
+                    submitted_by   INT,
+                    image_url      VARCHAR(255)  DEFAULT '',
+                    created_at     TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (submitted_by) REFERENCES borgol_users(id) ON DELETE SET NULL
+                )""");
+            s.execute("""
+                CREATE TABLE IF NOT EXISTS cafe_ratings (
+                    user_id    INT,
+                    cafe_id    INT,
+                    rating     INT  NOT NULL,
+                    review     VARCHAR(500) DEFAULT '',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (user_id, cafe_id),
+                    FOREIGN KEY (user_id)  REFERENCES borgol_users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (cafe_id)  REFERENCES cafes(id)        ON DELETE CASCADE
+                )""");
+        } catch (SQLException e) {
+            throw new RuntimeException("Schema initialization failed", e);
+        }
+    }
+
+    // ── User operations ───────────────────────────────────────────────────────
+
+    public Optional<User> findUserById(int id) {
+        String sql = "SELECT * FROM borgol_users WHERE id = ?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return Optional.of(mapUser(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return Optional.empty();
+    }
+
+    public Optional<User> findUserByEmail(String email) {
+        String sql = "SELECT * FROM borgol_users WHERE LOWER(email) = LOWER(?)";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return Optional.of(mapUser(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return Optional.empty();
+    }
+
+    public Optional<User> findUserByUsername(String username) {
+        String sql = "SELECT * FROM borgol_users WHERE LOWER(username) = LOWER(?)";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return Optional.of(mapUser(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return Optional.empty();
+    }
+
+    public User createUser(String username, String email, String passwordHash) {
+        String sql = "INSERT INTO borgol_users (username, email, password_hash) VALUES (?, ?, ?)";
+        try (PreparedStatement ps = conn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, username);
+            ps.setString(2, email);
+            ps.setString(3, passwordHash);
+            ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    return findUserById(keys.getInt(1)).orElseThrow();
+                }
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        throw new RuntimeException("User creation failed");
+    }
+
+    public void updateUser(int id, String bio, String avatarUrl, String expertiseLevel) {
+        String sql = "UPDATE borgol_users SET bio=?, avatar_url=?, expertise_level=? WHERE id=?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setString(1, bio);
+            ps.setString(2, avatarUrl);
+            ps.setString(3, expertiseLevel);
+            ps.setInt(4, id);
+            ps.executeUpdate();
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    public List<String> getUserFlavorPrefs(int userId) {
+        String sql = "SELECT flavor FROM user_flavor_prefs WHERE user_id = ?";
+        List<String> prefs = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) prefs.add(rs.getString("flavor"));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return prefs;
+    }
+
+    public void setUserFlavorPrefs(int userId, List<String> flavors) {
+        try {
+            try (PreparedStatement del = conn().prepareStatement(
+                    "DELETE FROM user_flavor_prefs WHERE user_id = ?")) {
+                del.setInt(1, userId);
+                del.executeUpdate();
+            }
+            if (flavors != null) {
+                try (PreparedStatement ins = conn().prepareStatement(
+                        "INSERT INTO user_flavor_prefs (user_id, flavor) VALUES (?, ?)")) {
+                    for (String f : flavors) {
+                        ins.setInt(1, userId);
+                        ins.setString(2, f);
+                        ins.addBatch();
+                    }
+                    ins.executeBatch();
+                }
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    public int getFollowerCount(int userId) {
+        return count("SELECT COUNT(*) FROM user_follows WHERE following_id = ?", userId);
+    }
+
+    public int getFollowingCount(int userId) {
+        return count("SELECT COUNT(*) FROM user_follows WHERE follower_id = ?", userId);
+    }
+
+    public int getUserRecipeCount(int userId) {
+        return count("SELECT COUNT(*) FROM recipes WHERE author_id = ?", userId);
+    }
+
+    public boolean isFollowing(int followerId, int followingId) {
+        String sql = "SELECT COUNT(*) FROM user_follows WHERE follower_id=? AND following_id=?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, followerId);
+            ps.setInt(2, followingId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    public void followUser(int followerId, int followingId) {
+        String sql = "MERGE INTO user_follows (follower_id, following_id) KEY(follower_id, following_id) VALUES (?,?)";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, followerId);
+            ps.setInt(2, followingId);
+            ps.executeUpdate();
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    public void unfollowUser(int followerId, int followingId) {
+        String sql = "DELETE FROM user_follows WHERE follower_id=? AND following_id=?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, followerId);
+            ps.setInt(2, followingId);
+            ps.executeUpdate();
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    public List<User> searchUsers(String query) {
+        String sql = "SELECT * FROM borgol_users WHERE LOWER(username) LIKE ? OR LOWER(bio) LIKE ? LIMIT 20";
+        String pattern = "%" + query.toLowerCase() + "%";
+        List<User> users = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setString(1, pattern);
+            ps.setString(2, pattern);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) users.add(mapUser(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return users;
+    }
+
+    // ── Recipe operations ─────────────────────────────────────────────────────
+
+    public List<Recipe> findAllRecipes(int currentUserId, String search, String drinkType, String sort) {
+        StringBuilder sql = new StringBuilder("""
+            SELECT r.*, u.username AS author_username
+            FROM recipes r
+            JOIN borgol_users u ON r.author_id = u.id
+            WHERE 1=1
+            """);
+        List<Object> params = new ArrayList<>();
+        if (search != null && !search.isBlank()) {
+            sql.append(" AND (LOWER(r.title) LIKE ? OR LOWER(r.description) LIKE ?)");
+            params.add("%" + search.toLowerCase() + "%");
+            params.add("%" + search.toLowerCase() + "%");
+        }
+        if (drinkType != null && !drinkType.isBlank() && !drinkType.equals("ALL")) {
+            sql.append(" AND r.drink_type = ?");
+            params.add(drinkType);
+        }
+        sql.append("TRENDING".equals(sort)
+            ? " ORDER BY r.likes_count DESC, r.created_at DESC"
+            : " ORDER BY r.created_at DESC");
+        sql.append(" LIMIT 50");
+
+        List<Recipe> recipes = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) ps.setObject(i + 1, params.get(i));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) recipes.add(mapRecipe(rs, currentUserId));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return recipes;
+    }
+
+    public List<Recipe> getFeedRecipes(int userId, int limit) {
+        // Recipes from followed users + own recipes, ordered by date
+        String sql = """
+            SELECT r.*, u.username AS author_username
+            FROM recipes r
+            JOIN borgol_users u ON r.author_id = u.id
+            WHERE r.author_id = ?
+               OR r.author_id IN (SELECT following_id FROM user_follows WHERE follower_id = ?)
+            ORDER BY r.created_at DESC
+            LIMIT ?
+            """;
+        List<Recipe> recipes = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, userId);
+            ps.setInt(3, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) recipes.add(mapRecipe(rs, userId));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return recipes;
+    }
+
+    public List<Recipe> getUserRecipes(int authorId, int currentUserId) {
+        String sql = """
+            SELECT r.*, u.username AS author_username
+            FROM recipes r
+            JOIN borgol_users u ON r.author_id = u.id
+            WHERE r.author_id = ?
+            ORDER BY r.created_at DESC
+            """;
+        List<Recipe> recipes = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, authorId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) recipes.add(mapRecipe(rs, currentUserId));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return recipes;
+    }
+
+    public Optional<Recipe> findRecipeById(int id, int currentUserId) {
+        String sql = """
+            SELECT r.*, u.username AS author_username
+            FROM recipes r
+            JOIN borgol_users u ON r.author_id = u.id
+            WHERE r.id = ?
+            """;
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return Optional.of(mapRecipe(rs, currentUserId));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return Optional.empty();
+    }
+
+    public Recipe createRecipe(Recipe r) {
+        String sql = """
+            INSERT INTO recipes
+              (author_id, title, description, drink_type, ingredients, instructions,
+               brew_time, difficulty, image_url)
+            VALUES (?,?,?,?,?,?,?,?,?)
+            """;
+        try (PreparedStatement ps = conn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, r.getAuthorId());
+            ps.setString(2, r.getTitle());
+            ps.setString(3, nvl(r.getDescription()));
+            ps.setString(4, nvl(r.getDrinkType(), "COFFEE"));
+            ps.setString(5, nvl(r.getIngredients()));
+            ps.setString(6, nvl(r.getInstructions()));
+            ps.setInt(7, r.getBrewTime());
+            ps.setString(8, nvl(r.getDifficulty(), "MEDIUM"));
+            ps.setString(9, nvl(r.getImageUrl()));
+            ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    int newId = keys.getInt(1);
+                    saveFlavorTags(newId, r.getFlavorTags());
+                    return findRecipeById(newId, r.getAuthorId()).orElseThrow();
+                }
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        throw new RuntimeException("Recipe creation failed");
+    }
+
+    public Recipe updateRecipe(Recipe r) {
+        String sql = """
+            UPDATE recipes SET title=?, description=?, drink_type=?,
+              ingredients=?, instructions=?, brew_time=?, difficulty=?, image_url=?
+            WHERE id=? AND author_id=?
+            """;
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setString(1, r.getTitle());
+            ps.setString(2, nvl(r.getDescription()));
+            ps.setString(3, nvl(r.getDrinkType(), "COFFEE"));
+            ps.setString(4, nvl(r.getIngredients()));
+            ps.setString(5, nvl(r.getInstructions()));
+            ps.setInt(6, r.getBrewTime());
+            ps.setString(7, nvl(r.getDifficulty(), "MEDIUM"));
+            ps.setString(8, nvl(r.getImageUrl()));
+            ps.setInt(9, r.getId());
+            ps.setInt(10, r.getAuthorId());
+            int updated = ps.executeUpdate();
+            if (updated == 0) throw new IllegalArgumentException("Recipe not found or not owner");
+            saveFlavorTags(r.getId(), r.getFlavorTags());
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return findRecipeById(r.getId(), r.getAuthorId()).orElseThrow();
+    }
+
+    public boolean deleteRecipe(int id, int userId) {
+        String sql = "DELETE FROM recipes WHERE id=? AND author_id=?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.setInt(2, userId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    public boolean likeRecipe(int userId, int recipeId) {
+        String check = "SELECT COUNT(*) FROM recipe_likes WHERE user_id=? AND recipe_id=?";
+        try (PreparedStatement ps = conn().prepareStatement(check)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, recipeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next() && rs.getInt(1) > 0) return false; // already liked
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+
+        String ins = "INSERT INTO recipe_likes (user_id, recipe_id) VALUES (?,?)";
+        String upd = "UPDATE recipes SET likes_count = likes_count + 1 WHERE id=?";
+        try (PreparedStatement ps1 = conn().prepareStatement(ins);
+             PreparedStatement ps2 = conn().prepareStatement(upd)) {
+            ps1.setInt(1, userId); ps1.setInt(2, recipeId); ps1.executeUpdate();
+            ps2.setInt(1, recipeId); ps2.executeUpdate();
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return true;
+    }
+
+    public boolean unlikeRecipe(int userId, int recipeId) {
+        String del = "DELETE FROM recipe_likes WHERE user_id=? AND recipe_id=?";
+        String upd = "UPDATE recipes SET likes_count = GREATEST(0, likes_count - 1) WHERE id=?";
+        try (PreparedStatement ps1 = conn().prepareStatement(del);
+             PreparedStatement ps2 = conn().prepareStatement(upd)) {
+            ps1.setInt(1, userId); ps1.setInt(2, recipeId);
+            int deleted = ps1.executeUpdate();
+            if (deleted > 0) { ps2.setInt(1, recipeId); ps2.executeUpdate(); }
+            return deleted > 0;
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    // ── Comment operations ────────────────────────────────────────────────────
+
+    public List<RecipeComment> findCommentsByRecipeId(int recipeId) {
+        String sql = """
+            SELECT c.*, u.username AS author_username
+            FROM recipe_comments c
+            JOIN borgol_users u ON c.author_id = u.id
+            WHERE c.recipe_id = ?
+            ORDER BY c.created_at ASC
+            """;
+        List<RecipeComment> comments = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, recipeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) comments.add(mapComment(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return comments;
+    }
+
+    public RecipeComment addComment(int recipeId, int authorId, String content) {
+        String ins = "INSERT INTO recipe_comments (recipe_id, author_id, content) VALUES (?,?,?)";
+        String upd = "UPDATE recipes SET comment_count = comment_count + 1 WHERE id=?";
+        try (PreparedStatement ps = conn().prepareStatement(ins, Statement.RETURN_GENERATED_KEYS);
+             PreparedStatement ps2 = conn().prepareStatement(upd)) {
+            ps.setInt(1, recipeId);
+            ps.setInt(2, authorId);
+            ps.setString(3, content);
+            ps.executeUpdate();
+            ps2.setInt(1, recipeId); ps2.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    int commentId = keys.getInt(1);
+                    return findCommentById(commentId);
+                }
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        throw new RuntimeException("Comment creation failed");
+    }
+
+    private RecipeComment findCommentById(int id) {
+        String sql = """
+            SELECT c.*, u.username AS author_username
+            FROM recipe_comments c
+            JOIN borgol_users u ON c.author_id = u.id
+            WHERE c.id = ?
+            """;
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapComment(rs);
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        throw new RuntimeException("Comment not found: " + id);
+    }
+
+    // ── Cafe operations ───────────────────────────────────────────────────────
+
+    public List<CafeListing> findAllCafes(int currentUserId, String search, String district) {
+        StringBuilder sql = new StringBuilder("""
+            SELECT c.*,
+                   u.username AS submitted_by_username,
+                   cr.rating  AS user_rating,
+                   cr.review  AS user_review
+            FROM cafes c
+            LEFT JOIN borgol_users u ON c.submitted_by = u.id
+            LEFT JOIN cafe_ratings cr ON cr.cafe_id = c.id AND cr.user_id = ?
+            WHERE 1=1
+            """);
+        List<Object> params = new ArrayList<>();
+        params.add(currentUserId);
+
+        if (search != null && !search.isBlank()) {
+            sql.append(" AND (LOWER(c.name) LIKE ? OR LOWER(c.description) LIKE ? OR LOWER(c.address) LIKE ?)");
+            String p = "%" + search.toLowerCase() + "%";
+            params.add(p); params.add(p); params.add(p);
+        }
+        if (district != null && !district.isBlank() && !district.equals("ALL")) {
+            sql.append(" AND LOWER(c.district) LIKE ?");
+            params.add("%" + district.toLowerCase() + "%");
+        }
+        sql.append(" ORDER BY c.avg_rating DESC, c.rating_count DESC");
+
+        List<CafeListing> cafes = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) ps.setObject(i + 1, params.get(i));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) cafes.add(mapCafe(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return cafes;
+    }
+
+    public Optional<CafeListing> findCafeById(int id, int currentUserId) {
+        String sql = """
+            SELECT c.*,
+                   u.username AS submitted_by_username,
+                   cr.rating  AS user_rating,
+                   cr.review  AS user_review
+            FROM cafes c
+            LEFT JOIN borgol_users u ON c.submitted_by = u.id
+            LEFT JOIN cafe_ratings cr ON cr.cafe_id = c.id AND cr.user_id = ?
+            WHERE c.id = ?
+            """;
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, currentUserId);
+            ps.setInt(2, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return Optional.of(mapCafe(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return Optional.empty();
+    }
+
+    public CafeListing createCafe(CafeListing c) {
+        String sql = """
+            INSERT INTO cafes (name, address, district, city, phone, description, hours, image_url, submitted_by)
+            VALUES (?,?,?,?,?,?,?,?,?)
+            """;
+        try (PreparedStatement ps = conn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, c.getName());
+            ps.setString(2, nvl(c.getAddress()));
+            ps.setString(3, nvl(c.getDistrict()));
+            ps.setString(4, nvl(c.getCity(), "Ulaanbaatar"));
+            ps.setString(5, nvl(c.getPhone()));
+            ps.setString(6, nvl(c.getDescription()));
+            ps.setString(7, nvl(c.getHours()));
+            ps.setString(8, nvl(c.getImageUrl()));
+            if (c.getSubmittedBy() > 0) ps.setInt(9, c.getSubmittedBy());
+            else ps.setNull(9, Types.INTEGER);
+            ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    return findCafeById(keys.getInt(1), c.getSubmittedBy()).orElseThrow();
+                }
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        throw new RuntimeException("Cafe creation failed");
+    }
+
+    public boolean rateCafe(int userId, int cafeId, int rating, String review) {
+        if (rating < 1 || rating > 5) throw new IllegalArgumentException("Rating must be 1-5");
+
+        String merge = """
+            MERGE INTO cafe_ratings (user_id, cafe_id, rating, review)
+            KEY(user_id, cafe_id) VALUES (?,?,?,?)
+            """;
+        try (PreparedStatement ps = conn().prepareStatement(merge)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, cafeId);
+            ps.setInt(3, rating);
+            ps.setString(4, nvl(review));
+            ps.executeUpdate();
+        } catch (SQLException e) { throw new RuntimeException(e); }
+
+        // Recalculate avg rating
+        String recalc = """
+            UPDATE cafes SET
+                avg_rating   = (SELECT AVG(CAST(rating AS DOUBLE)) FROM cafe_ratings WHERE cafe_id = ?),
+                rating_count = (SELECT COUNT(*) FROM cafe_ratings WHERE cafe_id = ?)
+            WHERE id = ?
+            """;
+        try (PreparedStatement ps = conn().prepareStatement(recalc)) {
+            ps.setInt(1, cafeId); ps.setInt(2, cafeId); ps.setInt(3, cafeId);
+            ps.executeUpdate();
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return true;
+    }
+
+    // ── Mapping helpers ───────────────────────────────────────────────────────
+
+    private User mapUser(ResultSet rs) throws SQLException {
+        User u = new User(
+            rs.getInt("id"),
+            rs.getString("username"),
+            rs.getString("email"),
+            rs.getString("password_hash")
+        );
+        u.setBio(nullToEmpty(rs.getString("bio")));
+        u.setAvatarUrl(nullToEmpty(rs.getString("avatar_url")));
+        u.setExpertiseLevel(nullToEmpty(rs.getString("expertise_level")));
+        Timestamp ts = rs.getTimestamp("created_at");
+        if (ts != null) u.setCreatedAt(ts.toLocalDateTime().toString());
+        return u;
+    }
+
+    private Recipe mapRecipe(ResultSet rs, int currentUserId) throws SQLException {
+        Recipe r = new Recipe();
+        r.setId(rs.getInt("id"));
+        r.setAuthorId(rs.getInt("author_id"));
+        r.setAuthorUsername(rs.getString("author_username"));
+        r.setTitle(rs.getString("title"));
+        r.setDescription(nullToEmpty(rs.getString("description")));
+        r.setDrinkType(nullToEmpty(rs.getString("drink_type")));
+        r.setIngredients(nullToEmpty(rs.getString("ingredients")));
+        r.setInstructions(nullToEmpty(rs.getString("instructions")));
+        r.setBrewTime(rs.getInt("brew_time"));
+        r.setDifficulty(nullToEmpty(rs.getString("difficulty")));
+        r.setImageUrl(nullToEmpty(rs.getString("image_url")));
+        r.setLikesCount(rs.getInt("likes_count"));
+        r.setCommentCount(rs.getInt("comment_count"));
+        Timestamp ts = rs.getTimestamp("created_at");
+        if (ts != null) r.setCreatedAt(ts.toLocalDateTime().toString());
+
+        // Load flavor tags
+        r.setFlavorTags(getRecipeFlavorTags(r.getId()));
+
+        // Check if liked by current user
+        if (currentUserId > 0) {
+            r.setLikedByCurrentUser(isRecipeLikedBy(currentUserId, r.getId()));
+        }
+        return r;
+    }
+
+    private List<String> getRecipeFlavorTags(int recipeId) {
+        String sql = "SELECT flavor FROM recipe_flavor_tags WHERE recipe_id = ?";
+        List<String> tags = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, recipeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) tags.add(rs.getString("flavor"));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return tags;
+    }
+
+    private boolean isRecipeLikedBy(int userId, int recipeId) {
+        String sql = "SELECT COUNT(*) FROM recipe_likes WHERE user_id=? AND recipe_id=?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, userId); ps.setInt(2, recipeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    private void saveFlavorTags(int recipeId, List<String> tags) throws SQLException {
+        try (PreparedStatement del = conn().prepareStatement(
+                "DELETE FROM recipe_flavor_tags WHERE recipe_id=?")) {
+            del.setInt(1, recipeId);
+            del.executeUpdate();
+        }
+        if (tags != null && !tags.isEmpty()) {
+            try (PreparedStatement ins = conn().prepareStatement(
+                    "INSERT INTO recipe_flavor_tags (recipe_id, flavor) VALUES (?,?)")) {
+                for (String t : tags) {
+                    ins.setInt(1, recipeId);
+                    ins.setString(2, t);
+                    ins.addBatch();
+                }
+                ins.executeBatch();
+            }
+        }
+    }
+
+    private RecipeComment mapComment(ResultSet rs) throws SQLException {
+        RecipeComment c = new RecipeComment();
+        c.setId(rs.getInt("id"));
+        c.setRecipeId(rs.getInt("recipe_id"));
+        c.setAuthorId(rs.getInt("author_id"));
+        c.setAuthorUsername(rs.getString("author_username"));
+        c.setContent(rs.getString("content"));
+        Timestamp ts = rs.getTimestamp("created_at");
+        if (ts != null) c.setCreatedAt(ts.toLocalDateTime().toString());
+        return c;
+    }
+
+    private CafeListing mapCafe(ResultSet rs) throws SQLException {
+        CafeListing c = new CafeListing();
+        c.setId(rs.getInt("id"));
+        c.setName(rs.getString("name"));
+        c.setAddress(nullToEmpty(rs.getString("address")));
+        c.setDistrict(nullToEmpty(rs.getString("district")));
+        c.setCity(nullToEmpty(rs.getString("city")));
+        c.setPhone(nullToEmpty(rs.getString("phone")));
+        c.setDescription(nullToEmpty(rs.getString("description")));
+        c.setHours(nullToEmpty(rs.getString("hours")));
+        c.setAvgRating(rs.getDouble("avg_rating"));
+        c.setRatingCount(rs.getInt("rating_count"));
+        c.setSubmittedBy(rs.getInt("submitted_by"));
+        c.setSubmittedByUsername(nullToEmpty(rs.getString("submitted_by_username")));
+        c.setImageUrl(nullToEmpty(rs.getString("image_url")));
+        Timestamp ts = rs.getTimestamp("created_at");
+        if (ts != null) c.setCreatedAt(ts.toLocalDateTime().toString());
+
+        // User's rating
+        int userRating = rs.getInt("user_rating");
+        if (!rs.wasNull()) {
+            c.setCurrentUserRating(userRating);
+            c.setCurrentUserReview(nullToEmpty(rs.getString("user_review")));
+        }
+        return c;
+    }
+
+    // ── Utilities ─────────────────────────────────────────────────────────────
+
+    private Connection conn() { return db.getConnection(); }
+
+    private int count(String sql, int param) {
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, param);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    private static String nvl(String s)           { return s != null ? s : ""; }
+    private static String nvl(String s, String d) { return (s != null && !s.isBlank()) ? s : d; }
+    private static String nullToEmpty(String s)    { return s != null ? s : ""; }
+}

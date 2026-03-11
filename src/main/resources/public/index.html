@@ -1,551 +1,1423 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MyCafé ☕ Menu Manager</title>
-  <style>
-    /* ── Design tokens ─────────────────────────────────────────────────────── */
-    :root {
-      --espresso  : #1C0F09;
-      --roast     : #4A2512;
-      --caramel   : #C68642;
-      --caramel-lt: #E8A84F;
-      --cream     : #F5E6C8;
-      --milk-foam : #FAF6EF;
-      --border    : #E8D8C4;
-      --text      : #1A1108;
-      --text-muted: #8B7355;
-      --success   : #2E7D32;
-      --danger    : #C62828;
-      --radius    : 10px;
-      --shadow    : 0 2px 16px rgba(28,15,9,.10);
-    }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Borgol ☕ Coffee Enthusiast Platform</title>
+<style>
+/* ── Design tokens ──────────────────────────────────────────────────────── */
+:root {
+  --espresso  : #1C0F09;
+  --roast     : #3D1E0F;
+  --caramel   : #C68642;
+  --caramel-lt: #E8A84F;
+  --gold      : #F0C060;
+  --cream     : #F5E6C8;
+  --milk      : #FAF6EF;
+  --border    : #E8D8C4;
+  --muted     : #9B8B6E;
+  --text      : #1A1108;
+  --success   : #2E7D32;
+  --danger    : #C62828;
+  --blue      : #1565C0;
+  --radius    : 12px;
+  --shadow    : 0 2px 20px rgba(28,15,9,.10);
+  --shadow-md : 0 4px 30px rgba(28,15,9,.15);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--milk);color:var(--text)}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;font-family:inherit}
+img{max-width:100%;display:block}
 
-    /* ── Reset ─────────────────────────────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--milk-foam); color: var(--text); }
+/* ── Navbar ──────────────────────────────────────────────────────────────── */
+.navbar{background:var(--espresso);color:var(--cream);height:60px;display:flex;align-items:center;padding:0 24px;gap:20px;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(0,0,0,.4)}
+.nav-brand{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:800;letter-spacing:-.5px;color:#fff;flex-shrink:0}
+.nav-brand span{font-size:26px}
+.nav-links{display:flex;gap:4px;flex:1;justify-content:center}
+.nav-link{padding:8px 14px;border-radius:8px;font-size:14px;font-weight:600;color:rgba(255,255,255,.75);transition:.15s;border:none;background:none}
+.nav-link:hover{color:#fff;background:rgba(255,255,255,.1)}
+.nav-link.active{color:var(--gold);background:rgba(240,192,96,.12)}
+.nav-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.nav-search{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:6px 12px 6px 32px;border-radius:20px;font-size:13px;width:160px;transition:.2s;outline:none}
+.nav-search::placeholder{color:rgba(255,255,255,.5)}
+.nav-search:focus{width:220px;background:rgba(255,255,255,.18);border-color:var(--caramel-lt)}
+.search-wrap{position:relative}
+.search-wrap::before{content:'🔍';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;pointer-events:none}
+.btn-login{padding:7px 16px;background:var(--caramel);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;transition:.15s}
+.btn-login:hover{background:var(--caramel-lt)}
+.user-pill{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;background:rgba(255,255,255,.12);border-radius:20px;cursor:pointer;border:none;color:#fff;font-size:13px;font-weight:600;transition:.15s}
+.user-pill:hover{background:rgba(255,255,255,.2)}
+.avatar{width:30px;height:30px;border-radius:50%;object-fit:cover;background:var(--caramel);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden}
+.avatar img{width:100%;height:100%;object-fit:cover}
 
-    /* ── Header ────────────────────────────────────────────────────────────── */
-    header {
-      background: var(--espresso);
-      color: var(--cream);
-      padding: 0 28px;
-      height: 58px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      box-shadow: 0 3px 12px rgba(0,0,0,.35);
-      position: sticky; top: 0; z-index: 100;
-    }
-    header .logo { font-size: 26px; }
-    header h1   { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
-    header .tagline { font-size: 12px; color: var(--caramel-lt); margin-left: auto; }
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+.page{display:none;max-width:1100px;margin:0 auto;padding:28px 24px}
+.page.active{display:block}
+.two-col{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start}
+.section-title{font-size:22px;font-weight:800;color:var(--roast);margin-bottom:20px;display:flex;align-items:center;gap:8px}
 
-    /* ── Stats bar ─────────────────────────────────────────────────────────── */
-    .stats-bar {
-      background: var(--roast);
-      color: var(--cream);
-      padding: 7px 28px;
-      display: flex;
-      gap: 28px;
-      font-size: 13px;
-    }
-    .stat strong { color: var(--caramel-lt); }
+/* ── Cards ───────────────────────────────────────────────────────────────── */
+.card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden}
+.card-hover{transition:transform .15s,box-shadow .15s}
+.card-hover:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
 
-    /* ── App layout ────────────────────────────────────────────────────────── */
-    .layout {
-      display: grid;
-      grid-template-columns: 300px 1fr;
-      height: calc(100vh - 88px);
-    }
+/* ── Recipe card ─────────────────────────────────────────────────────────── */
+.recipe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.recipe-card{cursor:pointer}
+.recipe-img{height:180px;background:var(--cream);position:relative;overflow:hidden}
+.recipe-img img{width:100%;height:100%;object-fit:cover;transition:.3s}
+.recipe-card:hover .recipe-img img{transform:scale(1.04)}
+.recipe-badge{position:absolute;top:10px;left:10px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;backdrop-filter:blur(6px)}
+.recipe-body{padding:14px 16px}
+.recipe-title{font-size:15px;font-weight:700;margin-bottom:4px;line-height:1.3}
+.recipe-author{font-size:12px;color:var(--muted);margin-bottom:8px}
+.recipe-meta{display:flex;gap:12px;font-size:12px;color:var(--muted);margin-bottom:10px}
+.recipe-meta span{display:flex;align-items:center;gap:3px}
+.flavor-tags{display:flex;flex-wrap:wrap;gap:4px}
+.flavor-tag{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;background:var(--cream);color:var(--muted);text-transform:uppercase}
+.recipe-actions{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--border)}
+.like-btn{display:flex;align-items:center;gap:5px;border:none;background:none;font-size:13px;color:var(--muted);padding:5px 10px;border-radius:8px;transition:.15s;font-weight:600}
+.like-btn:hover{background:#FFF0F0;color:var(--danger)}
+.like-btn.liked{color:var(--danger)}
+.comment-count{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px}
 
-    /* ── Sidebar ───────────────────────────────────────────────────────────── */
-    .sidebar {
-      background: #fff;
-      border-right: 1.5px solid var(--border);
-      padding: 24px 20px;
-      overflow-y: auto;
-    }
-    .sidebar-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--roast);
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+/* ── Cafe card ───────────────────────────────────────────────────────────── */
+.cafe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.cafe-card{cursor:pointer}
+.cafe-img{height:160px;background:var(--cream);overflow:hidden;position:relative}
+.cafe-img img{width:100%;height:100%;object-fit:cover;transition:.3s}
+.cafe-card:hover .cafe-img img{transform:scale(1.04)}
+.cafe-body{padding:14px 16px}
+.cafe-name{font-size:16px;font-weight:700;margin-bottom:4px}
+.cafe-addr{font-size:12px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:4px}
+.stars{display:flex;align-items:center;gap:2px;font-size:14px}
+.star{color:#ddd}
+.star.on{color:#F5A623}
+.star.half{color:#F5A623;opacity:.6}
+.rating-text{font-size:12px;color:var(--muted);margin-left:6px}
 
-    /* Form fields */
-    .field { margin-bottom: 14px; }
-    .field label {
-      display: block;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: .6px;
-      margin-bottom: 5px;
-    }
-    .field input, .field select {
-      width: 100%;
-      padding: 9px 12px;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      font-size: 14px;
-      color: var(--text);
-      background: var(--milk-foam);
-      transition: border-color .18s, box-shadow .18s;
-    }
-    .field input:focus, .field select:focus {
-      outline: none;
-      border-color: var(--caramel);
-      box-shadow: 0 0 0 3px rgba(198,134,66,.18);
-      background: #fff;
-    }
+/* ── Drink type badge colors ─────────────────────────────────────────────── */
+.dt-ESPRESSO   {background:#C8AFA0;color:#3D1505}
+.dt-LATTE      {background:#E8D5C0;color:#5C3317}
+.dt-CAPPUCCINO {background:#D4BCA8;color:#4A2512}
+.dt-AMERICANO  {background:#B8A090;color:#2D1008}
+.dt-COLD_BREW  {background:#A8C4D0;color:#0D3D54}
+.dt-POUR_OVER  {background:#D0C090;color:#4A3000}
+.dt-FRENCH_PRESS{background:#C4B080;color:#3A2800}
+.dt-TEA        {background:#B8D4B0;color:#1B5E20}
+.dt-SMOOTHIE   {background:#D0B8D8;color:#4A1580}
+.dt-OTHER      {background:#D0D0D0;color:#444}
 
-    .toggle-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .toggle-row label { font-size: 14px; color: var(--text); margin: 0; }
-    input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--caramel); cursor: pointer; }
+/* ── Filters ──────────────────────────────────────────────────────────────── */
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;align-items:center}
+.chip{padding:6px 14px;border:1.5px solid var(--border);border-radius:20px;background:#fff;font-size:13px;color:var(--muted);transition:.15s;font-weight:600;white-space:nowrap}
+.chip:hover{border-color:var(--caramel);color:var(--roast)}
+.chip.active{background:var(--roast);color:#fff;border-color:var(--roast)}
+.search-bar{flex:1;min-width:200px;max-width:360px}
+.search-input{width:100%;padding:8px 14px;border:1.5px solid var(--border);border-radius:20px;font-size:13px;outline:none;transition:.2s}
+.search-input:focus{border-color:var(--caramel);box-shadow:0 0 0 3px rgba(198,134,66,.15)}
 
-    /* Buttons */
-    .btn {
-      display: block;
-      width: 100%;
-      padding: 10px 16px;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all .18s;
-      margin-bottom: 8px;
-    }
-    .btn-save   { background: var(--roast); color: #fff; }
-    .btn-save:hover   { background: var(--espresso); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(74,37,18,.3); }
-    .btn-clear  { background: var(--cream); color: var(--roast); }
-    .btn-clear:hover  { background: #ecd9bc; }
+/* ── Feed ────────────────────────────────────────────────────────────────── */
+.feed-card{margin-bottom:16px}
+.feed-header{display:flex;align-items:center;gap:10px;padding:14px 16px 10px}
+.feed-user-info{flex:1}
+.feed-username{font-size:14px;font-weight:700;cursor:pointer}
+.feed-username:hover{color:var(--caramel)}
+.feed-time{font-size:11px;color:var(--muted)}
+.feed-img{width:100%;max-height:400px;object-fit:cover}
+.feed-body{padding:12px 16px}
+.feed-title{font-size:16px;font-weight:700;margin-bottom:4px;cursor:pointer}
+.feed-title:hover{color:var(--caramel)}
+.feed-desc{font-size:14px;color:#555;line-height:1.5;margin-bottom:8px}
+.feed-footer{display:flex;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid var(--border)}
 
-    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+/* ── Modal ───────────────────────────────────────────────────────────────── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-sm{max-width:420px}
+.modal-md{max-width:600px}
+.modal-lg{max-width:800px}
+.modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
+.modal-title{font-size:18px;font-weight:800;color:var(--roast)}
+.modal-close{width:32px;height:32px;border:none;background:var(--cream);border-radius:8px;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:.15s}
+.modal-close:hover{background:var(--border)}
+.modal-body{padding:20px 24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
 
-    /* ── Main panel ────────────────────────────────────────────────────────── */
-    .main { overflow: auto; padding: 22px 28px; }
+/* ── Forms ───────────────────────────────────────────────────────────────── */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;color:var(--text);background:var(--milk);transition:.18s;outline:none;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--caramel);box-shadow:0 0 0 3px rgba(198,134,66,.15);background:#fff}
+.field textarea{resize:vertical;min-height:80px}
+.field-help{font-size:11px;color:var(--muted);margin-top:4px}
+.checkbox-row{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.checkbox-row label{font-size:14px;color:var(--text);margin:0}
+input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
+.flavor-picker{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.flavor-opt{padding:5px 12px;border:1.5px solid var(--border);border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;background:#fff;color:var(--muted)}
+.flavor-opt.selected{background:var(--roast);color:#fff;border-color:var(--roast)}
 
-    /* Filter chips */
-    .filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 18px;
-    }
-    .chip {
-      padding: 5px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 20px;
-      background: #fff;
-      font-size: 13px;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all .15s;
-      font-weight: 500;
-    }
-    .chip:hover { border-color: var(--caramel); color: var(--roast); }
-    .chip.active { background: var(--roast); color: #fff; border-color: var(--roast); }
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:700;border:none;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--roast);color:#fff}
+.btn-primary:hover{background:var(--espresso)}
+.btn-secondary{background:var(--cream);color:var(--roast);border:1.5px solid var(--border)}
+.btn-secondary:hover{background:var(--border)}
+.btn-danger{background:#FFEBEE;color:var(--danger)}
+.btn-danger:hover{background:var(--danger);color:#fff}
+.btn-full{width:100%;justify-content:center}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-icon{width:36px;height:36px;padding:0;border-radius:8px;background:var(--cream);color:var(--muted);justify-content:center}
+.btn-icon:hover{background:var(--border)}
 
-    /* Table card */
-    .table-card {
-      background: #fff;
-      border-radius: 14px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-      border: 1px solid var(--border);
-    }
-    table { width: 100%; border-collapse: collapse; }
-    thead { background: var(--espresso); }
-    th {
-      padding: 12px 16px;
-      text-align: left;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .6px;
-      color: var(--cream);
-    }
-    th:last-child { text-align: center; }
+/* ── Profile ─────────────────────────────────────────────────────────────── */
+.profile-header{padding:28px;display:flex;gap:24px;align-items:flex-start;border-bottom:1px solid var(--border)}
+.profile-avatar{width:80px;height:80px;border-radius:50%;background:var(--caramel);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden}
+.profile-avatar img{width:100%;height:100%;object-fit:cover}
+.profile-info{flex:1}
+.profile-name{font-size:22px;font-weight:800;margin-bottom:4px}
+.profile-level{font-size:12px;font-weight:700;padding:3px 10px;border-radius:12px;display:inline-block;margin-bottom:8px}
+.level-BEGINNER{background:#E3F2FD;color:#1565C0}
+.level-ENTHUSIAST{background:#F3E5F5;color:#6A1B9A}
+.level-BARISTA{background:#FFF3E0;color:#E65100}
+.level-EXPERT{background:#FBE9E7;color:#BF360C}
+.profile-bio{font-size:14px;color:#555;line-height:1.5;margin-bottom:12px}
+.profile-stats{display:flex;gap:24px}
+.stat-item{text-align:center}
+.stat-num{font-size:18px;font-weight:800;color:var(--roast)}
+.stat-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
 
-    tbody tr {
-      border-bottom: 1px solid #F2E9DE;
-      transition: background .12s;
-    }
-    tbody tr:last-child { border-bottom: none; }
-    tbody tr:hover   { background: #FDF7F0; }
-    tbody tr.editing { background: #FFF8EC; }
+/* ── Detail page ─────────────────────────────────────────────────────────── */
+.detail-img{width:100%;max-height:400px;object-fit:cover;border-radius:var(--radius) var(--radius) 0 0}
+.detail-body{padding:24px}
+.detail-title{font-size:24px;font-weight:800;margin-bottom:8px}
+.detail-meta{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+.meta-pill{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--muted);background:var(--milk);padding:4px 10px;border-radius:20px;border:1px solid var(--border)}
+.section-label{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.ingredients-list{list-style:none;padding:0}
+.ingredients-list li{padding:6px 0;border-bottom:1px solid var(--border);font-size:14px;display:flex;align-items:center;gap:8px}
+.ingredients-list li::before{content:'•';color:var(--caramel);font-size:20px;line-height:1}
+.instructions-steps{counter-reset:steps}
+.step{display:flex;gap:14px;margin-bottom:14px;align-items:flex-start}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--roast);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-text{font-size:14px;line-height:1.6;padding-top:4px}
+.comments-section{margin-top:24px;border-top:1px solid var(--border);padding-top:20px}
+.comment-item{display:flex;gap:10px;margin-bottom:16px}
+.comment-body{flex:1}
+.comment-author{font-size:13px;font-weight:700;margin-bottom:2px;cursor:pointer}
+.comment-author:hover{color:var(--caramel)}
+.comment-text{font-size:13px;color:#444;line-height:1.5}
+.comment-time{font-size:11px;color:var(--muted);margin-top:2px}
+.comment-input{display:flex;gap:8px;margin-top:16px}
+.comment-input input{flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none}
+.comment-input input:focus{border-color:var(--caramel)}
 
-    td {
-      padding: 12px 16px;
-      font-size: 14px;
-      vertical-align: middle;
-    }
-    .td-id    { color: var(--text-muted); font-size: 12px; font-weight: 600; }
-    .td-name  { font-weight: 600; }
-    .td-price { font-weight: 700; color: var(--roast); }
-    .td-actions { text-align: center; }
+/* ── Sidebar widgets ─────────────────────────────────────────────────────── */
+.widget{margin-bottom:20px}
+.widget-title{font-size:13px;font-weight:800;color:var(--roast);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.trending-item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.trending-item:last-child{border-bottom:none}
+.trending-item:hover .trending-title{color:var(--caramel)}
+.trending-rank{width:22px;height:22px;border-radius:50%;background:var(--cream);font-size:11px;font-weight:800;color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.trending-title{font-size:13px;font-weight:600;line-height:1.3;margin-bottom:2px}
+.trending-likes{font-size:11px;color:var(--muted)}
 
-    /* Category badge */
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .3px;
-    }
-    .badge-COFFEE   { background: #E8D5C4; color: #5C3317; }
-    .badge-TEA      { background: #C8E6C9; color: #1B5E20; }
-    .badge-SMOOTHIE { background: #E1BEE7; color: #4A148C; }
-    .badge-FOOD     { background: #FFF9C4; color: #795548; }
-    .badge-DESSERT  { background: #FFCDD2; color: #B71C1C; }
+/* ── Toast ───────────────────────────────────────────────────────────────── */
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:10px;color:#fff;font-size:14px;font-weight:600;z-index:9999;max-width:320px;opacity:0;transform:translateY(12px);transition:.25s;pointer-events:none;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.ok{background:var(--success)}
+.toast.err{background:var(--danger)}
+.toast.info{background:var(--roast)}
 
-    /* Status pill */
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .pill-on  { background: #E8F5E9; color: #2E7D32; }
-    .pill-off { background: #F5F5F5; color: #9E9E9E; }
+/* ── Empty & loading states ─────────────────────────────────────────────── */
+.empty-state{text-align:center;padding:60px 24px;color:var(--muted)}
+.empty-icon{font-size:48px;margin-bottom:12px}
+.empty-msg{font-size:16px;margin-bottom:16px}
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--muted);gap:10px;font-size:14px}
+.spinner{width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--caramel);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-    /* Action icon buttons */
-    .actions { display: flex; gap: 6px; justify-content: center; }
-    .icon-btn {
-      width: 32px; height: 32px;
-      border: none; border-radius: 8px;
-      cursor: pointer; font-size: 15px;
-      display: flex; align-items: center; justify-content: center;
-      transition: all .15s;
-    }
-    .btn-edit   { background: #FFF3E0; color: #E65100; }
-    .btn-edit:hover   { background: #E65100; color: #fff; }
-    .btn-delete { background: #FFEBEE; color: #C62828; }
-    .btn-delete:hover { background: #C62828; color: #fff; }
+/* ── Tab bar ─────────────────────────────────────────────────────────────── */
+.tab-bar{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px}
+.tab-btn{padding:10px 20px;border:none;background:none;font-size:14px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s;cursor:pointer}
+.tab-btn.active{color:var(--roast);border-bottom-color:var(--roast)}
 
-    /* Empty / loading state */
-    .state-row td {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--text-muted);
-    }
-    .state-icon { font-size: 42px; margin-bottom: 10px; }
-    .state-msg  { font-size: 15px; }
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media(max-width:800px){
+  .two-col{grid-template-columns:1fr}
+  .sidebar-col{display:none}
+  .form-row{grid-template-columns:1fr}
+  .nav-links{display:none}
+  .nav-search{display:none}
+}
+@media(max-width:480px){
+  .page{padding:16px 12px}
+  .navbar{padding:0 16px}
+}
 
-    /* ── Toast ─────────────────────────────────────────────────────────────── */
-    .toast {
-      position: fixed;
-      bottom: 24px; right: 24px;
-      padding: 13px 20px;
-      border-radius: var(--radius);
-      color: #fff;
-      font-size: 14px; font-weight: 600;
-      z-index: 9999;
-      max-width: 320px;
-      opacity: 0; transform: translateY(14px);
-      transition: opacity .25s, transform .25s;
-      pointer-events: none;
-      display: flex; align-items: center; gap: 8px;
-      box-shadow: 0 4px 20px rgba(0,0,0,.2);
-    }
-    .toast.show { opacity: 1; transform: translateY(0); }
-    .toast.ok  { background: var(--success); }
-    .toast.err { background: var(--danger); }
-
-    /* ── Responsive ────────────────────────────────────────────────────────── */
-    @media (max-width: 768px) {
-      .layout { grid-template-columns: 1fr; }
-      .sidebar { border-right: none; border-bottom: 1.5px solid var(--border); }
-    }
-  </style>
+/* ── Auth page ───────────────────────────────────────────────────────────── */
+.auth-hero{text-align:center;padding:60px 24px 40px;background:linear-gradient(135deg,var(--espresso),var(--roast));color:#fff;border-radius:0 0 40px 40px;margin:-28px -24px 32px}
+.auth-hero h1{font-size:36px;font-weight:900;margin-bottom:8px}
+.auth-hero p{font-size:16px;opacity:.8;max-width:480px;margin:0 auto 24px}
+</style>
 </head>
 <body>
 
-<!-- ── Header ──────────────────────────────────────────────────────────────── -->
-<header>
-  <span class="logo">☕</span>
-  <h1>MyCafé — Menu Manager</h1>
-  <span class="tagline">Hexagonal Architecture · Java 21 · REST API</span>
-</header>
+<!-- ── Navbar ──────────────────────────────────────────────────────────────── -->
+<nav class="navbar">
+  <div class="nav-brand"><span>🫘</span> Borgol</div>
+  <div class="nav-links">
+    <button class="nav-link" onclick="showPage('feed')">🏠 Feed</button>
+    <button class="nav-link" onclick="showPage('recipes')">📖 Recipes</button>
+    <button class="nav-link" onclick="showPage('cafes')">☕ Cafes</button>
+    <button class="nav-link" onclick="showPage('explore')">🔭 Explore</button>
+  </div>
+  <div class="nav-right">
+    <div class="search-wrap">
+      <input class="nav-search" type="text" placeholder="Search..." id="nav-search"
+        onkeydown="if(event.key==='Enter')globalSearch(this.value)"/>
+    </div>
+    <div id="auth-buttons">
+      <button class="btn-login" onclick="openModal('login-modal')">Log in</button>
+      <button class="btn-login" style="background:transparent;border:1px solid rgba(255,255,255,.4);margin-left:4px" onclick="openModal('register-modal')">Sign up</button>
+    </div>
+    <div id="user-menu" style="display:none">
+      <button class="user-pill" onclick="showPage('profile')">
+        <div class="avatar" id="nav-avatar">👤</div>
+        <span id="nav-username">User</span>
+      </button>
+    </div>
+  </div>
+</nav>
 
-<!-- ── Stats bar ───────────────────────────────────────────────────────────── -->
-<div class="stats-bar">
-  <div class="stat">Items: <strong id="s-total">—</strong></div>
-  <div class="stat">Available: <strong id="s-avail">—</strong></div>
-  <div class="stat">Categories: <strong id="s-cats">—</strong></div>
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- FEED PAGE -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-feed">
+  <div class="two-col">
+    <div>
+      <div id="feed-content">
+        <div class="loading"><div class="spinner"></div> Loading feed…</div>
+      </div>
+    </div>
+    <div class="sidebar-col">
+      <div class="card widget" style="padding:16px">
+        <div class="widget-title">🔥 Trending Recipes</div>
+        <div id="trending-list"><div class="loading" style="padding:20px"><div class="spinner"></div></div></div>
+      </div>
+      <div class="card widget" style="padding:16px">
+        <div class="widget-title">☕ Quick Stats</div>
+        <div id="quick-stats" style="font-size:14px;color:var(--muted)">Loading…</div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- ── App layout ──────────────────────────────────────────────────────────── -->
-<div class="layout">
-
-  <!-- Sidebar: Add / Edit form -->
-  <aside class="sidebar">
-    <div class="sidebar-title" id="form-title">✏️ Add New Item</div>
-
-    <input type="hidden" id="f-id" />
-
-    <div class="field">
-      <label for="f-name">Item Name</label>
-      <input id="f-name" type="text" placeholder="e.g. Flat White" autocomplete="off" />
-    </div>
-
-    <div class="field">
-      <label for="f-category">Category</label>
-      <select id="f-category">
-        <option value="COFFEE">☕  Coffee</option>
-        <option value="TEA">🍵  Tea</option>
-        <option value="SMOOTHIE">🥤  Smoothie</option>
-        <option value="FOOD">🥐  Food</option>
-        <option value="DESSERT">🍰  Dessert</option>
-      </select>
-    </div>
-
-    <div class="field">
-      <label for="f-price">Price ($)</label>
-      <input id="f-price" type="number" min="0" step="0.25" placeholder="0.00" />
-    </div>
-
-    <div class="toggle-row">
-      <input id="f-available" type="checkbox" checked />
-      <label for="f-available">Available for order</label>
-    </div>
-
-    <button class="btn btn-save"  onclick="saveItem()">💾 Save Item</button>
-    <button class="btn btn-clear" onclick="clearForm()">✕  Clear Form</button>
-    <hr class="divider" />
-
-    <!-- Quick-add shortcuts -->
-    <div class="sidebar-title" style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">
-      Quick Add ↓
-    </div>
-    <button class="btn btn-clear" onclick="quickAdd('Espresso','COFFEE',3.50)">☕ Espresso $3.50</button>
-    <button class="btn btn-clear" onclick="quickAdd('Matcha Latte','TEA',4.00)">🍵 Matcha Latte $4.00</button>
-    <button class="btn btn-clear" onclick="quickAdd('Tiramisu','DESSERT',5.50)">🍰 Tiramisu $5.50</button>
-  </aside>
-
-  <!-- Main: Table -->
-  <main class="main">
-
-    <!-- Category filter chips -->
-    <div class="filters">
-      <button class="chip active" data-f="ALL"      onclick="setFilter(this)">All</button>
-      <button class="chip"        data-f="COFFEE"   onclick="setFilter(this)">☕ Coffee</button>
-      <button class="chip"        data-f="TEA"      onclick="setFilter(this)">🍵 Tea</button>
-      <button class="chip"        data-f="SMOOTHIE" onclick="setFilter(this)">🥤 Smoothie</button>
-      <button class="chip"        data-f="FOOD"     onclick="setFilter(this)">🥐 Food</button>
-      <button class="chip"        data-f="DESSERT"  onclick="setFilter(this)">🍰 Dessert</button>
-    </div>
-
-    <div class="table-card">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Price</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="tbody">
-          <tr class="state-row"><td colspan="6">
-            <div class="state-icon">⏳</div>
-            <div class="state-msg">Loading menu…</div>
-          </td></tr>
-        </tbody>
-      </table>
-    </div>
-  </main>
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- RECIPES PAGE -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-recipes">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div class="section-title">📖 Recipes</div>
+    <button class="btn btn-primary" onclick="openModal('new-recipe-modal')" id="btn-new-recipe" style="display:none">
+      + New Recipe
+    </button>
+  </div>
+  <div class="filters">
+    <input class="search-input search-bar" type="text" placeholder="Search recipes…" id="recipe-search"
+      oninput="debounce(loadRecipes,400)()"/>
+    <button class="chip active" data-dt="ALL"         onclick="setDrinkFilter(this)">All</button>
+    <button class="chip"        data-dt="ESPRESSO"    onclick="setDrinkFilter(this)">Espresso</button>
+    <button class="chip"        data-dt="LATTE"       onclick="setDrinkFilter(this)">Latte</button>
+    <button class="chip"        data-dt="CAPPUCCINO"  onclick="setDrinkFilter(this)">Cappuccino</button>
+    <button class="chip"        data-dt="COLD_BREW"   onclick="setDrinkFilter(this)">Cold Brew</button>
+    <button class="chip"        data-dt="POUR_OVER"   onclick="setDrinkFilter(this)">Pour Over</button>
+    <button class="chip"        data-dt="TEA"         onclick="setDrinkFilter(this)">Tea</button>
+    <button class="chip"        data-dt="SMOOTHIE"    onclick="setDrinkFilter(this)">Smoothie</button>
+    <button class="chip"        data-dt="TRENDING"    onclick="setDrinkFilter(this)" style="margin-left:auto">🔥 Trending</button>
+  </div>
+  <div id="recipes-grid" class="recipe-grid">
+    <div class="loading"><div class="spinner"></div></div>
+  </div>
 </div>
 
-<!-- Toast notification -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- CAFES PAGE -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-cafes">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div class="section-title">☕ Cafes in Ulaanbaatar</div>
+    <button class="btn btn-primary" onclick="openModal('new-cafe-modal')" id="btn-new-cafe" style="display:none">
+      + Add Cafe
+    </button>
+  </div>
+  <div class="filters">
+    <input class="search-input search-bar" type="text" placeholder="Search cafes, areas…" id="cafe-search"
+      oninput="debounce(loadCafes,400)()"/>
+    <button class="chip active" data-dist="ALL" onclick="setCafeFilter(this)">All Districts</button>
+    <button class="chip" data-dist="Sukhbaatar" onclick="setCafeFilter(this)">Sukhbaatar</button>
+    <button class="chip" data-dist="Khan-Uul"   onclick="setCafeFilter(this)">Khan-Uul</button>
+    <button class="chip" data-dist="Bayanzurkh" onclick="setCafeFilter(this)">Bayanzurkh</button>
+    <button class="chip" data-dist="Chingeltei" onclick="setCafeFilter(this)">Chingeltei</button>
+  </div>
+  <div id="cafes-grid" class="cafe-grid">
+    <div class="loading"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- EXPLORE PAGE -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-explore">
+  <div class="section-title">🔭 Explore Community</div>
+  <div class="filters">
+    <input class="search-input search-bar" type="text" placeholder="Search people…" id="explore-search"
+      oninput="debounce(searchUsers,400)()"/>
+  </div>
+  <div id="explore-results">
+    <div class="empty-state"><div class="empty-icon">👥</div><div class="empty-msg">Search for coffee enthusiasts</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- PROFILE PAGE -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-profile">
+  <div class="card" style="margin-bottom:20px">
+    <div class="profile-header" id="profile-header">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="profileTab('recipes',this)">Recipes</button>
+  </div>
+  <div id="profile-recipes" class="recipe-grid"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- MODALS -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- Login -->
+<div class="modal-overlay" id="login-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title">🫘 Welcome back</div>
+      <button class="modal-close" onclick="closeModal('login-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Email</label><input id="login-email" type="email" placeholder="you@example.com" autocomplete="email"/></div>
+      <div class="field"><label>Password</label><input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password"/></div>
+      <button class="btn btn-primary btn-full" onclick="doLogin()">Log In</button>
+      <p style="text-align:center;margin-top:16px;font-size:13px;color:var(--muted)">
+        No account? <a href="#" onclick="switchModal('login-modal','register-modal')" style="color:var(--caramel);font-weight:700">Sign up</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Register -->
+<div class="modal-overlay" id="register-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title">☕ Join Borgol</div>
+      <button class="modal-close" onclick="closeModal('register-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Username</label><input id="reg-username" type="text" placeholder="coffee_lover" autocomplete="username"/></div>
+      <div class="field"><label>Email</label><input id="reg-email" type="email" placeholder="you@example.com" autocomplete="email"/></div>
+      <div class="field"><label>Password (min 6 chars)</label><input id="reg-password" type="password" placeholder="••••••••" autocomplete="new-password"/></div>
+      <button class="btn btn-primary btn-full" onclick="doRegister()">Create Account</button>
+      <p style="text-align:center;margin-top:16px;font-size:13px;color:var(--muted)">
+        Have an account? <a href="#" onclick="switchModal('register-modal','login-modal')" style="color:var(--caramel);font-weight:700">Log in</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- New Recipe -->
+<div class="modal-overlay" id="new-recipe-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="recipe-modal-title">✍️ Share a Recipe</div>
+      <button class="modal-close" onclick="closeModal('new-recipe-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="recipe-edit-id"/>
+      <div class="form-row">
+        <div class="field"><label>Recipe Title *</label><input id="r-title" type="text" placeholder="e.g. Perfect Pour-Over"/></div>
+        <div class="field">
+          <label>Drink Type *</label>
+          <select id="r-drinktype">
+            <option value="ESPRESSO">Espresso</option>
+            <option value="LATTE">Latte</option>
+            <option value="CAPPUCCINO">Cappuccino</option>
+            <option value="AMERICANO">Americano</option>
+            <option value="COLD_BREW">Cold Brew</option>
+            <option value="POUR_OVER" selected>Pour Over</option>
+            <option value="FRENCH_PRESS">French Press</option>
+            <option value="TEA">Tea</option>
+            <option value="SMOOTHIE">Smoothie</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Description</label><textarea id="r-description" rows="2" placeholder="What makes this recipe special?"></textarea></div>
+      <div class="form-row">
+        <div class="field"><label>Brew Time (minutes)</label><input id="r-brewtime" type="number" min="0" max="120" value="5"/></div>
+        <div class="field">
+          <label>Difficulty</label>
+          <select id="r-difficulty">
+            <option value="EASY">Easy</option>
+            <option value="MEDIUM" selected>Medium</option>
+            <option value="HARD">Hard</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Ingredients (one per line)</label><textarea id="r-ingredients" rows="4" placeholder="20g medium-fine ground coffee&#10;300ml water at 93°C&#10;Pour-over dripper"></textarea></div>
+      <div class="field"><label>Instructions (one step per line)</label><textarea id="r-instructions" rows="5" placeholder="1. Rinse filter with hot water&#10;2. Add coffee and bloom..."></textarea></div>
+      <div class="field">
+        <label>Flavor Tags</label>
+        <div class="flavor-picker" id="r-flavor-picker">
+          <!-- generated by JS -->
+        </div>
+      </div>
+      <div class="field"><label>Image URL (optional)</label><input id="r-imageurl" type="url" placeholder="https://…"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('new-recipe-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRecipe()">Share Recipe</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Cafe -->
+<div class="modal-overlay" id="new-cafe-modal">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <div class="modal-title">☕ Add a Cafe</div>
+      <button class="modal-close" onclick="closeModal('new-cafe-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Cafe Name *</label><input id="c-name" type="text" placeholder="Blue Sky Cafe"/></div>
+      <div class="form-row">
+        <div class="field"><label>Address</label><input id="c-address" type="text" placeholder="Peace Ave 15"/></div>
+        <div class="field"><label>District</label><input id="c-district" type="text" placeholder="Sukhbaatar"/></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>City</label><input id="c-city" type="text" value="Ulaanbaatar"/></div>
+        <div class="field"><label>Phone</label><input id="c-phone" type="tel" placeholder="+976 9911-2233"/></div>
+      </div>
+      <div class="field"><label>Description</label><textarea id="c-description" rows="3" placeholder="What's special about this place?"></textarea></div>
+      <div class="field"><label>Opening Hours</label><input id="c-hours" type="text" placeholder="Mon-Fri 8:00-20:00, Sat-Sun 9:00-21:00"/></div>
+      <div class="field"><label>Image URL (optional)</label><input id="c-imageurl" type="url" placeholder="https://…"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('new-cafe-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCafe()">Add Cafe</button>
+    </div>
+  </div>
+</div>
+
+<!-- Recipe Detail -->
+<div class="modal-overlay" id="recipe-detail-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="recipe-detail-title">Recipe</div>
+      <button class="modal-close" onclick="closeModal('recipe-detail-modal')">✕</button>
+    </div>
+    <div id="recipe-detail-content"></div>
+  </div>
+</div>
+
+<!-- Cafe Detail -->
+<div class="modal-overlay" id="cafe-detail-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="cafe-detail-title">Cafe</div>
+      <button class="modal-close" onclick="closeModal('cafe-detail-modal')">✕</button>
+    </div>
+    <div id="cafe-detail-content"></div>
+  </div>
+</div>
+
+<!-- Edit Profile -->
+<div class="modal-overlay" id="edit-profile-modal">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Edit Profile</div>
+      <button class="modal-close" onclick="closeModal('edit-profile-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Bio</label><textarea id="p-bio" rows="3" placeholder="Tell the coffee community about yourself…"></textarea></div>
+      <div class="field">
+        <label>Expertise Level</label>
+        <select id="p-level">
+          <option value="BEGINNER">Beginner</option>
+          <option value="ENTHUSIAST">Enthusiast</option>
+          <option value="BARISTA">Barista</option>
+          <option value="EXPERT">Expert</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Flavor Preferences</label>
+        <div class="flavor-picker" id="p-flavor-picker"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('edit-profile-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- ── JavaScript ───────────────────────────────────────────────────────────── -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- JAVASCRIPT -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
 <script>
-  /* ── State ──────────────────────────────────────────────────────────────── */
-  let allItems    = [];
-  let activeFilter = 'ALL';
+// ── State ─────────────────────────────────────────────────────────────────────
+let TOKEN    = localStorage.getItem('borgol_token') || null;
+let ME       = null;
+let drinkFilter   = 'ALL';
+let cafeDistFilter = 'ALL';
+let viewingUserId  = null;
 
-  const CAT_ICON = { COFFEE:'☕', TEA:'🍵', SMOOTHIE:'🥤', FOOD:'🥐', DESSERT:'🍰' };
+const FLAVORS = ['BITTER','SWEET','SOUR','FRUITY','NUTTY','CHOCOLATEY','FLORAL','SPICY','EARTHY','SMOKY','CARAMEL','VANILLA'];
+const DRINK_LABELS = {
+  ESPRESSO:'Espresso',LATTE:'Latte',CAPPUCCINO:'Cappuccino',AMERICANO:'Americano',
+  COLD_BREW:'Cold Brew',POUR_OVER:'Pour Over',FRENCH_PRESS:'French Press',
+  TEA:'Tea',SMOOTHIE:'Smoothie',OTHER:'Other'
+};
 
-  /* ── Fetch helpers ──────────────────────────────────────────────────────── */
-  const api = (url, opts = {}) =>
-    fetch(url, { headers: { 'Content-Type': 'application/json' }, ...opts })
-      .then(async r => { const d = await r.json().catch(() => null); if (!r.ok) throw new Error(d?.error || r.statusText); return d; });
+// ── API helper ────────────────────────────────────────────────────────────────
+async function api(url, opts={}) {
+  const headers = {'Content-Type':'application/json'};
+  if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+  const res = await fetch(url, { ...opts, headers: {...headers, ...opts.headers} });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(data?.error || res.statusText || 'Request failed');
+  return data;
+}
 
-  /* ── Load ───────────────────────────────────────────────────────────────── */
-  async function loadItems() {
-    try {
-      allItems = await api('/api/menu');
-      updateStats();
-      renderTable();
-    } catch (e) { toast('Failed to load: ' + e.message, 'err'); }
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  try {
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const result   = await api('/api/auth/login', {method:'POST',body:JSON.stringify({email,password})});
+    TOKEN = result.token;
+    ME    = result.user;
+    localStorage.setItem('borgol_token', TOKEN);
+    closeModal('login-modal');
+    updateNavUser();
+    toast('Welcome back, ' + ME.username + '!', 'ok');
+    showPage('feed');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function doRegister() {
+  try {
+    const username = document.getElementById('reg-username').value.trim();
+    const email    = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const result   = await api('/api/auth/register', {method:'POST',body:JSON.stringify({username,email,password})});
+    TOKEN = result.token;
+    ME    = result.user;
+    localStorage.setItem('borgol_token', TOKEN);
+    closeModal('register-modal');
+    updateNavUser();
+    toast('Welcome to Borgol, ' + ME.username + '!', 'ok');
+    showPage('feed');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function logout() {
+  TOKEN = null;
+  ME    = null;
+  localStorage.removeItem('borgol_token');
+  updateNavUser();
+  showPage('recipes');
+  toast('Logged out', 'info');
+}
+
+async function loadMe() {
+  if (!TOKEN) return;
+  try {
+    ME = await api('/api/auth/me');
+    updateNavUser();
+  } catch (e) {
+    TOKEN = null;
+    localStorage.removeItem('borgol_token');
   }
+}
 
-  /* ── Save (Create or Update) ────────────────────────────────────────────── */
-  async function saveItem() {
-    const id        = document.getElementById('f-id').value;
-    const name      = document.getElementById('f-name').value.trim();
-    const category  = document.getElementById('f-category').value;
-    const priceRaw  = document.getElementById('f-price').value;
-    const available = document.getElementById('f-available').checked;
-
-    if (!name)             { toast('Name is required', 'err'); return; }
-    const price = parseFloat(priceRaw);
-    if (isNaN(price) || price < 0) { toast('Enter a valid price ≥ 0', 'err'); return; }
-
-    const body = JSON.stringify({ name, category, price, available });
-    try {
-      if (!id) {
-        await api('/api/menu', { method: 'POST', body });
-        toast('✓ Item added', 'ok');
-      } else {
-        await api(`/api/menu/${id}`, { method: 'PUT', body });
-        toast('✓ Item updated', 'ok');
-      }
-      clearForm();
-      loadItems();
-    } catch (e) { toast(e.message, 'err'); }
+function updateNavUser() {
+  const authBtns = document.getElementById('auth-buttons');
+  const userMenu = document.getElementById('user-menu');
+  if (ME) {
+    authBtns.style.display = 'none';
+    userMenu.style.display = 'flex';
+    document.getElementById('nav-username').textContent = ME.username;
+    document.getElementById('nav-avatar').textContent   = ME.username[0].toUpperCase();
+    document.getElementById('btn-new-recipe').style.display = 'flex';
+    document.getElementById('btn-new-cafe').style.display   = 'flex';
+  } else {
+    authBtns.style.display = 'flex';
+    userMenu.style.display = 'none';
+    document.getElementById('btn-new-recipe').style.display = 'none';
+    document.getElementById('btn-new-cafe').style.display   = 'none';
   }
+}
 
-  /* ── Delete ─────────────────────────────────────────────────────────────── */
-  async function deleteItem(id, name) {
-    if (!confirm(`Delete "${name}"?\nThis cannot be undone.`)) return;
-    try {
-      await fetch(`/api/menu/${id}`, { method: 'DELETE' });
-      toast(`✓ "${name}" deleted`, 'ok');
-      if (document.getElementById('f-id').value == id) clearForm();
-      loadItems();
-    } catch (e) { toast('Error deleting: ' + e.message, 'err'); }
+// ── Pages ─────────────────────────────────────────────────────────────────────
+function showPage(name, userId=null) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  const page = document.getElementById('page-' + name);
+  if (page) page.classList.add('active');
+  const link = document.querySelector(`.nav-link[onclick*="${name}"]`);
+  if (link) link.classList.add('active');
+
+  if      (name === 'feed')    loadFeed();
+  else if (name === 'recipes') loadRecipes();
+  else if (name === 'cafes')   loadCafes();
+  else if (name === 'explore') { /* wait for user input */ }
+  else if (name === 'profile') loadProfile(userId || (ME && ME.id));
+}
+
+// ── Feed ──────────────────────────────────────────────────────────────────────
+async function loadFeed() {
+  if (!ME) {
+    document.getElementById('feed-content').innerHTML = `
+      <div class="auth-hero">
+        <h1>☕ Welcome to Borgol</h1>
+        <p>Your coffee community — discover recipes, find cafes, and connect with baristas across Mongolia.</p>
+        <div style="display:flex;gap:12px;justify-content:center">
+          <button class="btn btn-primary" style="font-size:16px;padding:12px 28px" onclick="openModal('register-modal')">Join Now</button>
+          <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;font-size:16px;padding:12px 28px" onclick="openModal('login-modal')">Log In</button>
+        </div>
+      </div>
+      <div class="section-title">🔥 Trending Now</div>
+    `;
+    const trending = await api('/api/recipes?sort=TRENDING');
+    document.getElementById('feed-content').innerHTML += renderRecipeGrid(trending, true);
+    loadTrending();
+    return;
   }
-
-  /* ── Edit (fill form) ───────────────────────────────────────────────────── */
-  function editItem(item) {
-    document.getElementById('f-id').value          = item.id;
-    document.getElementById('f-name').value        = item.name;
-    document.getElementById('f-category').value    = item.category;
-    document.getElementById('f-price').value       = item.price.toFixed(2);
-    document.getElementById('f-available').checked = item.available;
-    document.getElementById('form-title').textContent = '✏️ Edit Item  #' + item.id;
-    document.querySelectorAll('tr.editing').forEach(r => r.classList.remove('editing'));
-    const row = document.querySelector(`tr[data-id="${item.id}"]`);
-    if (row) { row.classList.add('editing'); row.scrollIntoView({ block: 'nearest' }); }
-    document.getElementById('f-name').focus();
-  }
-
-  /* ── Clear form ─────────────────────────────────────────────────────────── */
-  function clearForm() {
-    document.getElementById('f-id').value           = '';
-    document.getElementById('f-name').value         = '';
-    document.getElementById('f-category').value     = 'COFFEE';
-    document.getElementById('f-price').value        = '';
-    document.getElementById('f-available').checked  = true;
-    document.getElementById('form-title').textContent = '✏️ Add New Item';
-    document.querySelectorAll('tr.editing').forEach(r => r.classList.remove('editing'));
-  }
-
-  /* ── Quick add ──────────────────────────────────────────────────────────── */
-  async function quickAdd(name, category, price) {
-    try {
-      await api('/api/menu', { method:'POST', body: JSON.stringify({ name, category, price, available: true }) });
-      toast(`✓ "${name}" added`, 'ok');
-      loadItems();
-    } catch (e) { toast(e.message, 'err'); }
-  }
-
-  /* ── Filter ─────────────────────────────────────────────────────────────── */
-  function setFilter(btn) {
-    document.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    activeFilter = btn.dataset.f;
-    renderTable();
-  }
-
-  /* ── Render table ───────────────────────────────────────────────────────── */
-  function renderTable() {
-    const items = activeFilter === 'ALL'
-      ? allItems
-      : allItems.filter(i => i.category === activeFilter);
-
-    const tbody = document.getElementById('tbody');
-
-    if (items.length === 0) {
-      tbody.innerHTML = `<tr class="state-row"><td colspan="6">
-        <div class="state-icon">${activeFilter === 'ALL' ? '☕' : CAT_ICON[activeFilter] || '🔍'}</div>
-        <div class="state-msg">No items found</div>
-      </td></tr>`;
-      return;
+  document.getElementById('feed-content').innerHTML = '<div class="loading"><div class="spinner"></div> Loading feed…</div>';
+  try {
+    const feed = await api('/api/feed');
+    if (!feed.length) {
+      document.getElementById('feed-content').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">☕</div>
+          <div class="empty-msg">Your feed is empty — follow people to see their recipes!</div>
+          <button class="btn btn-primary" onclick="showPage('explore')">Find People</button>
+        </div>
+        <div class="section-title" style="margin-top:32px">🔥 Trending</div>
+      `;
+      const trending = await api('/api/recipes?sort=TRENDING');
+      document.getElementById('feed-content').innerHTML += renderRecipeGrid(trending, true);
+    } else {
+      document.getElementById('feed-content').innerHTML = feed.map(r => renderFeedCard(r)).join('');
     }
+    loadTrending();
+    loadQuickStats();
+  } catch (e) { toast(e.message, 'err'); }
+}
 
-    tbody.innerHTML = items.map(item => `
-      <tr data-id="${item.id}">
-        <td class="td-id">#${item.id}</td>
-        <td class="td-name">${esc(item.name)}</td>
-        <td><span class="badge badge-${item.category}">${CAT_ICON[item.category] || ''} ${item.category}</span></td>
-        <td class="td-price">$${item.price.toFixed(2)}</td>
-        <td>${item.available
-          ? '<span class="pill pill-on">✓ Available</span>'
-          : '<span class="pill pill-off">✗ Unavailable</span>'}</td>
-        <td class="td-actions">
-          <div class="actions">
-            <button class="icon-btn btn-edit"   title="Edit"   onclick='editItem(${JSON.stringify(item)})'>✏️</button>
-            <button class="icon-btn btn-delete" title="Delete" onclick="deleteItem(${item.id},'${esc(item.name)}')">🗑</button>
+function renderFeedCard(r) {
+  const dtLabel = DRINK_LABELS[r.drinkType] || r.drinkType;
+  const ago     = timeAgo(r.createdAt);
+  const img     = r.imageUrl || `https://picsum.photos/seed/${r.id}/600/300`;
+  return `
+    <div class="card feed-card card-hover">
+      <div class="feed-header">
+        <div class="avatar" style="width:38px;height:38px;font-size:16px">${(r.authorUsername||'?')[0].toUpperCase()}</div>
+        <div class="feed-user-info">
+          <div class="feed-username" onclick="showPage('profile',${r.authorId})">${esc(r.authorUsername)}</div>
+          <div class="feed-time">${ago} · ${dtLabel}</div>
+        </div>
+        <span class="recipe-badge dt-${r.drinkType}" style="position:static;font-size:10px">${dtLabel}</span>
+      </div>
+      <img src="${img}" class="feed-img" alt="${esc(r.title)}" onerror="this.src='https://picsum.photos/seed/${r.id+10}/600/300'"/>
+      <div class="feed-body">
+        <div class="feed-title" onclick="openRecipeDetail(${r.id})">${esc(r.title)}</div>
+        ${r.description ? `<div class="feed-desc">${esc(r.description).substring(0,120)}${r.description.length>120?'…':''}</div>` : ''}
+        ${r.flavorTags?.length ? `<div class="flavor-tags">${r.flavorTags.map(t=>`<span class="flavor-tag">${t.toLowerCase()}</span>`).join('')}</div>` : ''}
+      </div>
+      <div class="feed-footer">
+        <button class="like-btn${r.likedByCurrentUser?' liked':''}" onclick="toggleLike(${r.id},this)">
+          ${r.likedByCurrentUser?'❤️':'🤍'} <span class="like-count">${r.likesCount||0}</span>
+        </button>
+        <span class="comment-count" onclick="openRecipeDetail(${r.id})">💬 ${r.commentCount||0}</span>
+        <button class="btn btn-sm btn-secondary" onclick="openRecipeDetail(${r.id})" style="margin-left:auto">View Recipe</button>
+      </div>
+    </div>`;
+}
+
+async function loadTrending() {
+  try {
+    const trending = await api('/api/recipes?sort=TRENDING');
+    const top5     = trending.slice(0, 5);
+    document.getElementById('trending-list').innerHTML = top5.map((r,i) => `
+      <div class="trending-item" onclick="openRecipeDetail(${r.id})">
+        <div class="trending-rank">${i+1}</div>
+        <div>
+          <div class="trending-title">${esc(r.title)}</div>
+          <div class="trending-likes">❤️ ${r.likesCount} · ${DRINK_LABELS[r.drinkType]||r.drinkType}</div>
+        </div>
+      </div>`).join('');
+  } catch (e) {}
+}
+
+async function loadQuickStats() {
+  try {
+    const [recipes, cafes] = await Promise.all([api('/api/recipes'), api('/api/cafes')]);
+    document.getElementById('quick-stats').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center">
+        <div><div style="font-size:22px;font-weight:800;color:var(--roast)">${recipes.length}</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase">Recipes</div></div>
+        <div><div style="font-size:22px;font-weight:800;color:var(--roast)">${cafes.length}</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase">Cafes</div></div>
+      </div>`;
+  } catch (e) {}
+}
+
+// ── Recipes ───────────────────────────────────────────────────────────────────
+async function loadRecipes() {
+  const search = document.getElementById('recipe-search').value;
+  const isSort  = drinkFilter === 'TRENDING';
+  const dt      = isSort ? '' : (drinkFilter === 'ALL' ? '' : drinkFilter);
+  const sort    = isSort ? 'TRENDING' : 'LATEST';
+  const url     = `/api/recipes?search=${encodeURIComponent(search||'')}&drinkType=${dt}&sort=${sort}`;
+  document.getElementById('recipes-grid').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const recipes = await api(url);
+    document.getElementById('recipes-grid').innerHTML = renderRecipeGrid(recipes, true) || emptyState('☕','No recipes found');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function renderRecipeGrid(recipes, asGrid=false) {
+  if (!recipes || !recipes.length) return emptyState('☕','No recipes yet');
+  return `<div class="recipe-grid">${recipes.map(r => renderRecipeCard(r)).join('')}</div>`;
+}
+
+function renderRecipeCard(r) {
+  const dtLabel = DRINK_LABELS[r.drinkType] || r.drinkType;
+  const img     = r.imageUrl || `https://picsum.photos/seed/${r.id}/400/200`;
+  return `
+    <div class="card recipe-card card-hover" onclick="openRecipeDetail(${r.id})">
+      <div class="recipe-img">
+        <img src="${img}" alt="${esc(r.title)}" onerror="this.src='https://picsum.photos/seed/${r.id+5}/400/200'" loading="lazy"/>
+        <span class="recipe-badge dt-${r.drinkType}">${dtLabel}</span>
+      </div>
+      <div class="recipe-body">
+        <div class="recipe-title">${esc(r.title)}</div>
+        <div class="recipe-author">by ${esc(r.authorUsername)}</div>
+        <div class="recipe-meta">
+          ${r.brewTime ? `<span>⏱️ ${r.brewTime}min</span>` : ''}
+          ${r.difficulty ? `<span>${diffIcon(r.difficulty)} ${cap(r.difficulty)}</span>` : ''}
+        </div>
+        ${r.flavorTags?.length ? `<div class="flavor-tags">${r.flavorTags.slice(0,3).map(t=>`<span class="flavor-tag">${t.toLowerCase()}</span>`).join('')}</div>` : ''}
+      </div>
+      <div class="recipe-actions" onclick="event.stopPropagation()">
+        <button class="like-btn${r.likedByCurrentUser?' liked':''}" onclick="toggleLike(${r.id},this)">
+          ${r.likedByCurrentUser?'❤️':'🤍'} <span class="like-count">${r.likesCount||0}</span>
+        </button>
+        <span class="comment-count">💬 ${r.commentCount||0}</span>
+      </div>
+    </div>`;
+}
+
+function setDrinkFilter(btn) {
+  document.querySelectorAll('[data-dt]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  drinkFilter = btn.dataset.dt;
+  loadRecipes();
+}
+
+// ── Recipe detail ─────────────────────────────────────────────────────────────
+async function openRecipeDetail(id) {
+  openModal('recipe-detail-modal');
+  document.getElementById('recipe-detail-content').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const [r, comments] = await Promise.all([
+      api(`/api/recipes/${id}`),
+      api(`/api/recipes/${id}/comments`)
+    ]);
+    document.getElementById('recipe-detail-title').textContent = r.title;
+
+    const img        = r.imageUrl || `https://picsum.photos/seed/${r.id}/800/400`;
+    const dtLabel    = DRINK_LABELS[r.drinkType] || r.drinkType;
+    const isMine     = ME && ME.id === r.authorId;
+    const ingredients= (r.ingredients||'').split('\n').filter(l=>l.trim());
+    const steps      = (r.instructions||'').split('\n').filter(l=>l.trim());
+
+    document.getElementById('recipe-detail-content').innerHTML = `
+      <img src="${img}" class="detail-img" alt="${esc(r.title)}" onerror="this.src='https://picsum.photos/seed/${r.id+5}/800/400'"/>
+      <div class="detail-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div>
+            <div class="detail-title">${esc(r.title)}</div>
+            <div style="font-size:13px;color:var(--muted)">by <span style="cursor:pointer;color:var(--caramel);font-weight:700" onclick="closeModal('recipe-detail-modal');showPage('profile',${r.authorId})">${esc(r.authorUsername)}</span></div>
           </div>
-        </td>
-      </tr>`).join('');
-  }
+          ${isMine ? `<div style="display:flex;gap:6px">
+            <button class="btn btn-sm btn-secondary" onclick="openEditRecipe(${r.id})">✏️ Edit</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteRecipe(${r.id})">🗑</button>
+          </div>` : ''}
+        </div>
+        <div class="detail-meta">
+          <span class="meta-pill recipe-badge dt-${r.drinkType}" style="position:static">${dtLabel}</span>
+          ${r.brewTime ? `<span class="meta-pill">⏱️ ${r.brewTime} min</span>` : ''}
+          ${r.difficulty ? `<span class="meta-pill">${diffIcon(r.difficulty)} ${cap(r.difficulty)}</span>` : ''}
+          ${r.flavorTags?.length ? `<span class="meta-pill">🏷️ ${r.flavorTags.join(', ')}</span>` : ''}
+        </div>
+        ${r.description ? `<p style="font-size:14px;line-height:1.7;color:#555;margin-bottom:20px">${esc(r.description)}</p>` : ''}
 
-  /* ── Stats ──────────────────────────────────────────────────────────────── */
-  function updateStats() {
-    document.getElementById('s-total').textContent = allItems.length;
-    document.getElementById('s-avail').textContent = allItems.filter(i => i.available).length;
-    document.getElementById('s-cats').textContent  = new Set(allItems.map(i => i.category)).size;
-  }
+        ${ingredients.length ? `
+        <div style="margin-bottom:20px">
+          <div class="section-label">Ingredients</div>
+          <ul class="ingredients-list">${ingredients.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>
+        </div>` : ''}
 
-  /* ── Toast ──────────────────────────────────────────────────────────────── */
-  let toastTimer;
-  function toast(msg, type = 'ok') {
-    const el = document.getElementById('toast');
-    clearTimeout(toastTimer);
-    el.textContent = msg;
-    el.className   = `toast ${type} show`;
-    toastTimer     = setTimeout(() => el.className = 'toast', 3200);
-  }
+        ${steps.length ? `
+        <div style="margin-bottom:20px">
+          <div class="section-label">Instructions</div>
+          ${steps.map((s,i)=>`
+            <div class="step">
+              <div class="step-num">${i+1}</div>
+              <div class="step-text">${esc(s)}</div>
+            </div>`).join('')}
+        </div>` : ''}
 
-  /* ── Keyboard shortcut: Enter to save ─────────────────────────────────── */
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && ['f-name','f-price'].includes(e.target.id)) saveItem();
-    if (e.key === 'Escape') clearForm();
+        <div style="display:flex;align-items:center;gap:16px;padding:12px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:16px">
+          <button class="like-btn${r.likedByCurrentUser?' liked':''}" id="detail-like-btn" onclick="toggleLike(${r.id},this)">
+            ${r.likedByCurrentUser?'❤️':'🤍'} <span class="like-count">${r.likesCount||0}</span> likes
+          </button>
+        </div>
+
+        <div class="comments-section">
+          <div class="section-label">Comments (${comments.length})</div>
+          <div id="comments-list-${r.id}">
+            ${comments.length ? comments.map(c=>renderComment(c)).join('') : '<p style="color:var(--muted);font-size:13px">No comments yet. Be the first!</p>'}
+          </div>
+          ${ME ? `
+          <div class="comment-input">
+            <div class="avatar" style="width:32px;height:32px;font-size:13px;flex-shrink:0">${ME.username[0].toUpperCase()}</div>
+            <input id="new-comment-${r.id}" type="text" placeholder="Add a comment…"
+              onkeydown="if(event.key==='Enter')postComment(${r.id})"/>
+            <button class="btn btn-sm btn-primary" onclick="postComment(${r.id})">Post</button>
+          </div>` : `<p style="font-size:13px;color:var(--muted);margin-top:12px"><a href="#" onclick="closeModal('recipe-detail-modal');openModal('login-modal')" style="color:var(--caramel);font-weight:700">Log in</a> to comment.</p>`}
+        </div>
+      </div>`;
+  } catch (e) {
+    document.getElementById('recipe-detail-content').innerHTML = `<div class="modal-body"><p style="color:var(--danger)">${e.message}</p></div>`;
+  }
+}
+
+function renderComment(c) {
+  return `
+    <div class="comment-item">
+      <div class="avatar" style="width:32px;height:32px;font-size:13px;flex-shrink:0">${(c.authorUsername||'?')[0].toUpperCase()}</div>
+      <div class="comment-body">
+        <div class="comment-author" onclick="closeModal('recipe-detail-modal');showPage('profile',${c.authorId})">${esc(c.authorUsername)}</div>
+        <div class="comment-text">${esc(c.content)}</div>
+        <div class="comment-time">${timeAgo(c.createdAt)}</div>
+      </div>
+    </div>`;
+}
+
+async function postComment(recipeId) {
+  const input   = document.getElementById(`new-comment-${recipeId}`);
+  const content = input.value.trim();
+  if (!content) return;
+  try {
+    const comment = await api(`/api/recipes/${recipeId}/comments`, {method:'POST',body:JSON.stringify({content})});
+    const list    = document.getElementById(`comments-list-${recipeId}`);
+    if (list.children.length === 0 || list.firstElementChild?.tagName === 'P') list.innerHTML = '';
+    list.innerHTML += renderComment(comment);
+    input.value = '';
+    toast('Comment added!', 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// ── Like toggle ───────────────────────────────────────────────────────────────
+async function toggleLike(recipeId, btn) {
+  if (!ME) { openModal('login-modal'); return; }
+  try {
+    const result = await api(`/api/recipes/${recipeId}/like`, {method:'POST'});
+    // Update all like buttons for this recipe
+    document.querySelectorAll('.like-btn').forEach(b => {
+      if (b.getAttribute('onclick')?.includes(recipeId)) {
+        const countEl = b.querySelector('.like-count');
+        if (countEl) countEl.textContent = result.likesCount;
+        b.className = `like-btn${result.liked?' liked':''}`;
+        b.innerHTML = `${result.liked?'❤️':'🤍'} <span class="like-count">${result.likesCount}</span>`;
+        if (b.id === 'detail-like-btn') b.innerHTML += ' likes';
+      }
+    });
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// ── New/Edit recipe ───────────────────────────────────────────────────────────
+function openNewRecipeModal() {
+  if (!ME) { openModal('login-modal'); return; }
+  buildFlavorPicker('r-flavor-picker', []);
+  document.getElementById('recipe-edit-id').value = '';
+  document.getElementById('recipe-modal-title').textContent = '✍️ Share a Recipe';
+  document.getElementById('r-title').value = '';
+  document.getElementById('r-description').value = '';
+  document.getElementById('r-drinktype').value = 'POUR_OVER';
+  document.getElementById('r-brewtime').value = '5';
+  document.getElementById('r-difficulty').value = 'MEDIUM';
+  document.getElementById('r-ingredients').value = '';
+  document.getElementById('r-instructions').value = '';
+  document.getElementById('r-imageurl').value = '';
+  openModal('new-recipe-modal');
+}
+
+async function openEditRecipe(recipeId) {
+  try {
+    const r = await api(`/api/recipes/${recipeId}`);
+    buildFlavorPicker('r-flavor-picker', r.flavorTags || []);
+    document.getElementById('recipe-edit-id').value = recipeId;
+    document.getElementById('recipe-modal-title').textContent = '✏️ Edit Recipe';
+    document.getElementById('r-title').value = r.title;
+    document.getElementById('r-description').value = r.description || '';
+    document.getElementById('r-drinktype').value = r.drinkType || 'POUR_OVER';
+    document.getElementById('r-brewtime').value = r.brewTime || 5;
+    document.getElementById('r-difficulty').value = r.difficulty || 'MEDIUM';
+    document.getElementById('r-ingredients').value = r.ingredients || '';
+    document.getElementById('r-instructions').value = r.instructions || '';
+    document.getElementById('r-imageurl').value = r.imageUrl || '';
+    closeModal('recipe-detail-modal');
+    openModal('new-recipe-modal');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function saveRecipe() {
+  if (!ME) return;
+  const id = document.getElementById('recipe-edit-id').value;
+  const body = {
+    title:        document.getElementById('r-title').value.trim(),
+    description:  document.getElementById('r-description').value.trim(),
+    drinkType:    document.getElementById('r-drinktype').value,
+    brewTime:     parseInt(document.getElementById('r-brewtime').value) || 0,
+    difficulty:   document.getElementById('r-difficulty').value,
+    ingredients:  document.getElementById('r-ingredients').value.trim(),
+    instructions: document.getElementById('r-instructions').value.trim(),
+    flavorTags:   getSelectedFlavors('r-flavor-picker'),
+    imageUrl:     document.getElementById('r-imageurl').value.trim()
+  };
+  try {
+    if (id) {
+      await api(`/api/recipes/${id}`, {method:'PUT',body:JSON.stringify(body)});
+      toast('Recipe updated!', 'ok');
+    } else {
+      await api('/api/recipes', {method:'POST',body:JSON.stringify(body)});
+      toast('Recipe shared!', 'ok');
+    }
+    closeModal('new-recipe-modal');
+    loadRecipes();
+    if (document.getElementById('page-feed').classList.contains('active')) loadFeed();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function deleteRecipe(recipeId) {
+  if (!confirm('Delete this recipe? This cannot be undone.')) return;
+  try {
+    await api(`/api/recipes/${recipeId}`, {method:'DELETE'});
+    closeModal('recipe-detail-modal');
+    toast('Recipe deleted', 'ok');
+    loadRecipes();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// ── Cafes ─────────────────────────────────────────────────────────────────────
+async function loadCafes() {
+  const search = document.getElementById('cafe-search').value;
+  const dist   = cafeDistFilter === 'ALL' ? '' : cafeDistFilter;
+  const url    = `/api/cafes?search=${encodeURIComponent(search||'')}&district=${dist}`;
+  document.getElementById('cafes-grid').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const cafes = await api(url);
+    document.getElementById('cafes-grid').innerHTML = cafes.length
+      ? `<div class="cafe-grid">${cafes.map(c=>renderCafeCard(c)).join('')}</div>`
+      : emptyState('☕','No cafes found');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function renderCafeCard(c) {
+  const img = c.imageUrl || `https://picsum.photos/seed/cafe${c.id}/400/200`;
+  return `
+    <div class="card cafe-card card-hover" onclick="openCafeDetail(${c.id})">
+      <div class="cafe-img"><img src="${img}" alt="${esc(c.name)}" onerror="this.src='https://picsum.photos/seed/c${c.id+20}/400/200'" loading="lazy"/></div>
+      <div class="cafe-body">
+        <div class="cafe-name">${esc(c.name)}</div>
+        <div class="cafe-addr">📍 ${esc(c.district ? c.district + ', ' : '')}${esc(c.city||'')}</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="stars">${renderStars(c.avgRating)}</div>
+          <span class="rating-text">${c.avgRating>0?c.avgRating.toFixed(1)+' · ':''} ${c.ratingCount} review${c.ratingCount!==1?'s':''}</span>
+        </div>
+        ${c.hours ? `<div style="font-size:12px;color:var(--muted);margin-top:6px">🕐 ${esc(c.hours)}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+function renderStars(avg) {
+  return [1,2,3,4,5].map(i => {
+    const cls = i <= Math.floor(avg) ? 'on' : (i - avg < 1 && i - avg > 0 ? 'half' : '');
+    return `<span class="star ${cls}">★</span>`;
+  }).join('');
+}
+
+function setCafeFilter(btn) {
+  document.querySelectorAll('[data-dist]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  cafeDistFilter = btn.dataset.dist;
+  loadCafes();
+}
+
+async function openCafeDetail(id) {
+  openModal('cafe-detail-modal');
+  document.getElementById('cafe-detail-content').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const c = await api(`/api/cafes/${id}`);
+    document.getElementById('cafe-detail-title').textContent = c.name;
+    const img = c.imageUrl || `https://picsum.photos/seed/cafe${c.id}/800/300`;
+
+    document.getElementById('cafe-detail-content').innerHTML = `
+      <img src="${img}" class="detail-img" alt="${esc(c.name)}" onerror="this.src='https://picsum.photos/seed/c${c.id+20}/800/300'"/>
+      <div class="detail-body">
+        <div class="detail-title">${esc(c.name)}</div>
+        <div class="detail-meta">
+          ${c.address ? `<span class="meta-pill">📍 ${esc(c.address)}</span>` : ''}
+          ${c.district ? `<span class="meta-pill">🏙️ ${esc(c.district)}</span>` : ''}
+          ${c.phone ? `<span class="meta-pill">📞 ${esc(c.phone)}</span>` : ''}
+          ${c.hours ? `<span class="meta-pill">🕐 ${esc(c.hours)}</span>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div class="stars" style="font-size:20px">${renderStars(c.avgRating)}</div>
+          <span style="font-size:18px;font-weight:800;color:var(--roast)">${c.avgRating>0?c.avgRating.toFixed(1):'-'}</span>
+          <span style="color:var(--muted);font-size:14px">(${c.ratingCount} reviews)</span>
+        </div>
+        ${c.description ? `<p style="font-size:14px;line-height:1.7;color:#555;margin-bottom:20px">${esc(c.description)}</p>` : ''}
+
+        ${ME ? `
+        <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:16px">
+          <div class="section-label">Rate This Cafe</div>
+          <div id="rate-stars-${c.id}" style="display:flex;gap:6px;font-size:32px;cursor:pointer;margin-bottom:8px">
+            ${[1,2,3,4,5].map(i=>`<span onclick="setRating(${c.id},${i})" data-rating="${i}" style="color:${i<=(c.currentUserRating||0)?'#F5A623':'#ddd'};transition:.15s"
+              onmouseover="hoverStars(${c.id},${i})" onmouseout="unhoverStars(${c.id},${c.currentUserRating||0})">★</span>`).join('')}
+          </div>
+          <textarea id="rate-review-${c.id}" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;resize:vertical;min-height:60px;margin-bottom:8px" placeholder="Write a review (optional)…">${c.currentUserReview||''}</textarea>
+          <button class="btn btn-primary btn-sm" onclick="submitRating(${c.id})" id="rate-btn-${c.id}">
+            ${c.currentUserRating ? 'Update Rating' : 'Submit Rating'}
+          </button>
+        </div>` : `<p style="font-size:13px;color:var(--muted)"><a href="#" onclick="closeModal('cafe-detail-modal');openModal('login-modal')" style="color:var(--caramel);font-weight:700">Log in</a> to rate this cafe.</p>`}
+      </div>`;
+
+    // Store current user rating
+    document._cafeRatings = document._cafeRatings || {};
+    document._cafeRatings[c.id] = c.currentUserRating || 0;
+  } catch (e) {
+    document.getElementById('cafe-detail-content').innerHTML = `<div class="modal-body"><p style="color:var(--danger)">${e.message}</p></div>`;
+  }
+}
+
+function hoverStars(cafeId, rating) {
+  document.querySelectorAll(`#rate-stars-${cafeId} span`).forEach((s,i) => {
+    s.style.color = i < rating ? '#F5A623' : '#ddd';
   });
+}
+function unhoverStars(cafeId, current) {
+  document.querySelectorAll(`#rate-stars-${cafeId} span`).forEach((s,i) => {
+    s.style.color = i < current ? '#F5A623' : '#ddd';
+  });
+}
+function setRating(cafeId, rating) {
+  document._cafeRatings = document._cafeRatings || {};
+  document._cafeRatings[cafeId] = rating;
+  hoverStars(cafeId, rating);
+}
 
-  /* ── Escape HTML ────────────────────────────────────────────────────────── */
-  function esc(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+async function submitRating(cafeId) {
+  const rating = (document._cafeRatings || {})[cafeId] || 0;
+  if (!rating) { toast('Please select a star rating', 'err'); return; }
+  const review = document.getElementById(`rate-review-${cafeId}`)?.value || '';
+  try {
+    await api(`/api/cafes/${cafeId}/rate`, {method:'POST', body:JSON.stringify({rating, review})});
+    closeModal('cafe-detail-modal');
+    toast('Rating submitted!', 'ok');
+    if (document.getElementById('page-cafes').classList.contains('active')) loadCafes();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function saveCafe() {
+  if (!ME) return;
+  const body = {
+    name:        document.getElementById('c-name').value.trim(),
+    address:     document.getElementById('c-address').value.trim(),
+    district:    document.getElementById('c-district').value.trim(),
+    city:        document.getElementById('c-city').value.trim() || 'Ulaanbaatar',
+    phone:       document.getElementById('c-phone').value.trim(),
+    description: document.getElementById('c-description').value.trim(),
+    hours:       document.getElementById('c-hours').value.trim(),
+    imageUrl:    document.getElementById('c-imageurl').value.trim()
+  };
+  try {
+    await api('/api/cafes', {method:'POST', body:JSON.stringify(body)});
+    closeModal('new-cafe-modal');
+    toast('Cafe added!', 'ok');
+    loadCafes();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// ── Profile ───────────────────────────────────────────────────────────────────
+async function loadProfile(userId) {
+  if (!userId) {
+    document.getElementById('profile-header').innerHTML = `
+      <div class="empty-state" style="width:100%">
+        <div class="empty-icon">☕</div>
+        <div class="empty-msg">Log in to view your profile</div>
+        <button class="btn btn-primary" onclick="openModal('login-modal')">Log In</button>
+      </div>`;
+    return;
   }
+  viewingUserId = userId;
+  document.getElementById('profile-header').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  document.getElementById('profile-recipes').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const [user, recipes] = await Promise.all([
+      api(`/api/users/${userId}`),
+      api(`/api/users/${userId}/recipes`)
+    ]);
+    const isMe       = ME && ME.id === userId;
+    const isFollowing = user.isFollowing;
 
-  /* ── Boot ───────────────────────────────────────────────────────────────── */
-  loadItems();
+    document.getElementById('profile-header').innerHTML = `
+      <div class="profile-avatar">${user.username[0].toUpperCase()}</div>
+      <div class="profile-info">
+        <div class="profile-name">${esc(user.username)}</div>
+        <span class="profile-level level-${user.expertiseLevel}">${cap(user.expertiseLevel)}</span>
+        <div class="profile-bio">${esc(user.bio || 'No bio yet')}</div>
+        ${user.flavorPrefs?.length ? `<div class="flavor-tags" style="margin-bottom:12px">${user.flavorPrefs.map(f=>`<span class="flavor-tag">${f.toLowerCase()}</span>`).join('')}</div>` : ''}
+        <div class="profile-stats">
+          <div class="stat-item"><div class="stat-num">${user.recipeCount}</div><div class="stat-lbl">Recipes</div></div>
+          <div class="stat-item"><div class="stat-num">${user.followerCount}</div><div class="stat-lbl">Followers</div></div>
+          <div class="stat-item"><div class="stat-num">${user.followingCount}</div><div class="stat-lbl">Following</div></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-self:flex-start">
+        ${isMe ? `
+          <button class="btn btn-secondary" onclick="openEditProfile()">✏️ Edit Profile</button>
+          <button class="btn btn-secondary btn-sm" onclick="logout()" style="color:var(--danger)">Log Out</button>
+        ` : ME ? `
+          <button class="btn ${isFollowing ? 'btn-secondary' : 'btn-primary'}" id="follow-btn" onclick="toggleFollow(${userId})">
+            ${isFollowing ? '✓ Following' : '+ Follow'}
+          </button>
+        ` : ''}
+      </div>`;
+
+    document.getElementById('profile-recipes').innerHTML = recipes.length
+      ? recipes.map(r => renderRecipeCard(r)).join('')
+      : emptyState('📖', 'No recipes yet');
+  } catch (e) {
+    document.getElementById('profile-header').innerHTML = `<p style="color:var(--danger)">${e.message}</p>`;
+  }
+}
+
+async function toggleFollow(userId) {
+  if (!ME) { openModal('login-modal'); return; }
+  const btn = document.getElementById('follow-btn');
+  const isFollowing = btn.textContent.trim().startsWith('✓');
+  try {
+    if (isFollowing) {
+      await api(`/api/users/${userId}/follow`, {method:'DELETE'});
+      btn.textContent = '+ Follow';
+      btn.className = 'btn btn-primary';
+      toast('Unfollowed', 'info');
+    } else {
+      await api(`/api/users/${userId}/follow`, {method:'POST'});
+      btn.textContent = '✓ Following';
+      btn.className = 'btn btn-secondary';
+      toast('Following!', 'ok');
+    }
+    loadProfile(userId);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function openEditProfile() {
+  if (!ME) return;
+  const user = ME;
+  document.getElementById('p-bio').value   = user.bio || '';
+  document.getElementById('p-level').value = user.expertiseLevel || 'BEGINNER';
+  buildFlavorPicker('p-flavor-picker', user.flavorPrefs || []);
+  openModal('edit-profile-modal');
+}
+
+async function saveProfile() {
+  const body = {
+    bio:           document.getElementById('p-bio').value.trim(),
+    expertiseLevel:document.getElementById('p-level').value,
+    flavorPrefs:   getSelectedFlavors('p-flavor-picker')
+  };
+  try {
+    ME = await api('/api/users/me', {method:'PUT', body:JSON.stringify(body)});
+    closeModal('edit-profile-modal');
+    toast('Profile updated!', 'ok');
+    loadProfile(ME.id);
+    document.getElementById('nav-username').textContent = ME.username;
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// ── Explore / search users ────────────────────────────────────────────────────
+async function searchUsers() {
+  const q = document.getElementById('explore-search').value.trim();
+  if (!q) {
+    document.getElementById('explore-results').innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-msg">Search for coffee enthusiasts</div></div>`;
+    return;
+  }
+  try {
+    const users = await api(`/api/users/search?q=${encodeURIComponent(q)}`);
+    document.getElementById('explore-results').innerHTML = users.length
+      ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
+          ${users.map(u => `
+            <div class="card card-hover" style="padding:16px;cursor:pointer" onclick="showPage('profile',${u.id})">
+              <div style="display:flex;gap:12px;align-items:center">
+                <div class="avatar" style="width:50px;height:50px;font-size:22px;flex-shrink:0">${u.username[0].toUpperCase()}</div>
+                <div>
+                  <div style="font-size:15px;font-weight:700">${esc(u.username)}</div>
+                  <span class="profile-level level-${u.expertiseLevel}" style="font-size:10px">${cap(u.expertiseLevel)}</span>
+                  <div style="font-size:12px;color:var(--muted);margin-top:2px">${u.recipeCount} recipes · ${u.followerCount} followers</div>
+                </div>
+              </div>
+              ${u.bio ? `<p style="font-size:13px;color:#555;margin-top:10px;line-height:1.4">${esc(u.bio).substring(0,80)}${u.bio.length>80?'…':''}</p>` : ''}
+              ${u.flavorPrefs?.length ? `<div class="flavor-tags" style="margin-top:8px">${u.flavorPrefs.slice(0,3).map(f=>`<span class="flavor-tag">${f.toLowerCase()}</span>`).join('')}</div>` : ''}
+            </div>`).join('')}
+         </div>`
+      : emptyState('🔍', `No users found for "${q}"`);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function globalSearch(q) {
+  if (!q) return;
+  showPage('explore');
+  document.getElementById('explore-search').value = q;
+  await searchUsers();
+}
+
+// ── Flavor picker ─────────────────────────────────────────────────────────────
+function buildFlavorPicker(containerId, selectedFlavors) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = FLAVORS.map(f => `
+    <span class="flavor-opt${selectedFlavors.includes(f)?' selected':''}" onclick="toggleFlavor(this,'${f}')">${f.toLowerCase()}</span>
+  `).join('');
+}
+
+function toggleFlavor(el, flavor) {
+  el.classList.toggle('selected');
+}
+
+function getSelectedFlavors(containerId) {
+  return Array.from(document.querySelectorAll(`#${containerId} .flavor-opt.selected`))
+    .map(el => el.textContent.toUpperCase().trim());
+}
+
+// ── Modal helpers ─────────────────────────────────────────────────────────────
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+function switchModal(from, to) {
+  closeModal(from);
+  openModal(to);
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  clearTimeout(toastTimer);
+  const icon = type==='ok'?'✓':type==='err'?'✕':'ℹ';
+  el.innerHTML = `<span>${icon}</span> ${esc(msg)}`;
+  el.className = `toast ${type} show`;
+  toastTimer = setTimeout(() => el.className = 'toast', 3500);
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function cap(s) {
+  if (!s) return '';
+  return s[0].toUpperCase() + s.slice(1).toLowerCase();
+}
+
+function diffIcon(d) {
+  return d==='EASY'?'🟢':d==='MEDIUM'?'🟡':'🔴';
+}
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const now  = Date.now();
+  const date = new Date(ts.replace('T',' ').replace(/\.\d+$/,''));
+  const diff = Math.floor((now - date.getTime()) / 1000);
+  if (diff < 60)   return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+
+function emptyState(icon, msg) {
+  return `<div class="empty-state"><div class="empty-icon">${icon}</div><div class="empty-msg">${msg}</div></div>`;
+}
+
+// Debounce
+const _timers = {};
+function debounce(fn, ms) {
+  return (...args) => {
+    clearTimeout(_timers[fn.name]);
+    _timers[fn.name] = setTimeout(() => fn(...args), ms);
+  };
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+(async () => {
+  // Init flavor pickers
+  buildFlavorPicker('r-flavor-picker', []);
+  buildFlavorPicker('p-flavor-picker', []);
+
+  // Restore session
+  await loadMe();
+  updateNavUser();
+
+  // Show initial page
+  showPage(ME ? 'feed' : 'recipes');
+})();
 </script>
 </body>
 </html>
