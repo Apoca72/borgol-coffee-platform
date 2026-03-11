@@ -1,0 +1,25 @@
+# Build output
+target/
+
+# H2 database files (DO NOT commit)
+data/
+
+# Configuration with credentials (DO NOT commit passwords to Git!)
+src/main/resources/database.properties
+
+# Eclipse IDE
+.project
+.classpath
+.settings/
+bin/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Maven wrapper — DO commit the jar
+!.mvn/wrapper/maven-wrapper.jar
