@@ -113,6 +113,20 @@ public class BorgolApiServer {
         app.post("/api/cafes",          this::createCafe);
         app.post("/api/cafes/{id}/rate",this::rateCafe);
 
+        // Brew Journal
+        app.get   ("/api/journal",      this::getJournal);
+        app.post  ("/api/journal",      this::createJournalEntry);
+        app.put   ("/api/journal/{id}", this::updateJournalEntry);
+        app.delete("/api/journal/{id}", this::deleteJournalEntry);
+
+        // Brew Guides
+        app.get("/api/brew-guides",      this::getBrewGuides);
+        app.get("/api/brew-guides/{id}", this::getBrewGuide);
+
+        // Learn Articles
+        app.get("/api/learn",      this::getLearnArticles);
+        app.get("/api/learn/{id}", this::getLearnArticle);
+
         // Legacy menu API (kept for backward compatibility)
         app.get   ("/api/menu",      ctx -> ctx.json(menuService.getAllItems()));
         app.get   ("/api/menu/{id}", ctx -> {
@@ -396,6 +410,84 @@ public class BorgolApiServer {
         }
     }
 
+    // ── Brew Journal handlers ─────────────────────────────────────────────────
+
+    private void getJournal(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.getJournalEntries(userId));
+    }
+
+    private void createJournalEntry(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        try {
+            var req = ctx.bodyAsClass(JournalReq.class);
+            ctx.status(201).json(borgol.createJournalEntry(userId, req.coffeeBean, req.origin,
+                req.roastLevel, req.brewMethod, req.grindSize, req.waterTempC,
+                req.doseGrams, req.yieldGrams, req.brewTimeSec,
+                req.ratingAroma, req.ratingFlavor, req.ratingAcidity,
+                req.ratingBody, req.ratingSweetness, req.ratingFinish, req.notes));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(err(e.getMessage()));
+        }
+    }
+
+    private void updateJournalEntry(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        try {
+            int id  = intParam(ctx, "id");
+            var req = ctx.bodyAsClass(JournalReq.class);
+            ctx.json(borgol.updateJournalEntry(id, userId, req.coffeeBean, req.origin,
+                req.roastLevel, req.brewMethod, req.grindSize, req.waterTempC,
+                req.doseGrams, req.yieldGrams, req.brewTimeSec,
+                req.ratingAroma, req.ratingFlavor, req.ratingAcidity,
+                req.ratingBody, req.ratingSweetness, req.ratingFinish, req.notes));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(err(e.getMessage()));
+        }
+    }
+
+    private void deleteJournalEntry(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        try {
+            borgol.deleteJournalEntry(intParam(ctx, "id"), userId);
+            ctx.status(204);
+        } catch (IllegalArgumentException e) {
+            ctx.status(403).json(err(e.getMessage()));
+        }
+    }
+
+    // ── Brew Guide handlers ───────────────────────────────────────────────────
+
+    private void getBrewGuides(Context ctx) {
+        ctx.json(borgol.getBrewGuides());
+    }
+
+    private void getBrewGuide(Context ctx) {
+        try {
+            ctx.json(borgol.getBrewGuide(intParam(ctx, "id")));
+        } catch (IllegalArgumentException e) {
+            ctx.status(404).json(err(e.getMessage()));
+        }
+    }
+
+    // ── Learn Article handlers ────────────────────────────────────────────────
+
+    private void getLearnArticles(Context ctx) {
+        ctx.json(borgol.getLearnArticles());
+    }
+
+    private void getLearnArticle(Context ctx) {
+        try {
+            ctx.json(borgol.getLearnArticle(intParam(ctx, "id")));
+        } catch (IllegalArgumentException e) {
+            ctx.status(404).json(err(e.getMessage()));
+        }
+    }
+
     // ── Auth helpers ──────────────────────────────────────────────────────────
 
     /** Returns userId or sends 401 and returns null. */
@@ -477,5 +569,24 @@ public class BorgolApiServer {
         public String  category  = "COFFEE";
         public double  price;
         public boolean available = true;
+    }
+
+    public static class JournalReq {
+        public String coffeeBean  = "";
+        public String origin      = "";
+        public String roastLevel  = "";
+        public String brewMethod  = "";
+        public String grindSize   = "";
+        public int    waterTempC  = 93;
+        public double doseGrams   = 18;
+        public double yieldGrams  = 36;
+        public int    brewTimeSec = 0;
+        public int    ratingAroma     = 5;
+        public int    ratingFlavor    = 5;
+        public int    ratingAcidity   = 5;
+        public int    ratingBody      = 5;
+        public int    ratingSweetness = 5;
+        public int    ratingFinish    = 5;
+        public String notes       = "";
     }
 }

@@ -259,6 +259,305 @@ public class BorgolService {
             }).toList();
     }
 
+    // ── Brew Journal ──────────────────────────────────────────────────────────
+
+    public List<BrewJournalEntry> getJournalEntries(int userId) {
+        return repo.getJournalEntries(userId);
+    }
+
+    public BrewJournalEntry getJournalEntry(int id, int userId) {
+        return repo.findJournalEntry(id, userId)
+            .orElseThrow(() -> new IllegalArgumentException("Journal entry not found"));
+    }
+
+    public BrewJournalEntry createJournalEntry(int userId, String coffeeBean, String origin,
+            String roastLevel, String brewMethod, String grindSize, int waterTempC,
+            double doseGrams, double yieldGrams, int brewTimeSec,
+            int ratingAroma, int ratingFlavor, int ratingAcidity,
+            int ratingBody, int ratingSweetness, int ratingFinish, String notes) {
+        BrewJournalEntry e = new BrewJournalEntry();
+        e.setUserId(userId);
+        e.setCoffeeBean(coffeeBean != null ? coffeeBean : "");
+        e.setOrigin(origin != null ? origin : "");
+        e.setRoastLevel(roastLevel != null ? roastLevel : "");
+        e.setBrewMethod(brewMethod != null ? brewMethod : "");
+        e.setGrindSize(grindSize != null ? grindSize : "");
+        e.setWaterTempC(waterTempC);
+        e.setDoseGrams(doseGrams);
+        e.setYieldGrams(yieldGrams);
+        e.setBrewTimeSec(brewTimeSec);
+        e.setRatingAroma(ratingAroma);
+        e.setRatingFlavor(ratingFlavor);
+        e.setRatingAcidity(ratingAcidity);
+        e.setRatingBody(ratingBody);
+        e.setRatingSweetness(ratingSweetness);
+        e.setRatingFinish(ratingFinish);
+        e.setNotes(notes != null ? notes : "");
+        return repo.createJournalEntry(e);
+    }
+
+    public BrewJournalEntry updateJournalEntry(int id, int userId, String coffeeBean, String origin,
+            String roastLevel, String brewMethod, String grindSize, int waterTempC,
+            double doseGrams, double yieldGrams, int brewTimeSec,
+            int ratingAroma, int ratingFlavor, int ratingAcidity,
+            int ratingBody, int ratingSweetness, int ratingFinish, String notes) {
+        BrewJournalEntry e = new BrewJournalEntry();
+        e.setId(id);
+        e.setUserId(userId);
+        e.setCoffeeBean(coffeeBean != null ? coffeeBean : "");
+        e.setOrigin(origin != null ? origin : "");
+        e.setRoastLevel(roastLevel != null ? roastLevel : "");
+        e.setBrewMethod(brewMethod != null ? brewMethod : "");
+        e.setGrindSize(grindSize != null ? grindSize : "");
+        e.setWaterTempC(waterTempC);
+        e.setDoseGrams(doseGrams);
+        e.setYieldGrams(yieldGrams);
+        e.setBrewTimeSec(brewTimeSec);
+        e.setRatingAroma(ratingAroma);
+        e.setRatingFlavor(ratingFlavor);
+        e.setRatingAcidity(ratingAcidity);
+        e.setRatingBody(ratingBody);
+        e.setRatingSweetness(ratingSweetness);
+        e.setRatingFinish(ratingFinish);
+        e.setNotes(notes != null ? notes : "");
+        return repo.updateJournalEntry(e);
+    }
+
+    public void deleteJournalEntry(int id, int userId) {
+        boolean deleted = repo.deleteJournalEntry(id, userId);
+        if (!deleted) throw new IllegalArgumentException("Entry not found or not authorized");
+    }
+
+    // ── Brew Guides ───────────────────────────────────────────────────────────
+
+    public List<BrewGuide> getBrewGuides() {
+        return repo.findAllBrewGuides();
+    }
+
+    public BrewGuide getBrewGuide(int id) {
+        return repo.findBrewGuideById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Brew guide not found: id=" + id));
+    }
+
+    // ── Learn Articles ────────────────────────────────────────────────────────
+
+    public List<LearnArticle> getLearnArticles() {
+        return repo.findAllLearnArticles();
+    }
+
+    public LearnArticle getLearnArticle(int id) {
+        return repo.findLearnArticleById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Article not found: id=" + id));
+    }
+
+    // ── Static content seeding (idempotent) ───────────────────────────────────
+
+    public void seedStaticContent() {
+        if (repo.isStaticContentSeeded()) return;
+
+        // ── Brew Guides ───────────────────────────────────────────────────────
+        seedGuide("Pour Over (V60)", "☕",
+            "A classic manual brew producing a clean, bright cup that highlights delicate flavors.",
+            "BEGINNER", 4,
+            "Coffee:15g\nWater:250ml\nGrind:Medium-fine\nTemp:92°C\nRatio:1:16.5",
+            "1. Rinse the V60 filter with hot water and discard rinse water\n" +
+            "2. Add 15g of medium-fine ground coffee to the filter\n" +
+            "3. Create a small well in the center of the grounds\n" +
+            "4. Bloom: pour 30ml of water and wait 30 seconds\n" +
+            "5. Pour in slow concentric circles to reach 130ml at 1:00\n" +
+            "6. Continue pouring to 250ml total by 2:00\n" +
+            "7. Allow to drain completely — total time ~3:30");
+
+        seedGuide("French Press", "🫖",
+            "A full-immersion brew with rich body and bold flavors from the metal filter.",
+            "BEGINNER", 5,
+            "Coffee:30g\nWater:500ml\nGrind:Coarse\nTemp:95°C\nRatio:1:16",
+            "1. Preheat the French press with hot water, then discard\n" +
+            "2. Add 30g of coarsely ground coffee\n" +
+            "3. Pour 500ml of water at 95°C over the grounds\n" +
+            "4. Stir gently to ensure all grounds are saturated\n" +
+            "5. Place the lid on with the plunger pulled up\n" +
+            "6. Steep for exactly 4 minutes\n" +
+            "7. Press plunger slowly and steadily — pour immediately");
+
+        seedGuide("AeroPress", "🔄",
+            "Versatile and forgiving — produces a smooth, espresso-like concentrate.",
+            "INTERMEDIATE", 2,
+            "Coffee:17g\nWater:220ml\nGrind:Medium\nTemp:85°C\nRatio:1:13",
+            "1. Insert a paper filter into the AeroPress cap and rinse\n" +
+            "2. Assemble in inverted position (plunger down)\n" +
+            "3. Add 17g of ground coffee\n" +
+            "4. Pour 220ml of water at 85°C and stir for 10 seconds\n" +
+            "5. Secure the cap with filter\n" +
+            "6. At 1:30 flip onto your cup carefully\n" +
+            "7. Press steadily for 30 seconds — stop at first hiss");
+
+        seedGuide("Espresso", "⚡",
+            "High-pressure extraction creating an intense, concentrated shot with crema.",
+            "ADVANCED", 1,
+            "Coffee:18g\nYield:36g\nGrind:Extra-fine\nTemp:93°C\nPressure:9 bar",
+            "1. Flush the group head with hot water for 2 seconds\n" +
+            "2. Dose 18g of finely ground coffee into the portafilter\n" +
+            "3. Distribute evenly and tamp with 15kg of pressure\n" +
+            "4. Lock portafilter into the group head\n" +
+            "5. Start extraction — aim for first drops at 5-7 seconds\n" +
+            "6. Target 36g yield in 25-30 seconds total\n" +
+            "7. Adjust grind finer if fast, coarser if slow");
+
+        seedGuide("Cold Brew", "🧊",
+            "Slow, cold extraction over 12–24 hours produces a smooth, sweet concentrate.",
+            "BEGINNER", 720,
+            "Coffee:100g\nWater:800ml\nGrind:Extra-coarse\nTemp:Cold (4°C)\nRatio:1:8",
+            "1. Coarsely grind 100g of coffee beans\n" +
+            "2. Combine coffee and 800ml of cold filtered water in a jar\n" +
+            "3. Stir to ensure all grounds are saturated\n" +
+            "4. Cover and refrigerate for 12–24 hours\n" +
+            "5. Strain through a fine mesh strainer twice\n" +
+            "6. Optionally pass through a paper filter for clarity\n" +
+            "7. Store in fridge up to 2 weeks — dilute 1:1 to serve");
+
+        seedGuide("Moka Pot", "🏠",
+            "Stovetop espresso-style brew with rich, bittersweet flavors and heavy body.",
+            "BEGINNER", 8,
+            "Coffee:22g\nWater:200ml\nGrind:Fine-medium\nTemp:Stovetop\nRatio:1:9",
+            "1. Fill the bottom chamber with hot water to the valve\n" +
+            "2. Insert the filter basket and fill with 22g of ground coffee\n" +
+            "3. Level the grounds without tamping\n" +
+            "4. Screw the top chamber on tightly\n" +
+            "5. Place on medium-low heat\n" +
+            "6. Keep lid open and watch for coffee to emerge slowly\n" +
+            "7. Remove from heat when sputtering — serve immediately");
+
+        // ── Learn Articles ────────────────────────────────────────────────────
+        seedArticle("Understanding Roast Levels", "🔥", "Roasting",
+            "## Light Roast\n" +
+            "Light roasts are roasted to an internal temperature of 180–205°C. " +
+            "The beans are light brown and have no surface oils. " +
+            "They preserve the most origin character — you'll taste the terroir, " +
+            "the altitude, and the variety of the bean itself. " +
+            "Expect floral, fruity, and tea-like notes with high acidity.\n\n" +
+            "## Medium Roast\n" +
+            "Roasted to 210–220°C, medium roasts balance origin flavor with roast character. " +
+            "The beans are medium brown with little oil. You get sweetness, " +
+            "caramel notes, and a balanced acidity. This is the most popular roast level " +
+            "and works well for drip coffee and pour overs.\n\n" +
+            "## Dark Roast\n" +
+            "Dark roasts reach 225–245°C. The beans are dark brown to almost black " +
+            "with oily surfaces. Roast flavors dominate — chocolate, bittersweet, smoky. " +
+            "Origin character is mostly lost. Lower acidity, fuller body. " +
+            "Classic for espresso and French press.", 4);
+
+        seedArticle("The Science of Coffee Extraction", "⚗️", "Brewing Science",
+            "## What Is Extraction?\n" +
+            "Extraction is the process of dissolving soluble compounds from coffee grounds " +
+            "into water. About 30% of a coffee bean is water-soluble, but you only want " +
+            "to extract 18–22% for the best flavor.\n\n" +
+            "## Under-Extraction\n" +
+            "Under-extracted coffee (below 18%) tastes sour, salty, and lacking sweetness. " +
+            "This happens when water is too cool, grind is too coarse, " +
+            "brew time is too short, or the dose is too low.\n\n" +
+            "## Over-Extraction\n" +
+            "Over-extracted coffee (above 22%) tastes bitter, harsh, and dry. " +
+            "Fix by using a coarser grind, lower water temperature, " +
+            "shorter contact time, or less coffee.\n\n" +
+            "## The Golden Ratio\n" +
+            "The Specialty Coffee Association recommends a brew ratio of 1:15 to 1:17 " +
+            "(coffee to water by weight). Start at 1:15 and adjust to taste.", 5);
+
+        seedArticle("Water Quality for Coffee", "💧", "Brewing Science",
+            "## Why Water Matters\n" +
+            "Coffee is 98% water. The minerals dissolved in water dramatically affect " +
+            "extraction and taste. Distilled water produces flat, lifeless coffee " +
+            "because minerals help extract compounds from grounds.\n\n" +
+            "## Ideal Mineral Content\n" +
+            "The SCA recommends Total Dissolved Solids (TDS) of 75–250 ppm, " +
+            "with a target of about 150 ppm. Magnesium ions enhance flavor extraction. " +
+            "Calcium contributes to body. Too much sodium makes coffee taste salty.\n\n" +
+            "## Temperature\n" +
+            "Brew temperature should be 90–96°C (195–205°F). Below 88°C leads to " +
+            "under-extraction. Above 96°C increases bitterness. " +
+            "For lighter roasts, use higher temperatures (94–96°C). " +
+            "For darker roasts, go lower (88–92°C).\n\n" +
+            "## Practical Tips\n" +
+            "Filtered tap water is usually ideal. Avoid softened water — " +
+            "it replaces calcium and magnesium with sodium.", 4);
+
+        seedArticle("Coffee Tasting & the Flavor Wheel", "🎨", "Tasting",
+            "## What Is the Coffee Flavor Wheel?\n" +
+            "The SCA Flavor Wheel maps the spectrum of coffee flavors into categories: " +
+            "fruity, floral, sweet, nutty/cocoa, spicy, roasted, and savory. " +
+            "It was created to give baristas and enthusiasts a shared vocabulary.\n\n" +
+            "## How to Taste Coffee\n" +
+            "Start by smelling the dry grounds (fragrance). Then smell the wet coffee (aroma). " +
+            "Slurp the coffee to spray it across your palate. " +
+            "Notice the flavors, the mouthfeel (body), acidity, and how it finishes.\n\n" +
+            "## Key Attributes\n" +
+            "**Aroma** — fragrances you smell before and during drinking.\n" +
+            "**Acidity** — brightness or liveliness; citric, malic, or phosphoric.\n" +
+            "**Body** — mouthfeel; thin, medium, or full/syrupy.\n" +
+            "**Sweetness** — natural sugars that balance acidity and bitterness.\n" +
+            "**Finish** — how flavors linger after swallowing.", 5);
+
+        seedArticle("Arabica vs Robusta", "🌿", "Coffee Origins",
+            "## Arabica (Coffea arabica)\n" +
+            "Arabica makes up ~60% of global coffee production. " +
+            "It grows at high altitudes (600–2000m) in tropical climates. " +
+            "Arabica has lower caffeine (~1.5%), higher sugars and lipids, " +
+            "and a wider flavor spectrum. Expect floral, fruity, chocolatey, or " +
+            "caramel notes with pleasant acidity.\n\n" +
+            "## Robusta (Coffea canephora)\n" +
+            "Robusta grows at lower altitudes and is more disease-resistant. " +
+            "It has nearly twice the caffeine of Arabica (~2.7%), " +
+            "which acts as a natural pest deterrent. " +
+            "Robusta is cheaper to produce and has a harsher, more bitter taste. " +
+            "It's commonly used in instant coffee and espresso blends for crema.\n\n" +
+            "## Which Is Better?\n" +
+            "For specialty coffee, Arabica is the standard. " +
+            "But high-quality Robusta from Uganda or Vietnam can be surprisingly complex " +
+            "and is excellent for espresso blends that need more body and crema.", 4);
+
+        seedArticle("Grind Size Guide", "⚙️", "Brewing Science",
+            "## Why Grind Size Matters\n" +
+            "Grind size determines the surface area exposed to water. " +
+            "Finer grinds extract faster; coarser grinds extract slower. " +
+            "Matching grind to brew method is essential for balanced extraction.\n\n" +
+            "## Grind Size Chart\n" +
+            "**Extra Fine** — Turkish coffee; powder-like consistency\n" +
+            "**Fine** — Espresso; fine sand texture\n" +
+            "**Medium-Fine** — Pour over (V60, Kalita); between sand and sea salt\n" +
+            "**Medium** — Drip coffee, AeroPress; sea salt\n" +
+            "**Medium-Coarse** — Chemex, Clever Dripper; rough sand\n" +
+            "**Coarse** — French Press; coarse sea salt\n" +
+            "**Extra Coarse** — Cold brew; peppercorn\n\n" +
+            "## The Grinder Matters\n" +
+            "Blade grinders produce inconsistent particles causing uneven extraction. " +
+            "Burr grinders (conical or flat) create uniform grinds. " +
+            "For specialty coffee, a quality burr grinder is the single best investment.", 5);
+    }
+
+    private void seedGuide(String name, String icon, String desc, String diff, int time,
+                            String params, String steps) {
+        BrewGuide g = new BrewGuide();
+        g.setMethodName(name);
+        g.setIcon(icon);
+        g.setDescription(desc);
+        g.setDifficulty(diff);
+        g.setBrewTimeMin(time);
+        g.setParameters(params);
+        g.setSteps(steps);
+        repo.seedBrewGuide(g);
+    }
+
+    private void seedArticle(String title, String icon, String category, String content, int readTime) {
+        LearnArticle a = new LearnArticle();
+        a.setTitle(title);
+        a.setIcon(icon);
+        a.setCategory(category);
+        a.setContent(content);
+        a.setReadTimeMin(readTime);
+        repo.seedLearnArticle(a);
+    }
+
     // ── View mapping ──────────────────────────────────────────────────────────
 
     public record UserView(

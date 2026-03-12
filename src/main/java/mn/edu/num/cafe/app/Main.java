@@ -52,7 +52,10 @@ public class Main {
         // ── 5. Seed demo Borgol users + content ───────────────────────────────
         seedDemoData(borgolService);
 
-        // ── 6. Start web server ───────────────────────────────────────────────
+        // ── 6. Seed static content (brew guides + learn articles) ─────────────
+        borgolService.seedStaticContent();
+
+        // ── 7. Start web server ───────────────────────────────────────────────
         BorgolApiServer server = new BorgolApiServer(borgolService, menuService);
         server.start(PORT);
     }

@@ -123,6 +123,51 @@ public class BorgolRepository {
                     FOREIGN KEY (user_id)  REFERENCES borgol_users(id) ON DELETE CASCADE,
                     FOREIGN KEY (cafe_id)  REFERENCES cafes(id)        ON DELETE CASCADE
                 )""");
+            s.execute("""
+                CREATE TABLE IF NOT EXISTS brew_journal (
+                    id               INT PRIMARY KEY AUTO_INCREMENT,
+                    user_id          INT    NOT NULL,
+                    coffee_bean      VARCHAR(100) DEFAULT '',
+                    origin           VARCHAR(100) DEFAULT '',
+                    roast_level      VARCHAR(30)  DEFAULT '',
+                    brew_method      VARCHAR(50)  DEFAULT '',
+                    grind_size       VARCHAR(30)  DEFAULT '',
+                    water_temp_c     INT          DEFAULT 0,
+                    dose_grams       DOUBLE       DEFAULT 0,
+                    yield_grams      DOUBLE       DEFAULT 0,
+                    brew_time_sec    INT          DEFAULT 0,
+                    rating_aroma     INT          DEFAULT 5,
+                    rating_flavor    INT          DEFAULT 5,
+                    rating_acidity   INT          DEFAULT 5,
+                    rating_body      INT          DEFAULT 5,
+                    rating_sweetness INT          DEFAULT 5,
+                    rating_finish    INT          DEFAULT 5,
+                    notes            TEXT         DEFAULT '',
+                    created_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES borgol_users(id) ON DELETE CASCADE
+                )""");
+            s.execute("""
+                CREATE TABLE IF NOT EXISTS brew_guides (
+                    id            INT PRIMARY KEY AUTO_INCREMENT,
+                    method_name   VARCHAR(50)  NOT NULL,
+                    description   VARCHAR(500) DEFAULT '',
+                    difficulty    VARCHAR(20)  DEFAULT 'MEDIUM',
+                    brew_time_min INT          DEFAULT 5,
+                    parameters    TEXT         DEFAULT '',
+                    steps         TEXT         DEFAULT '',
+                    icon          VARCHAR(10)  DEFAULT '☕',
+                    created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+                )""");
+            s.execute("""
+                CREATE TABLE IF NOT EXISTS learn_articles (
+                    id            INT PRIMARY KEY AUTO_INCREMENT,
+                    title         VARCHAR(100) NOT NULL,
+                    category      VARCHAR(50)  DEFAULT '',
+                    content       TEXT         DEFAULT '',
+                    icon          VARCHAR(10)  DEFAULT '📖',
+                    read_time_min INT          DEFAULT 3,
+                    created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+                )""");
         } catch (SQLException e) {
             throw new RuntimeException("Schema initialization failed", e);
         }
@@ -840,6 +885,251 @@ public class BorgolRepository {
         return users;
     }
 
+    // ── Brew Journal operations ───────────────────────────────────────────────
+
+    public List<BrewJournalEntry> getJournalEntries(int userId) {
+        String sql = "SELECT * FROM brew_journal WHERE user_id=? ORDER BY created_at DESC";
+        List<BrewJournalEntry> list = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapJournal(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return list;
+    }
+
+    public Optional<BrewJournalEntry> findJournalEntry(int id, int userId) {
+        String sql = "SELECT * FROM brew_journal WHERE id=? AND user_id=?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, id); ps.setInt(2, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return Optional.of(mapJournal(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return Optional.empty();
+    }
+
+    public BrewJournalEntry createJournalEntry(BrewJournalEntry e) {
+        String sql = """
+            INSERT INTO brew_journal
+              (user_id, coffee_bean, origin, roast_level, brew_method, grind_size,
+               water_temp_c, dose_grams, yield_grams, brew_time_sec,
+               rating_aroma, rating_flavor, rating_acidity, rating_body,
+               rating_sweetness, rating_finish, notes)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """;
+        try (PreparedStatement ps = conn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, e.getUserId());
+            ps.setString(2, nvl(e.getCoffeeBean()));
+            ps.setString(3, nvl(e.getOrigin()));
+            ps.setString(4, nvl(e.getRoastLevel()));
+            ps.setString(5, nvl(e.getBrewMethod()));
+            ps.setString(6, nvl(e.getGrindSize()));
+            ps.setInt(7, e.getWaterTempC());
+            ps.setDouble(8, e.getDoseGrams());
+            ps.setDouble(9, e.getYieldGrams());
+            ps.setInt(10, e.getBrewTimeSec());
+            ps.setInt(11, clamp(e.getRatingAroma()));
+            ps.setInt(12, clamp(e.getRatingFlavor()));
+            ps.setInt(13, clamp(e.getRatingAcidity()));
+            ps.setInt(14, clamp(e.getRatingBody()));
+            ps.setInt(15, clamp(e.getRatingSweetness()));
+            ps.setInt(16, clamp(e.getRatingFinish()));
+            ps.setString(17, nvl(e.getNotes()));
+            ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    return findJournalEntry(keys.getInt(1), e.getUserId()).orElseThrow();
+                }
+            }
+        } catch (SQLException ex) { throw new RuntimeException(ex); }
+        throw new RuntimeException("Journal entry creation failed");
+    }
+
+    public BrewJournalEntry updateJournalEntry(BrewJournalEntry e) {
+        String sql = """
+            UPDATE brew_journal SET
+              coffee_bean=?, origin=?, roast_level=?, brew_method=?, grind_size=?,
+              water_temp_c=?, dose_grams=?, yield_grams=?, brew_time_sec=?,
+              rating_aroma=?, rating_flavor=?, rating_acidity=?, rating_body=?,
+              rating_sweetness=?, rating_finish=?, notes=?
+            WHERE id=? AND user_id=?
+            """;
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setString(1, nvl(e.getCoffeeBean()));
+            ps.setString(2, nvl(e.getOrigin()));
+            ps.setString(3, nvl(e.getRoastLevel()));
+            ps.setString(4, nvl(e.getBrewMethod()));
+            ps.setString(5, nvl(e.getGrindSize()));
+            ps.setInt(6, e.getWaterTempC());
+            ps.setDouble(7, e.getDoseGrams());
+            ps.setDouble(8, e.getYieldGrams());
+            ps.setInt(9, e.getBrewTimeSec());
+            ps.setInt(10, clamp(e.getRatingAroma()));
+            ps.setInt(11, clamp(e.getRatingFlavor()));
+            ps.setInt(12, clamp(e.getRatingAcidity()));
+            ps.setInt(13, clamp(e.getRatingBody()));
+            ps.setInt(14, clamp(e.getRatingSweetness()));
+            ps.setInt(15, clamp(e.getRatingFinish()));
+            ps.setString(16, nvl(e.getNotes()));
+            ps.setInt(17, e.getId());
+            ps.setInt(18, e.getUserId());
+            int updated = ps.executeUpdate();
+            if (updated == 0) throw new IllegalArgumentException("Entry not found or not authorized");
+        } catch (SQLException ex) { throw new RuntimeException(ex); }
+        return findJournalEntry(e.getId(), e.getUserId()).orElseThrow();
+    }
+
+    public boolean deleteJournalEntry(int id, int userId) {
+        String sql = "DELETE FROM brew_journal WHERE id=? AND user_id=?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, id); ps.setInt(2, userId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    // ── Brew Guides operations ────────────────────────────────────────────────
+
+    public List<BrewGuide> findAllBrewGuides() {
+        String sql = "SELECT * FROM brew_guides ORDER BY id ASC";
+        List<BrewGuide> list = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapBrewGuide(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return list;
+    }
+
+    public Optional<BrewGuide> findBrewGuideById(int id) {
+        String sql = "SELECT * FROM brew_guides WHERE id=?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return Optional.of(mapBrewGuide(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return Optional.empty();
+    }
+
+    // ── Learn Articles operations ─────────────────────────────────────────────
+
+    public List<LearnArticle> findAllLearnArticles() {
+        String sql = "SELECT * FROM learn_articles ORDER BY id ASC";
+        List<LearnArticle> list = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapLearnArticle(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return list;
+    }
+
+    public Optional<LearnArticle> findLearnArticleById(int id) {
+        String sql = "SELECT * FROM learn_articles WHERE id=?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return Optional.of(mapLearnArticle(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return Optional.empty();
+    }
+
+    // ── Static content seeding ────────────────────────────────────────────────
+
+    public boolean isStaticContentSeeded() {
+        return countNoParam("SELECT COUNT(*) FROM brew_guides") > 0;
+    }
+
+    public void seedBrewGuide(BrewGuide g) {
+        String sql = """
+            INSERT INTO brew_guides (method_name, description, difficulty, brew_time_min, parameters, steps, icon)
+            VALUES (?,?,?,?,?,?,?)
+            """;
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setString(1, g.getMethodName());
+            ps.setString(2, nvl(g.getDescription()));
+            ps.setString(3, nvl(g.getDifficulty(), "MEDIUM"));
+            ps.setInt(4, g.getBrewTimeMin());
+            ps.setString(5, nvl(g.getParameters()));
+            ps.setString(6, nvl(g.getSteps()));
+            ps.setString(7, nvl(g.getIcon(), "☕"));
+            ps.executeUpdate();
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    public void seedLearnArticle(LearnArticle a) {
+        String sql = """
+            INSERT INTO learn_articles (title, category, content, icon, read_time_min)
+            VALUES (?,?,?,?,?)
+            """;
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setString(1, a.getTitle());
+            ps.setString(2, nvl(a.getCategory()));
+            ps.setString(3, nvl(a.getContent()));
+            ps.setString(4, nvl(a.getIcon(), "📖"));
+            ps.setInt(5, a.getReadTimeMin());
+            ps.executeUpdate();
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    // ── Mapping helpers (new) ─────────────────────────────────────────────────
+
+    private BrewJournalEntry mapJournal(ResultSet rs) throws SQLException {
+        BrewJournalEntry e = new BrewJournalEntry();
+        e.setId(rs.getInt("id"));
+        e.setUserId(rs.getInt("user_id"));
+        e.setCoffeeBean(nullToEmpty(rs.getString("coffee_bean")));
+        e.setOrigin(nullToEmpty(rs.getString("origin")));
+        e.setRoastLevel(nullToEmpty(rs.getString("roast_level")));
+        e.setBrewMethod(nullToEmpty(rs.getString("brew_method")));
+        e.setGrindSize(nullToEmpty(rs.getString("grind_size")));
+        e.setWaterTempC(rs.getInt("water_temp_c"));
+        e.setDoseGrams(rs.getDouble("dose_grams"));
+        e.setYieldGrams(rs.getDouble("yield_grams"));
+        e.setBrewTimeSec(rs.getInt("brew_time_sec"));
+        e.setRatingAroma(rs.getInt("rating_aroma"));
+        e.setRatingFlavor(rs.getInt("rating_flavor"));
+        e.setRatingAcidity(rs.getInt("rating_acidity"));
+        e.setRatingBody(rs.getInt("rating_body"));
+        e.setRatingSweetness(rs.getInt("rating_sweetness"));
+        e.setRatingFinish(rs.getInt("rating_finish"));
+        e.setNotes(nullToEmpty(rs.getString("notes")));
+        Timestamp ts = rs.getTimestamp("created_at");
+        if (ts != null) e.setCreatedAt(ts.toLocalDateTime().toString());
+        return e;
+    }
+
+    private BrewGuide mapBrewGuide(ResultSet rs) throws SQLException {
+        BrewGuide g = new BrewGuide();
+        g.setId(rs.getInt("id"));
+        g.setMethodName(rs.getString("method_name"));
+        g.setDescription(nullToEmpty(rs.getString("description")));
+        g.setDifficulty(nullToEmpty(rs.getString("difficulty")));
+        g.setBrewTimeMin(rs.getInt("brew_time_min"));
+        g.setParameters(nullToEmpty(rs.getString("parameters")));
+        g.setSteps(nullToEmpty(rs.getString("steps")));
+        g.setIcon(nullToEmpty(rs.getString("icon")));
+        Timestamp ts = rs.getTimestamp("created_at");
+        if (ts != null) g.setCreatedAt(ts.toLocalDateTime().toString());
+        return g;
+    }
+
+    private LearnArticle mapLearnArticle(ResultSet rs) throws SQLException {
+        LearnArticle a = new LearnArticle();
+        a.setId(rs.getInt("id"));
+        a.setTitle(rs.getString("title"));
+        a.setCategory(nullToEmpty(rs.getString("category")));
+        a.setContent(nullToEmpty(rs.getString("content")));
+        a.setIcon(nullToEmpty(rs.getString("icon")));
+        a.setReadTimeMin(rs.getInt("read_time_min"));
+        Timestamp ts = rs.getTimestamp("created_at");
+        if (ts != null) a.setCreatedAt(ts.toLocalDateTime().toString());
+        return a;
+    }
+
     // ── Utilities ─────────────────────────────────────────────────────────────
 
     private Connection conn() { return db.getConnection(); }
@@ -853,6 +1143,14 @@ public class BorgolRepository {
         } catch (SQLException e) { throw new RuntimeException(e); }
     }
 
+    private int countNoParam(String sql) {
+        try (Statement s = conn().createStatement();
+             ResultSet rs = s.executeQuery(sql)) {
+            return rs.next() ? rs.getInt(1) : 0;
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    private static int clamp(int v) { return Math.max(0, Math.min(10, v)); }
     private static String nvl(String s)           { return s != null ? s : ""; }
     private static String nvl(String s, String d) { return (s != null && !s.isBlank()) ? s : d; }
     private static String nullToEmpty(String s)    { return s != null ? s : ""; }

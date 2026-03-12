@@ -281,6 +281,66 @@ img{max-width:100%;display:block}
 .auth-hero h1{font-size:36px;font-weight:900;margin-bottom:8px}
 .auth-hero p{font-size:16px;opacity:.8;max-width:480px;margin:0 auto 24px}
 
+/* ── Brew Guide cards ────────────────────────────────────────────────────── */
+.guide-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.guide-card{cursor:pointer;padding:0}
+.guide-card-inner{padding:20px}
+.guide-icon{font-size:36px;margin-bottom:10px}
+.guide-name{font-size:16px;font-weight:800;margin-bottom:4px}
+.guide-desc{font-size:13px;color:#555;line-height:1.4;margin-bottom:12px}
+.guide-meta{display:flex;gap:10px;flex-wrap:wrap}
+.guide-pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:12px;background:var(--cream);color:var(--muted)}
+.guide-detail-header{padding:24px 24px 0}
+.guide-steps{counter-reset:step}
+.guide-step{display:flex;gap:14px;margin-bottom:14px;align-items:flex-start}
+.guide-step-num{width:28px;height:28px;border-radius:50%;background:var(--roast);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.guide-params{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.guide-param{background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--roast)}
+.guide-param span{color:var(--muted);font-weight:400;margin-left:4px}
+
+/* ── Learn article cards ──────────────────────────────────────────────────── */
+.article-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.article-card{cursor:pointer;padding:20px}
+.article-icon{font-size:32px;margin-bottom:10px}
+.article-cat{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--caramel);margin-bottom:4px}
+.article-title{font-size:15px;font-weight:800;margin-bottom:6px;line-height:1.3}
+.article-preview{font-size:13px;color:#666;line-height:1.4;margin-bottom:10px}
+.article-footer{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted)}
+.article-content{padding:0 24px 24px;font-size:14px;line-height:1.75;color:#333}
+.article-content h2{font-size:16px;font-weight:800;color:var(--roast);margin:20px 0 8px}
+.article-content p{margin-bottom:12px}
+
+/* ── Radar / Spider chart ────────────────────────────────────────────────── */
+.radar-wrap{display:flex;align-items:center;justify-content:center}
+.radar-labels text{font-size:11px;font-weight:700;fill:var(--muted)}
+.radar-mini{display:inline-block;vertical-align:middle}
+.journal-ratings-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px}
+.rating-slider-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.rating-slider-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;width:80px;flex-shrink:0}
+.rating-slider{flex:1;accent-color:var(--caramel)}
+.rating-val{font-size:13px;font-weight:800;color:var(--roast);width:20px;text-align:right;flex-shrink:0}
+
+/* ── Journal entry cards ─────────────────────────────────────────────────── */
+.journal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.journal-card{padding:16px;cursor:pointer}
+.journal-card-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+.journal-radar{flex-shrink:0}
+.journal-info{flex:1;min-width:0}
+.journal-bean{font-size:15px;font-weight:800;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.journal-meta{font-size:11px;color:var(--muted);margin-bottom:6px}
+.journal-tags{display:flex;flex-wrap:wrap;gap:4px}
+.journal-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;background:var(--cream);color:var(--muted)}
+.journal-notes{font-size:12px;color:#666;line-height:1.4;margin-top:10px;border-top:1px solid var(--border);padding-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.journal-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px}
+.journal-detail-row{font-size:13px;padding:4px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
+.journal-detail-row:last-child{border-bottom:none}
+.journal-detail-key{color:var(--muted);font-weight:600}
+.journal-detail-val{font-weight:700;color:var(--roast)}
+
+/* ── Learn tabs ──────────────────────────────────────────────────────────── */
+.learn-tab-content{display:none}
+.learn-tab-content.active{display:block}
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media(max-width:800px){
   .two-col{grid-template-columns:1fr}
@@ -290,6 +350,7 @@ img{max-width:100%;display:block}
   .nav-search{display:none}
   .hamburger{display:flex}
   .auth-hero h1{font-size:28px}
+  .journal-ratings-grid{grid-template-columns:1fr}
 }
 @media(max-width:480px){
   .page{padding:16px 12px}
@@ -307,6 +368,8 @@ img{max-width:100%;display:block}
     <button class="nav-link" onclick="showPage('recipes')">📖 Recipes</button>
     <button class="nav-link" onclick="showPage('cafes')">☕ Cafes</button>
     <button class="nav-link" onclick="showPage('explore')">🔭 Explore</button>
+    <button class="nav-link" onclick="showPage('journal')">📓 Journal</button>
+    <button class="nav-link" onclick="showPage('learn')">🎓 Learn</button>
   </div>
   <div class="nav-right">
     <div class="search-wrap">
@@ -337,6 +400,8 @@ img{max-width:100%;display:block}
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('recipes')">📖 Recipes</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('cafes')">☕ Cafes</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('explore')">🔭 Explore</button>
+  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('journal')">📓 Journal</button>
+  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('learn')">🎓 Learn</button>
   <hr class="mobile-divider"/>
   <div id="mobile-auth-section">
     <button class="mobile-nav-link" onclick="toggleMobileNav();openModal('login-modal')">🔑 Log In</button>
@@ -458,6 +523,43 @@ img{max-width:100%;display:block}
     <button class="tab-btn"        id="tab-followers" onclick="profileTab('followers',this)">Followers</button>
   </div>
   <div id="profile-tab-content" class="recipe-grid"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- JOURNAL PAGE -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-journal">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div class="section-title">📓 My Brew Journal</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" onclick="exportJournalPDF()" id="btn-export-journal" title="Export as PDF">📄 Export PDF</button>
+      <button class="btn btn-primary" onclick="openNewJournalModal()" id="btn-new-journal">+ New Entry</button>
+    </div>
+  </div>
+  <div id="journal-grid" class="journal-grid">
+    <div class="loading"><div class="spinner"></div> Loading journal…</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- LEARN PAGE -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-learn">
+  <div class="section-title">🎓 Learn About Coffee</div>
+  <div class="tab-bar" style="margin-bottom:24px">
+    <button class="tab-btn active" onclick="learnTab('guides',this)">☕ Brewing Methods</button>
+    <button class="tab-btn" onclick="learnTab('articles',this)">📖 Articles</button>
+  </div>
+  <div id="learn-guides" class="learn-tab-content active">
+    <div class="guide-grid" id="brew-guides-grid">
+      <div class="loading"><div class="spinner"></div> Loading guides…</div>
+    </div>
+  </div>
+  <div id="learn-articles" class="learn-tab-content">
+    <div class="article-grid" id="learn-articles-grid">
+      <div class="loading"><div class="spinner"></div> Loading articles…</div>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
@@ -651,6 +753,127 @@ img{max-width:100%;display:block}
   </div>
 </div>
 
+<!-- New / Edit Journal Entry -->
+<div class="modal-overlay" id="journal-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="journal-modal-title">📓 New Brew Entry</div>
+      <button class="modal-close" onclick="closeModal('journal-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="journal-edit-id"/>
+      <div class="form-row">
+        <div class="field"><label>Coffee Bean</label><input id="j-bean" type="text" placeholder="e.g. Yirgacheffe Natural"/></div>
+        <div class="field"><label>Origin / Farm</label><input id="j-origin" type="text" placeholder="e.g. Ethiopia, Guji Zone"/></div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Roast Level</label>
+          <select id="j-roast">
+            <option value="LIGHT">Light</option>
+            <option value="MEDIUM-LIGHT">Medium-Light</option>
+            <option value="MEDIUM" selected>Medium</option>
+            <option value="MEDIUM-DARK">Medium-Dark</option>
+            <option value="DARK">Dark</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Brew Method</label>
+          <select id="j-method">
+            <option value="Pour Over (V60)">Pour Over (V60)</option>
+            <option value="French Press">French Press</option>
+            <option value="AeroPress">AeroPress</option>
+            <option value="Espresso">Espresso</option>
+            <option value="Cold Brew">Cold Brew</option>
+            <option value="Moka Pot">Moka Pot</option>
+            <option value="Chemex">Chemex</option>
+            <option value="Drip">Drip Machine</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Grind Size</label>
+          <select id="j-grind">
+            <option value="Extra Fine">Extra Fine</option>
+            <option value="Fine">Fine</option>
+            <option value="Medium-Fine" selected>Medium-Fine</option>
+            <option value="Medium">Medium</option>
+            <option value="Medium-Coarse">Medium-Coarse</option>
+            <option value="Coarse">Coarse</option>
+            <option value="Extra Coarse">Extra Coarse</option>
+          </select>
+        </div>
+        <div class="field"><label>Water Temp (°C)</label><input id="j-temp" type="number" min="50" max="100" value="93"/></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Dose (grams)</label><input id="j-dose" type="number" step="0.1" min="1" max="100" value="18"/></div>
+        <div class="field"><label>Yield (grams)</label><input id="j-yield" type="number" step="0.1" min="1" max="500" value="36"/></div>
+      </div>
+      <div class="field"><label>Brew Time (seconds)</label><input id="j-time" type="number" min="0" max="3600" value="210"/></div>
+      <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;margin:16px 0">
+        <div style="flex:1;min-width:220px">
+          <div class="section-label" style="margin-bottom:12px">Rate Your Brew (0–10)</div>
+          <div id="journal-sliders">
+            <div class="rating-slider-row"><span class="rating-slider-label">Aroma</span><input class="rating-slider" type="range" id="j-aroma" min="0" max="10" value="7" oninput="updateJournalRadar()"/><span class="rating-val" id="jv-aroma">7</span></div>
+            <div class="rating-slider-row"><span class="rating-slider-label">Flavor</span><input class="rating-slider" type="range" id="j-flavor" min="0" max="10" value="7" oninput="updateJournalRadar()"/><span class="rating-val" id="jv-flavor">7</span></div>
+            <div class="rating-slider-row"><span class="rating-slider-label">Acidity</span><input class="rating-slider" type="range" id="j-acidity" min="0" max="10" value="6" oninput="updateJournalRadar()"/><span class="rating-val" id="jv-acidity">6</span></div>
+            <div class="rating-slider-row"><span class="rating-slider-label">Body</span><input class="rating-slider" type="range" id="j-body" min="0" max="10" value="7" oninput="updateJournalRadar()"/><span class="rating-val" id="jv-body">7</span></div>
+            <div class="rating-slider-row"><span class="rating-slider-label">Sweetness</span><input class="rating-slider" type="range" id="j-sweetness" min="0" max="10" value="6" oninput="updateJournalRadar()"/><span class="rating-val" id="jv-sweetness">6</span></div>
+            <div class="rating-slider-row"><span class="rating-slider-label">Finish</span><input class="rating-slider" type="range" id="j-finish" min="0" max="10" value="7" oninput="updateJournalRadar()"/><span class="rating-val" id="jv-finish">7</span></div>
+          </div>
+        </div>
+        <div class="radar-wrap" style="flex-shrink:0">
+          <div id="journal-radar-preview"></div>
+        </div>
+      </div>
+      <div class="field"><label>Tasting Notes</label><textarea id="j-notes" rows="3" placeholder="e.g. Bright and floral with blueberry sweetness, silky body…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('journal-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveJournalEntry()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- Journal Entry Detail -->
+<div class="modal-overlay" id="journal-detail-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="journal-detail-title">Brew Entry</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-secondary" onclick="shareJournalEntry()" id="btn-share-journal">📤 Share</button>
+        <button class="btn btn-sm btn-secondary" onclick="printJournalEntry()" id="btn-print-journal">🖨️ Print</button>
+        <button class="modal-close" onclick="closeModal('journal-detail-modal')">✕</button>
+      </div>
+    </div>
+    <div id="journal-detail-content" class="modal-body"></div>
+  </div>
+</div>
+
+<!-- Brew Guide Detail -->
+<div class="modal-overlay" id="brew-guide-modal">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <div class="modal-title" id="brew-guide-title">Brew Guide</div>
+      <button class="modal-close" onclick="closeModal('brew-guide-modal')">✕</button>
+    </div>
+    <div id="brew-guide-content"></div>
+  </div>
+</div>
+
+<!-- Learn Article Detail -->
+<div class="modal-overlay" id="learn-article-modal">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <div class="modal-title" id="learn-article-title">Article</div>
+      <button class="modal-close" onclick="closeModal('learn-article-modal')">✕</button>
+    </div>
+    <div id="learn-article-content"></div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -782,6 +1005,8 @@ function showPage(name, userId=null) {
   else if (name === 'recipes') loadRecipes();
   else if (name === 'cafes')   loadCafes();
   else if (name === 'explore') loadTopUsers();
+  else if (name === 'journal') loadJournal();
+  else if (name === 'learn')   loadLearn();
   else if (name === 'profile') loadProfile(userId || (ME && ME.id));
 }
 
@@ -1626,6 +1851,433 @@ function debounce(fn, ms) {
     clearTimeout(_timers[fn.name]);
     _timers[fn.name] = setTimeout(() => fn(...args), ms);
   };
+}
+
+// ── Radar / Spider Chart ──────────────────────────────────────────────────────
+function buildRadarSVG(values, size, showLabels) {
+  const labels  = ['Aroma','Flavor','Acidity','Body','Sweet','Finish'];
+  const n       = labels.length;
+  // Add padding for labels when shown
+  const pad     = showLabels ? size * 0.18 : 0;
+  const cx      = size / 2 + pad, cy = size / 2 + pad;
+  const totalSize = size + pad * 2;
+  const r       = size * 0.33;
+  const angleOffset = -Math.PI / 2;
+  const pt = (i, scale) => {
+    const a = angleOffset + (2 * Math.PI * i) / n;
+    return [cx + Math.cos(a) * r * scale, cy + Math.sin(a) * r * scale];
+  };
+  // Grid lines
+  let grid = '';
+  for (let lvl = 1; lvl <= 5; lvl++) {
+    const pts = Array.from({length:n}, (_,i) => pt(i, lvl/5)).map(p=>p.join(',')).join(' ');
+    grid += `<polygon points="${pts}" fill="none" stroke="#E8D8C4" stroke-width="${lvl===5?1.5:0.8}"/>`;
+  }
+  // Axis lines
+  let axes = '';
+  for (let i = 0; i < n; i++) {
+    const [ex, ey] = pt(i, 1);
+    axes += `<line x1="${cx}" y1="${cy}" x2="${ex}" y2="${ey}" stroke="#D0C0A8" stroke-width="0.8"/>`;
+  }
+  // Data polygon
+  const dataStr = values.map((v,i) => pt(i, v/10).join(',')).join(' ');
+  const poly = `<polygon points="${dataStr}" fill="rgba(198,134,66,.35)" stroke="#C68642" stroke-width="1.8" stroke-linejoin="round"/>`;
+  // Data dots
+  const dots = values.map((v,i) => { const [x,y]=pt(i,v/10); return `<circle cx="${x}" cy="${y}" r="2.5" fill="#C68642"/>`; }).join('');
+  // Labels
+  let lbls = '';
+  if (showLabels) {
+    labels.forEach((lbl,i) => {
+      const [lx,ly] = pt(i, 1.28);
+      const anchor  = lx < cx - 2 ? 'end' : lx > cx + 2 ? 'start' : 'middle';
+      lbls += `<text x="${lx.toFixed(1)}" y="${(ly+4).toFixed(1)}" text-anchor="${anchor}" font-size="10" font-weight="700" fill="#9B8B6E">${lbl}</text>`;
+      const [vx,vy] = pt(i, (values[i]/10)*0.72 + 0.05);
+      if (values[i] > 0) lbls += `<text x="${vx.toFixed(1)}" y="${(vy+4).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="800" fill="#3D1E0F">${values[i]}</text>`;
+    });
+  }
+  const w = showLabels ? totalSize : size;
+  const style = showLabels ? 'max-width:100%;height:auto;' : '';
+  return `<svg width="${w}" height="${w}" viewBox="0 0 ${w} ${w}" class="radar-labels" style="${style}">${grid}${axes}${poly}${dots}${lbls}</svg>`;
+}
+
+// ── Journal ───────────────────────────────────────────────────────────────────
+let JOURNAL_ENTRIES = [];
+let currentJournalEntry = null;
+
+async function loadJournal() {
+  const grid = document.getElementById('journal-grid');
+  if (!ME) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">📓</div><div class="empty-msg">Log in to keep your personal brew journal</div><button class="btn btn-primary" onclick="openModal('login-modal')">Log In</button></div>`;
+    return;
+  }
+  grid.innerHTML = '<div class="loading"><div class="spinner"></div> Loading journal…</div>';
+  try {
+    JOURNAL_ENTRIES = await api('/api/journal');
+    renderJournalGrid();
+  } catch(e) { grid.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-msg">${esc(e.message)}</div></div>`; }
+}
+
+function renderJournalGrid() {
+  const grid = document.getElementById('journal-grid');
+  if (!JOURNAL_ENTRIES.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📓</div><div class="empty-msg">No brew entries yet. Start logging your brews!</div><button class="btn btn-primary" onclick="openNewJournalModal()">+ New Entry</button></div>`;
+    return;
+  }
+  grid.innerHTML = JOURNAL_ENTRIES.map(e => {
+    const vals = [e.ratingAroma, e.ratingFlavor, e.ratingAcidity, e.ratingBody, e.ratingSweetness, e.ratingFinish];
+    const avg  = (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
+    return `
+    <div class="card journal-card card-hover" onclick="openJournalDetail(${e.id})">
+      <div class="journal-card-top">
+        <div class="journal-radar">${buildRadarSVG(vals, 90, false)}</div>
+        <div class="journal-info">
+          <div class="journal-bean">${esc(e.coffeeBean||'Unknown Bean')}</div>
+          <div class="journal-meta">${esc(e.origin||'')}${e.origin&&e.roastLevel?' · ':''}${esc(e.roastLevel||'')}</div>
+          <div class="journal-tags">
+            ${e.brewMethod?`<span class="journal-tag">${esc(e.brewMethod)}</span>`:''}
+            ${e.grindSize?`<span class="journal-tag">${esc(e.grindSize)}</span>`:''}
+            <span class="journal-tag" style="background:var(--cream);color:var(--caramel)">⭐ ${avg}</span>
+          </div>
+        </div>
+      </div>
+      ${e.notes?`<div class="journal-notes">${esc(e.notes)}</div>`:''}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0 0;border-top:1px solid var(--border);margin-top:8px;font-size:11px;color:var(--muted)">
+        <span>${timeAgo(e.createdAt)}</span>
+        <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
+          <button class="btn btn-sm btn-secondary" style="padding:3px 8px;font-size:11px" onclick="openEditJournal(${e.id})">Edit</button>
+          <button class="btn btn-sm btn-danger" style="padding:3px 8px;font-size:11px" onclick="deleteJournalEntry(${e.id})">Del</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openNewJournalModal() {
+  if (!ME) { openModal('login-modal'); return; }
+  document.getElementById('journal-edit-id').value = '';
+  document.getElementById('journal-modal-title').textContent = '📓 New Brew Entry';
+  ['j-bean','j-origin','j-notes'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('j-roast').value = 'MEDIUM';
+  document.getElementById('j-method').value = 'Pour Over (V60)';
+  document.getElementById('j-grind').value = 'Medium-Fine';
+  document.getElementById('j-temp').value  = '93';
+  document.getElementById('j-dose').value  = '18';
+  document.getElementById('j-yield').value = '36';
+  document.getElementById('j-time').value  = '210';
+  ['aroma','flavor','acidity','body','sweetness','finish'].forEach(k => {
+    document.getElementById('j-'+k).value = 7;
+    document.getElementById('jv-'+k).textContent = 7;
+  });
+  updateJournalRadar();
+  openModal('journal-modal');
+}
+
+function openEditJournal(id) {
+  const e = JOURNAL_ENTRIES.find(x=>x.id===id);
+  if (!e) return;
+  document.getElementById('journal-edit-id').value = e.id;
+  document.getElementById('journal-modal-title').textContent = '✏️ Edit Brew Entry';
+  document.getElementById('j-bean').value   = e.coffeeBean || '';
+  document.getElementById('j-origin').value = e.origin || '';
+  document.getElementById('j-roast').value  = e.roastLevel || 'MEDIUM';
+  document.getElementById('j-method').value = e.brewMethod || 'Pour Over (V60)';
+  document.getElementById('j-grind').value  = e.grindSize || 'Medium-Fine';
+  document.getElementById('j-temp').value   = e.waterTempC || 93;
+  document.getElementById('j-dose').value   = e.doseGrams || 18;
+  document.getElementById('j-yield').value  = e.yieldGrams || 36;
+  document.getElementById('j-time').value   = e.brewTimeSec || 210;
+  document.getElementById('j-notes').value  = e.notes || '';
+  const map = {aroma:e.ratingAroma, flavor:e.ratingFlavor, acidity:e.ratingAcidity,
+               body:e.ratingBody, sweetness:e.ratingSweetness, finish:e.ratingFinish};
+  Object.entries(map).forEach(([k,v]) => {
+    document.getElementById('j-'+k).value = v;
+    document.getElementById('jv-'+k).textContent = v;
+  });
+  updateJournalRadar();
+  openModal('journal-modal');
+}
+
+function updateJournalRadar() {
+  const keys = ['aroma','flavor','acidity','body','sweetness','finish'];
+  const vals  = keys.map(k => {
+    const v = parseInt(document.getElementById('j-'+k).value);
+    document.getElementById('jv-'+k).textContent = v;
+    return v;
+  });
+  document.getElementById('journal-radar-preview').innerHTML = buildRadarSVG(vals, 160, true);
+}
+
+async function saveJournalEntry() {
+  if (!ME) return;
+  const editId = document.getElementById('journal-edit-id').value;
+  const body = {
+    coffeeBean: document.getElementById('j-bean').value.trim(),
+    origin:     document.getElementById('j-origin').value.trim(),
+    roastLevel: document.getElementById('j-roast').value,
+    brewMethod: document.getElementById('j-method').value,
+    grindSize:  document.getElementById('j-grind').value,
+    waterTempC: parseInt(document.getElementById('j-temp').value),
+    doseGrams:  parseFloat(document.getElementById('j-dose').value),
+    yieldGrams: parseFloat(document.getElementById('j-yield').value),
+    brewTimeSec:parseInt(document.getElementById('j-time').value),
+    ratingAroma:    parseInt(document.getElementById('j-aroma').value),
+    ratingFlavor:   parseInt(document.getElementById('j-flavor').value),
+    ratingAcidity:  parseInt(document.getElementById('j-acidity').value),
+    ratingBody:     parseInt(document.getElementById('j-body').value),
+    ratingSweetness:parseInt(document.getElementById('j-sweetness').value),
+    ratingFinish:   parseInt(document.getElementById('j-finish').value),
+    notes: document.getElementById('j-notes').value.trim(),
+  };
+  try {
+    if (editId) {
+      await api('/api/journal/'+editId, {method:'PUT', body:JSON.stringify(body)});
+      toast('Entry updated!', 'ok');
+    } else {
+      await api('/api/journal', {method:'POST', body:JSON.stringify(body)});
+      toast('Brew entry logged!', 'ok');
+    }
+    closeModal('journal-modal');
+    loadJournal();
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function deleteJournalEntry(id) {
+  if (!confirm('Delete this brew entry?')) return;
+  try {
+    await api('/api/journal/'+id, {method:'DELETE'});
+    toast('Entry deleted', 'info');
+    loadJournal();
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+function openJournalDetail(id) {
+  const e = JOURNAL_ENTRIES.find(x=>x.id===id);
+  if (!e) return;
+  currentJournalEntry = e;
+  document.getElementById('journal-detail-title').textContent = esc(e.coffeeBean||'Brew Entry');
+  const vals = [e.ratingAroma, e.ratingFlavor, e.ratingAcidity, e.ratingBody, e.ratingSweetness, e.ratingFinish];
+  const params = [
+    ['Brew Method', e.brewMethod], ['Origin', e.origin], ['Roast Level', e.roastLevel],
+    ['Grind Size', e.grindSize], ['Water Temp', e.waterTempC ? e.waterTempC+'°C' : '—'],
+    ['Dose', e.doseGrams ? e.doseGrams+'g' : '—'], ['Yield', e.yieldGrams ? e.yieldGrams+'g' : '—'],
+    ['Brew Time', e.brewTimeSec ? Math.floor(e.brewTimeSec/60)+'m '+(e.brewTimeSec%60)+'s' : '—'],
+  ].filter(([,v])=>v);
+  document.getElementById('journal-detail-content').innerHTML = `
+    <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-bottom:20px">
+      <div style="flex:1;min-width:200px">
+        <div class="section-label" style="margin-bottom:10px">Brew Parameters</div>
+        <div class="journal-detail-grid">
+          ${params.map(([k,v])=>`<div class="journal-detail-row"><span class="journal-detail-key">${k}</span><span class="journal-detail-val">${esc(String(v))}</span></div>`).join('')}
+        </div>
+      </div>
+      <div style="min-width:200px;flex:1">
+        <div class="section-label" style="margin-bottom:10px">Flavor Profile</div>
+        <div class="radar-wrap">${buildRadarSVG(vals, 220, true)}</div>
+      </div>
+    </div>
+    ${e.notes?`<div class="section-label">Tasting Notes</div><p style="font-size:14px;line-height:1.7;color:#444;margin-top:8px">${esc(e.notes)}</p>`:''}
+    <div style="font-size:11px;color:var(--muted);margin-top:16px">Logged ${timeAgo(e.createdAt)}</div>`;
+  openModal('journal-detail-modal');
+}
+
+function printJournalEntry() {
+  if (!currentJournalEntry) return;
+  const e = currentJournalEntry;
+  const vals = [e.ratingAroma, e.ratingFlavor, e.ratingAcidity, e.ratingBody, e.ratingSweetness, e.ratingFinish];
+  const labels = ['Aroma','Flavor','Acidity','Body','Sweetness','Finish'];
+  const radarSvg = buildRadarSVG(vals, 220, true);
+  const paramRows = [
+    ['Coffee Bean', e.coffeeBean], ['Origin', e.origin], ['Roast Level', e.roastLevel],
+    ['Brew Method', e.brewMethod], ['Grind Size', e.grindSize],
+    ['Water Temp', e.waterTempC?e.waterTempC+'°C':'—'],
+    ['Dose', e.doseGrams?e.doseGrams+'g':'—'], ['Yield', e.yieldGrams?e.yieldGrams+'g':'—'],
+    ['Brew Time', e.brewTimeSec?Math.floor(e.brewTimeSec/60)+'m '+(e.brewTimeSec%60)+'s':'—'],
+  ].filter(([,v])=>v&&v!=='—');
+  const ratingRows = labels.map((l,i)=>`<tr><td>${l}</td><td><strong>${vals[i]}/10</strong></td></tr>`).join('');
+  const win = window.open('','_blank','width=700,height=900');
+  win.document.write(`<!DOCTYPE html><html><head><title>Brew Log — ${e.coffeeBean||'Entry'}</title>
+  <style>body{font-family:-apple-system,sans-serif;padding:40px;color:#1A1108;max-width:620px;margin:0 auto}
+  h1{font-size:24px;color:#3D1E0F;border-bottom:2px solid #C68642;padding-bottom:10px;margin-bottom:20px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
+  table{width:100%;border-collapse:collapse}td{padding:6px 4px;border-bottom:1px solid #E8D8C4;font-size:13px}
+  td:first-child{color:#9B8B6E;font-weight:600}
+  .notes{background:#FAF6EF;border:1px solid #E8D8C4;border-radius:8px;padding:14px;font-size:13px;line-height:1.7;margin-top:16px}
+  .foot{margin-top:32px;font-size:11px;color:#999;text-align:center}
+  @media print{@page{margin:20mm}button{display:none}}
+  </style></head><body>
+  <h1>☕ Brew Log: ${e.coffeeBean||'Entry'}</h1>
+  <div class="two">
+    <div><h3 style="font-size:14px;color:#9B8B6E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Brew Parameters</h3>
+    <table>${paramRows.map(([k,v])=>`<tr><td>${k}</td><td><strong>${v}</strong></td></tr>`).join('')}</table></div>
+    <div><h3 style="font-size:14px;color:#9B8B6E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Flavor Profile</h3>
+    <table>${ratingRows}</table></div>
+  </div>
+  <div style="text-align:center;margin:16px 0">${radarSvg}</div>
+  ${e.notes?`<div class="notes"><strong>Tasting Notes:</strong><br/>${e.notes}</div>`:''}
+  <div class="foot">Borgol Coffee Platform · Logged ${new Date(e.createdAt).toLocaleDateString()}</div>
+  <br/><button onclick="window.print()" style="padding:10px 24px;background:#3D1E0F;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px">🖨️ Print / Save as PDF</button>
+  </body></html>`);
+  win.document.close();
+}
+
+async function shareJournalEntry() {
+  if (!currentJournalEntry) return;
+  const e = currentJournalEntry;
+  const text = `☕ ${e.coffeeBean||'Coffee'} Brew Log\n` +
+    `Method: ${e.brewMethod||'—'} · Origin: ${e.origin||'—'}\n` +
+    `Aroma:${e.ratingAroma} Flavor:${e.ratingFlavor} Acidity:${e.ratingAcidity} Body:${e.ratingBody} Sweetness:${e.ratingSweetness} Finish:${e.ratingFinish}\n` +
+    (e.notes ? `Notes: ${e.notes}` : '') +
+    `\nvia Borgol Coffee Platform`;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: 'Brew Log — '+e.coffeeBean, text });
+    } else {
+      await navigator.clipboard.writeText(text);
+      toast('Brew details copied to clipboard!', 'ok');
+    }
+  } catch(err) { if (err.name !== 'AbortError') toast('Could not share', 'err'); }
+}
+
+async function exportJournalPDF() {
+  if (!ME) { openModal('login-modal'); return; }
+  if (!JOURNAL_ENTRIES.length) { toast('No entries to export', 'info'); return; }
+  const rows = JOURNAL_ENTRIES.map(e => {
+    const vals = [e.ratingAroma, e.ratingFlavor, e.ratingAcidity, e.ratingBody, e.ratingSweetness, e.ratingFinish];
+    const avg  = (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
+    const radar = buildRadarSVG(vals, 90, false);
+    return `<tr><td>${radar}</td><td><strong>${e.coffeeBean||'—'}</strong><br/><small style="color:#999">${e.origin||''}</small></td>
+      <td>${e.brewMethod||'—'}</td><td>${e.roastLevel||'—'}</td>
+      <td style="text-align:center"><strong style="color:#C68642;font-size:16px">${avg}</strong><br/><small>avg</small></td>
+      <td style="font-size:12px;color:#666;max-width:180px">${e.notes||''}</td></tr>`;
+  }).join('');
+  const win = window.open('','_blank','width=900,height=700');
+  win.document.write(`<!DOCTYPE html><html><head><title>Brew Journal — ${ME.username}</title>
+  <style>body{font-family:-apple-system,sans-serif;padding:32px;color:#1A1108}
+  h1{color:#3D1E0F;font-size:22px;border-bottom:2px solid #C68642;padding-bottom:8px;margin-bottom:20px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{background:#F5E6C8;color:#3D1E0F;font-weight:700;padding:10px 8px;text-align:left;border-bottom:2px solid #E8D8C4}
+  td{padding:8px;border-bottom:1px solid #F0E4D0;vertical-align:middle}tr:hover td{background:#FFFBF5}
+  .foot{margin-top:24px;font-size:11px;color:#aaa;text-align:center}
+  @media print{@page{size:landscape;margin:15mm}button{display:none}}</style></head><body>
+  <h1>📓 Brew Journal — ${ME.username}</h1>
+  <table><thead><tr><th>Chart</th><th>Coffee Bean</th><th>Method</th><th>Roast</th><th>Score</th><th>Notes</th></tr></thead>
+  <tbody>${rows}</tbody></table>
+  <div class="foot">Borgol Coffee Platform · ${JOURNAL_ENTRIES.length} entries · ${new Date().toLocaleDateString()}</div>
+  <br/><button onclick="window.print()" style="padding:10px 24px;background:#3D1E0F;color:#fff;border:none;border-radius:8px;cursor:pointer">🖨️ Print / Save as PDF</button>
+  </body></html>`);
+  win.document.close();
+}
+
+// ── Learn: Brew Guides ────────────────────────────────────────────────────────
+let BREW_GUIDES = [];
+let LEARN_ARTICLES = [];
+let learnTabActive = 'guides';
+
+async function loadLearn() {
+  if (!BREW_GUIDES.length) loadBrewGuides();
+  if (!LEARN_ARTICLES.length) loadLearnArticles();
+}
+
+async function loadBrewGuides() {
+  const grid = document.getElementById('brew-guides-grid');
+  try {
+    BREW_GUIDES = await api('/api/brew-guides');
+    grid.innerHTML = BREW_GUIDES.map(g => `
+      <div class="card guide-card card-hover" onclick="openBrewGuide(${g.id})">
+        <div class="guide-card-inner">
+          <div class="guide-icon">${g.icon}</div>
+          <div class="guide-name">${esc(g.methodName)}</div>
+          <div class="guide-desc">${esc(g.description)}</div>
+          <div class="guide-meta">
+            <span class="guide-pill">⏱ ${g.brewTimeMin < 60 ? g.brewTimeMin+'m' : Math.floor(g.brewTimeMin/60)+'h'}</span>
+            <span class="guide-pill">${diffLabel(g.difficulty)}</span>
+          </div>
+        </div>
+      </div>`).join('');
+  } catch(e) { grid.innerHTML = `<div class="empty-state"><div class="empty-msg">Failed to load guides</div></div>`; }
+}
+
+async function loadLearnArticles() {
+  const grid = document.getElementById('learn-articles-grid');
+  try {
+    LEARN_ARTICLES = await api('/api/learn');
+    grid.innerHTML = LEARN_ARTICLES.map(a => {
+      const preview = a.content.replace(/##[^\n]*/g,'').replace(/\n+/g,' ').trim().substring(0,100);
+      return `
+      <div class="card article-card card-hover" onclick="openLearnArticle(${a.id})">
+        <div class="article-icon">${a.icon}</div>
+        <div class="article-cat">${esc(a.category)}</div>
+        <div class="article-title">${esc(a.title)}</div>
+        <div class="article-preview">${esc(preview)}…</div>
+        <div class="article-footer">
+          <span>📖 ${a.readTimeMin} min read</span>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { grid.innerHTML = `<div class="empty-state"><div class="empty-msg">Failed to load articles</div></div>`; }
+}
+
+function learnTab(tab, btn) {
+  learnTabActive = tab;
+  document.querySelectorAll('.learn-tab-content').forEach(el => el.classList.remove('active'));
+  document.getElementById('learn-'+tab).classList.add('active');
+  btn.closest('.tab-bar').querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if (tab==='guides' && !BREW_GUIDES.length) loadBrewGuides();
+  if (tab==='articles' && !LEARN_ARTICLES.length) loadLearnArticles();
+}
+
+function openBrewGuide(id) {
+  const g = BREW_GUIDES.find(x=>x.id===id);
+  if (!g) return;
+  document.getElementById('brew-guide-title').textContent = g.icon + ' ' + g.methodName;
+  const params = g.parameters.split('\n').filter(Boolean).map(p => {
+    const [k,...vs] = p.split(':');
+    return `<div class="guide-param">${esc(k)}<span>${esc(vs.join(':').trim())}</span></div>`;
+  });
+  const steps = g.steps.split('\n').filter(Boolean).map((s,i) => {
+    const text = s.replace(/^\d+\.\s*/,'');
+    return `<div class="guide-step"><div class="guide-step-num">${i+1}</div><div class="step-text">${esc(text)}</div></div>`;
+  });
+  document.getElementById('brew-guide-content').innerHTML = `
+    <div class="guide-detail-header">
+      <p style="color:#555;font-size:14px;line-height:1.6;margin-bottom:16px">${esc(g.description)}</p>
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        <span class="guide-pill">⏱ ${g.brewTimeMin < 60 ? g.brewTimeMin+' min' : Math.floor(g.brewTimeMin/60)+' hr'}</span>
+        <span class="guide-pill">${diffLabel(g.difficulty)}</span>
+      </div>
+      <div class="section-label" style="margin-bottom:10px">Parameters</div>
+      <div class="guide-params">${params.join('')}</div>
+      <div class="section-label" style="margin-bottom:12px">Steps</div>
+      ${steps.join('')}
+    </div>
+    <div style="height:16px"></div>`;
+  openModal('brew-guide-modal');
+}
+
+function openLearnArticle(id) {
+  const a = LEARN_ARTICLES.find(x=>x.id===id);
+  if (!a) return;
+  document.getElementById('learn-article-title').textContent = a.icon + ' ' + a.title;
+  // Convert ## headings and newlines to HTML
+  let html = esc(a.content)
+    .replace(/## ([^\n]+)/g, '</p><h2>$1</h2><p>')
+    .replace(/\n\n+/g, '</p><p>')
+    .replace(/\n/g, '<br/>');
+  html = '<p>' + html + '</p>';
+  document.getElementById('learn-article-content').innerHTML = `
+    <div class="article-content">
+      <div style="display:flex;gap:8px;font-size:12px;color:var(--muted);margin-bottom:16px">
+        <span style="background:var(--cream);padding:3px 10px;border-radius:10px;font-weight:700">${esc(a.category)}</span>
+        <span>📖 ${a.readTimeMin} min read</span>
+      </div>
+      ${html}
+    </div>`;
+  openModal('learn-article-modal');
+}
+
+function diffLabel(d) {
+  return d==='BEGINNER' ? '🟢 Beginner' : d==='ADVANCED' ? '🔴 Advanced' : '🟡 Intermediate';
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
