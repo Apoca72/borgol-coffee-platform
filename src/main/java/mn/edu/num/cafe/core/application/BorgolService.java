@@ -229,6 +229,36 @@ public class BorgolService {
         return getCafe(cafeId, userId);
     }
 
+    // ── Extra queries ─────────────────────────────────────────────────────────
+
+    public List<UserView> getAllUsers(int currentUserId) {
+        return repo.findAllUsers(60).stream()
+            .map(u -> {
+                boolean following = currentUserId > 0 && repo.isFollowing(currentUserId, u.getId());
+                return toView(u, currentUserId, following);
+            }).toList();
+    }
+
+    public List<Recipe> getLikedRecipes(int userId, int currentUserId) {
+        return repo.getLikedRecipes(userId, currentUserId);
+    }
+
+    public List<UserView> getFollowingUsers(int userId, int currentUserId) {
+        return repo.getFollowingUsers(userId).stream()
+            .map(u -> {
+                boolean following = currentUserId > 0 && repo.isFollowing(currentUserId, u.getId());
+                return toView(u, currentUserId, following);
+            }).toList();
+    }
+
+    public List<UserView> getFollowerUsers(int userId, int currentUserId) {
+        return repo.getFollowerUsers(userId).stream()
+            .map(u -> {
+                boolean following = currentUserId > 0 && repo.isFollowing(currentUserId, u.getId());
+                return toView(u, currentUserId, following);
+            }).toList();
+    }
+
     // ── View mapping ──────────────────────────────────────────────────────────
 
     public record UserView(

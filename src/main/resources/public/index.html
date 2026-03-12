@@ -32,7 +32,7 @@ img{max-width:100%;display:block}
 
 /* ── Navbar ──────────────────────────────────────────────────────────────── */
 .navbar{background:var(--espresso);color:var(--cream);height:60px;display:flex;align-items:center;padding:0 24px;gap:20px;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(0,0,0,.4)}
-.nav-brand{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:800;letter-spacing:-.5px;color:#fff;flex-shrink:0}
+.nav-brand{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:800;letter-spacing:-.5px;color:#fff;flex-shrink:0;cursor:pointer}
 .nav-brand span{font-size:26px}
 .nav-links{display:flex;gap:4px;flex:1;justify-content:center}
 .nav-link{padding:8px 14px;border-radius:8px;font-size:14px;font-weight:600;color:rgba(255,255,255,.75);transition:.15s;border:none;background:none}
@@ -50,6 +50,16 @@ img{max-width:100%;display:block}
 .user-pill:hover{background:rgba(255,255,255,.2)}
 .avatar{width:30px;height:30px;border-radius:50%;object-fit:cover;background:var(--caramel);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden}
 .avatar img{width:100%;height:100%;object-fit:cover}
+.hamburger{display:none;border:none;background:none;color:rgba(255,255,255,.9);font-size:24px;cursor:pointer;padding:4px;line-height:1}
+
+/* ── Mobile overlay nav ──────────────────────────────────────────────────── */
+.mobile-overlay{display:none;position:fixed;inset:0;background:var(--espresso);z-index:500;flex-direction:column;padding:20px 24px;overflow-y:auto}
+.mobile-overlay.open{display:flex}
+.mobile-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-shrink:0}
+.mobile-close{border:none;background:rgba(255,255,255,.12);color:#fff;width:40px;height:40px;border-radius:10px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.mobile-nav-link{padding:15px 8px;font-size:17px;font-weight:600;color:rgba(255,255,255,.85);border-radius:10px;border:none;background:none;text-align:left;cursor:pointer;width:100%;transition:.15s;display:block}
+.mobile-nav-link:hover{background:rgba(255,255,255,.1);color:#fff}
+.mobile-divider{border:none;border-top:1px solid rgba(255,255,255,.12);margin:10px 0}
 
 /* ── Layout ──────────────────────────────────────────────────────────────── */
 .page{display:none;max-width:1100px;margin:0 auto;padding:28px 24px}
@@ -154,9 +164,6 @@ img{max-width:100%;display:block}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--caramel);box-shadow:0 0 0 3px rgba(198,134,66,.15);background:#fff}
 .field textarea{resize:vertical;min-height:80px}
 .field-help{font-size:11px;color:var(--muted);margin-top:4px}
-.checkbox-row{display:flex;align-items:center;gap:8px;margin-bottom:14px}
-.checkbox-row label{font-size:14px;color:var(--text);margin:0}
-input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
 .flavor-picker{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .flavor-opt{padding:5px 12px;border:1.5px solid var(--border);border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;background:#fff;color:var(--muted)}
 .flavor-opt.selected{background:var(--roast);color:#fff;border-color:var(--roast)}
@@ -173,12 +180,16 @@ input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
 .btn-sm{padding:6px 12px;font-size:12px}
 .btn-icon{width:36px;height:36px;padding:0;border-radius:8px;background:var(--cream);color:var(--muted);justify-content:center}
 .btn-icon:hover{background:var(--border)}
+.btn-follow{padding:6px 16px;border-radius:16px;font-size:13px;font-weight:700;border:1.5px solid var(--caramel);background:transparent;color:var(--caramel);cursor:pointer;transition:.15s}
+.btn-follow:hover{background:var(--caramel);color:#fff}
+.btn-follow.following{border-color:var(--border);color:var(--muted)}
+.btn-follow.following:hover{border-color:var(--danger);color:var(--danger);background:transparent}
 
 /* ── Profile ─────────────────────────────────────────────────────────────── */
-.profile-header{padding:28px;display:flex;gap:24px;align-items:flex-start;border-bottom:1px solid var(--border)}
+.profile-header{padding:28px;display:flex;gap:24px;align-items:flex-start;border-bottom:1px solid var(--border);flex-wrap:wrap}
 .profile-avatar{width:80px;height:80px;border-radius:50%;background:var(--caramel);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden}
 .profile-avatar img{width:100%;height:100%;object-fit:cover}
-.profile-info{flex:1}
+.profile-info{flex:1;min-width:220px}
 .profile-name{font-size:22px;font-weight:800;margin-bottom:4px}
 .profile-level{font-size:12px;font-weight:700;padding:3px 10px;border-radius:12px;display:inline-block;margin-bottom:8px}
 .level-BEGINNER{background:#E3F2FD;color:#1565C0}
@@ -186,9 +197,10 @@ input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
 .level-BARISTA{background:#FFF3E0;color:#E65100}
 .level-EXPERT{background:#FBE9E7;color:#BF360C}
 .profile-bio{font-size:14px;color:#555;line-height:1.5;margin-bottom:12px}
-.profile-stats{display:flex;gap:24px}
-.stat-item{text-align:center}
-.stat-num{font-size:18px;font-weight:800;color:var(--roast)}
+.profile-stats{display:flex;gap:24px;flex-wrap:wrap}
+.stat-item{text-align:center;cursor:pointer}
+.stat-item:hover .stat-num{color:var(--caramel)}
+.stat-num{font-size:18px;font-weight:800;color:var(--roast);transition:.15s}
 .stat-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
 
 /* ── Detail page ─────────────────────────────────────────────────────────── */
@@ -201,7 +213,6 @@ input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
 .ingredients-list{list-style:none;padding:0}
 .ingredients-list li{padding:6px 0;border-bottom:1px solid var(--border);font-size:14px;display:flex;align-items:center;gap:8px}
 .ingredients-list li::before{content:'•';color:var(--caramel);font-size:20px;line-height:1}
-.instructions-steps{counter-reset:steps}
 .step{display:flex;gap:14px;margin-bottom:14px;align-items:flex-start}
 .step-num{width:28px;height:28px;border-radius:50%;background:var(--roast);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .step-text{font-size:14px;line-height:1.6;padding-top:4px}
@@ -226,6 +237,25 @@ input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
 .trending-title{font-size:13px;font-weight:600;line-height:1.3;margin-bottom:2px}
 .trending-likes{font-size:11px;color:var(--muted)}
 
+/* ── Suggest people (sidebar) ────────────────────────────────────────────── */
+.suggest-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.suggest-item:last-child{border-bottom:none}
+.suggest-info{flex:1;min-width:0}
+.suggest-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;transition:.15s}
+.suggest-name:hover{color:var(--caramel)}
+.suggest-meta{font-size:11px;color:var(--muted)}
+.btn-follow-sm{padding:4px 12px;border-radius:14px;font-size:11px;font-weight:700;border:1.5px solid var(--caramel);background:transparent;color:var(--caramel);cursor:pointer;white-space:nowrap;transition:.15s;flex-shrink:0}
+.btn-follow-sm:hover{background:var(--caramel);color:#fff}
+.btn-follow-sm.following{border-color:var(--border);color:var(--muted)}
+.btn-follow-sm.following:hover{border-color:var(--danger);color:var(--danger)}
+
+/* ── User list (followers/following modal) ───────────────────────────────── */
+.user-list-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s}
+.user-list-item:last-child{border-bottom:none}
+.user-list-item:hover .user-list-name{color:var(--caramel)}
+.user-list-name{font-size:14px;font-weight:700}
+.user-list-meta{font-size:12px;color:var(--muted)}
+
 /* ── Toast ───────────────────────────────────────────────────────────────── */
 .toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:10px;color:#fff;font-size:14px;font-weight:600;z-index:9999;max-width:320px;opacity:0;transform:translateY(12px);transition:.25s;pointer-events:none;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.2)}
 .toast.show{opacity:1;transform:translateY(0)}
@@ -246,6 +276,11 @@ input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
 .tab-btn{padding:10px 20px;border:none;background:none;font-size:14px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s;cursor:pointer}
 .tab-btn.active{color:var(--roast);border-bottom-color:var(--roast)}
 
+/* ── Auth hero ───────────────────────────────────────────────────────────── */
+.auth-hero{text-align:center;padding:60px 24px 40px;background:linear-gradient(135deg,var(--espresso),var(--roast));color:#fff;border-radius:0 0 40px 40px;margin:-28px -24px 32px}
+.auth-hero h1{font-size:36px;font-weight:900;margin-bottom:8px}
+.auth-hero p{font-size:16px;opacity:.8;max-width:480px;margin:0 auto 24px}
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media(max-width:800px){
   .two-col{grid-template-columns:1fr}
@@ -253,23 +288,20 @@ input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
   .form-row{grid-template-columns:1fr}
   .nav-links{display:none}
   .nav-search{display:none}
+  .hamburger{display:flex}
+  .auth-hero h1{font-size:28px}
 }
 @media(max-width:480px){
   .page{padding:16px 12px}
   .navbar{padding:0 16px}
 }
-
-/* ── Auth page ───────────────────────────────────────────────────────────── */
-.auth-hero{text-align:center;padding:60px 24px 40px;background:linear-gradient(135deg,var(--espresso),var(--roast));color:#fff;border-radius:0 0 40px 40px;margin:-28px -24px 32px}
-.auth-hero h1{font-size:36px;font-weight:900;margin-bottom:8px}
-.auth-hero p{font-size:16px;opacity:.8;max-width:480px;margin:0 auto 24px}
 </style>
 </head>
 <body>
 
 <!-- ── Navbar ──────────────────────────────────────────────────────────────── -->
 <nav class="navbar">
-  <div class="nav-brand"><span>🫘</span> Borgol</div>
+  <div class="nav-brand" onclick="showPage(ME?'feed':'recipes')"><span>🫘</span> Borgol</div>
   <div class="nav-links">
     <button class="nav-link" onclick="showPage('feed')">🏠 Feed</button>
     <button class="nav-link" onclick="showPage('recipes')">📖 Recipes</button>
@@ -278,7 +310,7 @@ input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
   </div>
   <div class="nav-right">
     <div class="search-wrap">
-      <input class="nav-search" type="text" placeholder="Search..." id="nav-search"
+      <input class="nav-search" type="text" placeholder="Search…" id="nav-search"
         onkeydown="if(event.key==='Enter')globalSearch(this.value)"/>
     </div>
     <div id="auth-buttons">
@@ -291,8 +323,31 @@ input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
         <span id="nav-username">User</span>
       </button>
     </div>
+    <button class="hamburger" onclick="toggleMobileNav()" aria-label="Menu">☰</button>
   </div>
 </nav>
+
+<!-- ── Mobile nav overlay ─────────────────────────────────────────────────── -->
+<div class="mobile-overlay" id="mobile-nav">
+  <div class="mobile-header">
+    <div class="nav-brand" style="color:#fff"><span>🫘</span> Borgol</div>
+    <button class="mobile-close" onclick="toggleMobileNav()">✕</button>
+  </div>
+  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('feed')">🏠 Feed</button>
+  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('recipes')">📖 Recipes</button>
+  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('cafes')">☕ Cafes</button>
+  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('explore')">🔭 Explore</button>
+  <hr class="mobile-divider"/>
+  <div id="mobile-auth-section">
+    <button class="mobile-nav-link" onclick="toggleMobileNav();openModal('login-modal')">🔑 Log In</button>
+    <button class="mobile-nav-link" onclick="toggleMobileNav();openModal('register-modal')">📝 Sign Up</button>
+  </div>
+  <div id="mobile-user-section" style="display:none">
+    <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('profile')">👤 My Profile</button>
+    <button class="mobile-nav-link" onclick="toggleMobileNav();openNewRecipeModal()">✍️ New Recipe</button>
+    <button class="mobile-nav-link" style="color:#EF9A9A" onclick="toggleMobileNav();logout()">🚪 Log Out</button>
+  </div>
+</div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <!-- FEED PAGE -->
@@ -310,6 +365,10 @@ input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
         <div id="trending-list"><div class="loading" style="padding:20px"><div class="spinner"></div></div></div>
       </div>
       <div class="card widget" style="padding:16px">
+        <div class="widget-title">👥 People to Follow</div>
+        <div id="suggest-people"><div class="loading" style="padding:20px"><div class="spinner"></div></div></div>
+      </div>
+      <div class="card widget" style="padding:16px">
         <div class="widget-title">☕ Quick Stats</div>
         <div id="quick-stats" style="font-size:14px;color:var(--muted)">Loading…</div>
       </div>
@@ -323,22 +382,22 @@ input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
 <div class="page" id="page-recipes">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
     <div class="section-title">📖 Recipes</div>
-    <button class="btn btn-primary" onclick="openModal('new-recipe-modal')" id="btn-new-recipe" style="display:none">
+    <button class="btn btn-primary" onclick="openNewRecipeModal()" id="btn-new-recipe" style="display:none">
       + New Recipe
     </button>
   </div>
   <div class="filters">
     <input class="search-input search-bar" type="text" placeholder="Search recipes…" id="recipe-search"
       oninput="debounce(loadRecipes,400)()"/>
-    <button class="chip active" data-dt="ALL"         onclick="setDrinkFilter(this)">All</button>
-    <button class="chip"        data-dt="ESPRESSO"    onclick="setDrinkFilter(this)">Espresso</button>
-    <button class="chip"        data-dt="LATTE"       onclick="setDrinkFilter(this)">Latte</button>
-    <button class="chip"        data-dt="CAPPUCCINO"  onclick="setDrinkFilter(this)">Cappuccino</button>
-    <button class="chip"        data-dt="COLD_BREW"   onclick="setDrinkFilter(this)">Cold Brew</button>
-    <button class="chip"        data-dt="POUR_OVER"   onclick="setDrinkFilter(this)">Pour Over</button>
-    <button class="chip"        data-dt="TEA"         onclick="setDrinkFilter(this)">Tea</button>
-    <button class="chip"        data-dt="SMOOTHIE"    onclick="setDrinkFilter(this)">Smoothie</button>
-    <button class="chip"        data-dt="TRENDING"    onclick="setDrinkFilter(this)" style="margin-left:auto">🔥 Trending</button>
+    <button class="chip active" data-dt="ALL"          onclick="setDrinkFilter(this)">All</button>
+    <button class="chip"        data-dt="ESPRESSO"     onclick="setDrinkFilter(this)">Espresso</button>
+    <button class="chip"        data-dt="LATTE"        onclick="setDrinkFilter(this)">Latte</button>
+    <button class="chip"        data-dt="CAPPUCCINO"   onclick="setDrinkFilter(this)">Cappuccino</button>
+    <button class="chip"        data-dt="COLD_BREW"    onclick="setDrinkFilter(this)">Cold Brew</button>
+    <button class="chip"        data-dt="POUR_OVER"    onclick="setDrinkFilter(this)">Pour Over</button>
+    <button class="chip"        data-dt="TEA"          onclick="setDrinkFilter(this)">Tea</button>
+    <button class="chip"        data-dt="SMOOTHIE"     onclick="setDrinkFilter(this)">Smoothie</button>
+    <button class="chip"        data-dt="TRENDING"     onclick="setDrinkFilter(this)" style="margin-left:auto">🔥 Trending</button>
   </div>
   <div id="recipes-grid" class="recipe-grid">
     <div class="loading"><div class="spinner"></div></div>
@@ -358,11 +417,11 @@ input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
   <div class="filters">
     <input class="search-input search-bar" type="text" placeholder="Search cafes, areas…" id="cafe-search"
       oninput="debounce(loadCafes,400)()"/>
-    <button class="chip active" data-dist="ALL" onclick="setCafeFilter(this)">All Districts</button>
-    <button class="chip" data-dist="Sukhbaatar" onclick="setCafeFilter(this)">Sukhbaatar</button>
-    <button class="chip" data-dist="Khan-Uul"   onclick="setCafeFilter(this)">Khan-Uul</button>
-    <button class="chip" data-dist="Bayanzurkh" onclick="setCafeFilter(this)">Bayanzurkh</button>
-    <button class="chip" data-dist="Chingeltei" onclick="setCafeFilter(this)">Chingeltei</button>
+    <button class="chip active" data-dist="ALL"        onclick="setCafeFilter(this)">All Districts</button>
+    <button class="chip" data-dist="Sukhbaatar"        onclick="setCafeFilter(this)">Sukhbaatar</button>
+    <button class="chip" data-dist="Khan-Uul"          onclick="setCafeFilter(this)">Khan-Uul</button>
+    <button class="chip" data-dist="Bayanzurkh"        onclick="setCafeFilter(this)">Bayanzurkh</button>
+    <button class="chip" data-dist="Chingeltei"        onclick="setCafeFilter(this)">Chingeltei</button>
   </div>
   <div id="cafes-grid" class="cafe-grid">
     <div class="loading"><div class="spinner"></div></div>
@@ -375,11 +434,11 @@ input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
 <div class="page" id="page-explore">
   <div class="section-title">🔭 Explore Community</div>
   <div class="filters">
-    <input class="search-input search-bar" type="text" placeholder="Search people…" id="explore-search"
+    <input class="search-input search-bar" type="text" placeholder="Search people by name or bio…" id="explore-search"
       oninput="debounce(searchUsers,400)()"/>
   </div>
   <div id="explore-results">
-    <div class="empty-state"><div class="empty-icon">👥</div><div class="empty-msg">Search for coffee enthusiasts</div></div>
+    <div class="loading"><div class="spinner"></div> Loading members…</div>
   </div>
 </div>
 
@@ -393,9 +452,12 @@ input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
     </div>
   </div>
   <div class="tab-bar">
-    <button class="tab-btn active" onclick="profileTab('recipes',this)">Recipes</button>
+    <button class="tab-btn active" id="tab-recipes"   onclick="profileTab('recipes',this)">Recipes</button>
+    <button class="tab-btn"        id="tab-liked"     onclick="profileTab('liked',this)">❤️ Liked</button>
+    <button class="tab-btn"        id="tab-following" onclick="profileTab('following',this)">Following</button>
+    <button class="tab-btn"        id="tab-followers" onclick="profileTab('followers',this)">Followers</button>
   </div>
-  <div id="profile-recipes" class="recipe-grid"></div>
+  <div id="profile-tab-content" class="recipe-grid"></div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
@@ -439,7 +501,7 @@ input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
   </div>
 </div>
 
-<!-- New Recipe -->
+<!-- New / Edit Recipe -->
 <div class="modal-overlay" id="new-recipe-modal">
   <div class="modal modal-lg">
     <div class="modal-header">
@@ -482,9 +544,7 @@ input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
       <div class="field"><label>Instructions (one step per line)</label><textarea id="r-instructions" rows="5" placeholder="1. Rinse filter with hot water&#10;2. Add coffee and bloom..."></textarea></div>
       <div class="field">
         <label>Flavor Tags</label>
-        <div class="flavor-picker" id="r-flavor-picker">
-          <!-- generated by JS -->
-        </div>
+        <div class="flavor-picker" id="r-flavor-picker"></div>
       </div>
       <div class="field"><label>Image URL (optional)</label><input id="r-imageurl" type="url" placeholder="https://…"/></div>
     </div>
@@ -567,11 +627,27 @@ input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
         <label>Flavor Preferences</label>
         <div class="flavor-picker" id="p-flavor-picker"></div>
       </div>
+      <div class="field">
+        <label>Avatar URL (optional)</label>
+        <input id="p-avatarurl" type="url" placeholder="https://…"/>
+        <div class="field-help">Link to a profile picture (jpg, png, etc.)</div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('edit-profile-modal')">Cancel</button>
       <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
     </div>
+  </div>
+</div>
+
+<!-- User List (followers / following) -->
+<div class="modal-overlay" id="user-list-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title" id="user-list-title">Users</div>
+      <button class="modal-close" onclick="closeModal('user-list-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="user-list-content" style="padding-top:8px;padding-bottom:8px"></div>
   </div>
 </div>
 
@@ -583,11 +659,12 @@ input[type="checkbox"]{width:16px;height:16px;accent-color:var(--caramel)}
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <script>
 // ── State ─────────────────────────────────────────────────────────────────────
-let TOKEN    = localStorage.getItem('borgol_token') || null;
-let ME       = null;
+let TOKEN         = localStorage.getItem('borgol_token') || null;
+let ME            = null;
 let drinkFilter   = 'ALL';
 let cafeDistFilter = 'ALL';
 let viewingUserId  = null;
+let currentProfileTab = 'recipes';
 
 const FLAVORS = ['BITTER','SWEET','SOUR','FRUITY','NUTTY','CHOCOLATEY','FLORAL','SPICY','EARTHY','SMOKY','CARAMEL','VANILLA'];
 const DRINK_LABELS = {
@@ -604,6 +681,11 @@ async function api(url, opts={}) {
   const data = await res.json().catch(() => null);
   if (!res.ok) throw new Error(data?.error || res.statusText || 'Request failed');
   return data;
+}
+
+// ── Mobile nav ────────────────────────────────────────────────────────────────
+function toggleMobileNav() {
+  document.getElementById('mobile-nav').classList.toggle('open');
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -659,18 +741,29 @@ async function loadMe() {
 }
 
 function updateNavUser() {
-  const authBtns = document.getElementById('auth-buttons');
-  const userMenu = document.getElementById('user-menu');
+  const authBtns  = document.getElementById('auth-buttons');
+  const userMenu  = document.getElementById('user-menu');
+  const mobileAuth = document.getElementById('mobile-auth-section');
+  const mobileUser = document.getElementById('mobile-user-section');
   if (ME) {
-    authBtns.style.display = 'none';
-    userMenu.style.display = 'flex';
+    authBtns.style.display  = 'none';
+    userMenu.style.display  = 'flex';
+    mobileAuth.style.display = 'none';
+    mobileUser.style.display = 'block';
     document.getElementById('nav-username').textContent = ME.username;
-    document.getElementById('nav-avatar').textContent   = ME.username[0].toUpperCase();
+    const avatarEl = document.getElementById('nav-avatar');
+    if (ME.avatarUrl) {
+      avatarEl.innerHTML = `<img src="${esc(ME.avatarUrl)}" alt="${ME.username[0].toUpperCase()}" onerror="this.parentElement.textContent='${ME.username[0].toUpperCase()}'"/>`;
+    } else {
+      avatarEl.textContent = ME.username[0].toUpperCase();
+    }
     document.getElementById('btn-new-recipe').style.display = 'flex';
     document.getElementById('btn-new-cafe').style.display   = 'flex';
   } else {
-    authBtns.style.display = 'flex';
-    userMenu.style.display = 'none';
+    authBtns.style.display  = 'flex';
+    userMenu.style.display  = 'none';
+    mobileAuth.style.display = 'block';
+    mobileUser.style.display = 'none';
     document.getElementById('btn-new-recipe').style.display = 'none';
     document.getElementById('btn-new-cafe').style.display   = 'none';
   }
@@ -682,13 +775,13 @@ function showPage(name, userId=null) {
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   const page = document.getElementById('page-' + name);
   if (page) page.classList.add('active');
-  const link = document.querySelector(`.nav-link[onclick*="${name}"]`);
+  const link = document.querySelector(`.nav-link[onclick*="'${name}'"]`);
   if (link) link.classList.add('active');
 
   if      (name === 'feed')    loadFeed();
   else if (name === 'recipes') loadRecipes();
   else if (name === 'cafes')   loadCafes();
-  else if (name === 'explore') { /* wait for user input */ }
+  else if (name === 'explore') loadTopUsers();
   else if (name === 'profile') loadProfile(userId || (ME && ME.id));
 }
 
@@ -707,8 +800,9 @@ async function loadFeed() {
       <div class="section-title">🔥 Trending Now</div>
     `;
     const trending = await api('/api/recipes?sort=TRENDING');
-    document.getElementById('feed-content').innerHTML += renderRecipeGrid(trending, true);
+    document.getElementById('feed-content').innerHTML += trending.map(r => renderRecipeCard(r)).join('');
     loadTrending();
+    loadSuggestPeople();
     return;
   }
   document.getElementById('feed-content').innerHTML = '<div class="loading"><div class="spinner"></div> Loading feed…</div>';
@@ -724,11 +818,12 @@ async function loadFeed() {
         <div class="section-title" style="margin-top:32px">🔥 Trending</div>
       `;
       const trending = await api('/api/recipes?sort=TRENDING');
-      document.getElementById('feed-content').innerHTML += renderRecipeGrid(trending, true);
+      document.getElementById('feed-content').innerHTML += trending.map(r => renderFeedCard(r)).join('');
     } else {
       document.getElementById('feed-content').innerHTML = feed.map(r => renderFeedCard(r)).join('');
     }
     loadTrending();
+    loadSuggestPeople();
     loadQuickStats();
   } catch (e) { toast(e.message, 'err'); }
 }
@@ -740,14 +835,14 @@ function renderFeedCard(r) {
   return `
     <div class="card feed-card card-hover">
       <div class="feed-header">
-        <div class="avatar" style="width:38px;height:38px;font-size:16px">${(r.authorUsername||'?')[0].toUpperCase()}</div>
+        ${avatarHtml(r.authorUsername, null, 38)}
         <div class="feed-user-info">
           <div class="feed-username" onclick="showPage('profile',${r.authorId})">${esc(r.authorUsername)}</div>
           <div class="feed-time">${ago} · ${dtLabel}</div>
         </div>
         <span class="recipe-badge dt-${r.drinkType}" style="position:static;font-size:10px">${dtLabel}</span>
       </div>
-      <img src="${img}" class="feed-img" alt="${esc(r.title)}" onerror="this.src='https://picsum.photos/seed/${r.id+10}/600/300'"/>
+      <img src="${img}" class="feed-img" alt="${esc(r.title)}" onerror="this.src='https://picsum.photos/seed/${r.id+10}/600/300'" loading="lazy"/>
       <div class="feed-body">
         <div class="feed-title" onclick="openRecipeDetail(${r.id})">${esc(r.title)}</div>
         ${r.description ? `<div class="feed-desc">${esc(r.description).substring(0,120)}${r.description.length>120?'…':''}</div>` : ''}
@@ -766,7 +861,7 @@ function renderFeedCard(r) {
 async function loadTrending() {
   try {
     const trending = await api('/api/recipes?sort=TRENDING');
-    const top5     = trending.slice(0, 5);
+    const top5 = trending.slice(0, 5);
     document.getElementById('trending-list').innerHTML = top5.map((r,i) => `
       <div class="trending-item" onclick="openRecipeDetail(${r.id})">
         <div class="trending-rank">${i+1}</div>
@@ -776,6 +871,52 @@ async function loadTrending() {
         </div>
       </div>`).join('');
   } catch (e) {}
+}
+
+async function loadSuggestPeople() {
+  try {
+    const users = await api('/api/users');
+    const el = document.getElementById('suggest-people');
+    if (!el) return;
+    // Show users that the current user is not already following (and not themselves)
+    const candidates = users.filter(u => {
+      if (ME && u.id === ME.id) return false;
+      if (ME && u.isFollowing) return false;
+      return true;
+    }).slice(0, 5);
+    if (!candidates.length) {
+      el.innerHTML = '<p style="font-size:13px;color:var(--muted)">No suggestions right now.</p>';
+      return;
+    }
+    el.innerHTML = candidates.map(u => `
+      <div class="suggest-item">
+        ${avatarHtml(u.username, null, 32)}
+        <div class="suggest-info">
+          <div class="suggest-name" onclick="showPage('profile',${u.id})">${esc(u.username)}</div>
+          <div class="suggest-meta">${u.recipeCount} recipes · ${u.followerCount} followers</div>
+        </div>
+        <button class="btn-follow-sm${u.isFollowing?' following':''}" id="sfbtn-${u.id}"
+          onclick="quickFollow(${u.id},this)">
+          ${u.isFollowing ? '✓' : '+ Follow'}
+        </button>
+      </div>`).join('');
+  } catch (e) {}
+}
+
+async function quickFollow(userId, btn) {
+  if (!ME) { openModal('login-modal'); return; }
+  const isFollowing = btn.classList.contains('following');
+  try {
+    if (isFollowing) {
+      await api(`/api/users/${userId}/follow`, {method:'DELETE'});
+      btn.className = 'btn-follow-sm';
+      btn.textContent = '+ Follow';
+    } else {
+      await api(`/api/users/${userId}/follow`, {method:'POST'});
+      btn.className = 'btn-follow-sm following';
+      btn.textContent = '✓';
+    }
+  } catch (e) { toast(e.message, 'err'); }
 }
 
 async function loadQuickStats() {
@@ -789,9 +930,65 @@ async function loadQuickStats() {
   } catch (e) {}
 }
 
+// ── Explore ───────────────────────────────────────────────────────────────────
+async function loadTopUsers() {
+  const el = document.getElementById('explore-results');
+  if (!el) return;
+  // Only show spinner if not already populated
+  if (!el.querySelector('.user-grid')) {
+    el.innerHTML = '<div class="loading"><div class="spinner"></div> Loading members…</div>';
+  }
+  try {
+    const users = await api('/api/users');
+    el.innerHTML = users.length
+      ? `<div style="margin-bottom:16px;font-size:13px;color:var(--muted)">${users.length} members in the community</div>
+         <div class="user-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
+           ${users.map(u => renderUserCard(u)).join('')}
+         </div>`
+      : emptyState('👥', 'No members yet — be the first!');
+  } catch (e) { el.innerHTML = emptyState('⚠️', 'Could not load members'); }
+}
+
+async function searchUsers() {
+  const q  = document.getElementById('explore-search').value.trim();
+  const el = document.getElementById('explore-results');
+  if (!q) { loadTopUsers(); return; }
+  try {
+    const users = await api(`/api/users/search?q=${encodeURIComponent(q)}`);
+    el.innerHTML = users.length
+      ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
+          ${users.map(u => renderUserCard(u)).join('')}
+         </div>`
+      : emptyState('🔍', `No users found for "${esc(q)}"`);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function renderUserCard(u) {
+  return `
+    <div class="card card-hover" style="padding:16px;cursor:pointer" onclick="showPage('profile',${u.id})">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:${u.bio||u.flavorPrefs?.length?'10px':'0'}">
+        ${avatarHtml(u.username, u.avatarUrl, 50)}
+        <div style="flex:1;min-width:0">
+          <div style="font-size:15px;font-weight:700">${esc(u.username)}</div>
+          <span class="profile-level level-${u.expertiseLevel}" style="font-size:10px">${cap(u.expertiseLevel)}</span>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${u.recipeCount} recipes · ${u.followerCount} followers</div>
+        </div>
+      </div>
+      ${u.bio ? `<p style="font-size:13px;color:#555;line-height:1.4">${esc(u.bio).substring(0,80)}${u.bio.length>80?'…':''}</p>` : ''}
+      ${u.flavorPrefs?.length ? `<div class="flavor-tags" style="margin-top:8px">${u.flavorPrefs.slice(0,3).map(f=>`<span class="flavor-tag">${f.toLowerCase()}</span>`).join('')}</div>` : ''}
+    </div>`;
+}
+
+async function globalSearch(q) {
+  if (!q) return;
+  showPage('explore');
+  document.getElementById('explore-search').value = q;
+  await searchUsers();
+}
+
 // ── Recipes ───────────────────────────────────────────────────────────────────
 async function loadRecipes() {
-  const search = document.getElementById('recipe-search').value;
+  const search  = document.getElementById('recipe-search').value;
   const isSort  = drinkFilter === 'TRENDING';
   const dt      = isSort ? '' : (drinkFilter === 'ALL' ? '' : drinkFilter);
   const sort    = isSort ? 'TRENDING' : 'LATEST';
@@ -799,13 +996,9 @@ async function loadRecipes() {
   document.getElementById('recipes-grid').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
   try {
     const recipes = await api(url);
-    document.getElementById('recipes-grid').innerHTML = renderRecipeGrid(recipes, true) || emptyState('☕','No recipes found');
+    document.getElementById('recipes-grid').innerHTML =
+      recipes.length ? recipes.map(r => renderRecipeCard(r)).join('') : emptyState('☕','No recipes found');
   } catch (e) { toast(e.message, 'err'); }
-}
-
-function renderRecipeGrid(recipes, asGrid=false) {
-  if (!recipes || !recipes.length) return emptyState('☕','No recipes yet');
-  return `<div class="recipe-grid">${recipes.map(r => renderRecipeCard(r)).join('')}</div>`;
 }
 
 function renderRecipeCard(r) {
@@ -853,14 +1046,14 @@ async function openRecipeDetail(id) {
     ]);
     document.getElementById('recipe-detail-title').textContent = r.title;
 
-    const img        = r.imageUrl || `https://picsum.photos/seed/${r.id}/800/400`;
-    const dtLabel    = DRINK_LABELS[r.drinkType] || r.drinkType;
-    const isMine     = ME && ME.id === r.authorId;
-    const ingredients= (r.ingredients||'').split('\n').filter(l=>l.trim());
-    const steps      = (r.instructions||'').split('\n').filter(l=>l.trim());
+    const img         = r.imageUrl || `https://picsum.photos/seed/${r.id}/800/400`;
+    const dtLabel     = DRINK_LABELS[r.drinkType] || r.drinkType;
+    const isMine      = ME && ME.id === r.authorId;
+    const ingredients = (r.ingredients||'').split('\n').filter(l=>l.trim());
+    const steps       = (r.instructions||'').split('\n').filter(l=>l.trim());
 
     document.getElementById('recipe-detail-content').innerHTML = `
-      <img src="${img}" class="detail-img" alt="${esc(r.title)}" onerror="this.src='https://picsum.photos/seed/${r.id+5}/800/400'"/>
+      <img src="${img}" class="detail-img" alt="${esc(r.title)}" onerror="this.src='https://picsum.photos/seed/${r.id+5}/800/400'" loading="lazy"/>
       <div class="detail-body">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div>
@@ -917,14 +1110,14 @@ async function openRecipeDetail(id) {
         </div>
       </div>`;
   } catch (e) {
-    document.getElementById('recipe-detail-content').innerHTML = `<div class="modal-body"><p style="color:var(--danger)">${e.message}</p></div>`;
+    document.getElementById('recipe-detail-content').innerHTML = `<div class="modal-body"><p style="color:var(--danger)">${esc(e.message)}</p></div>`;
   }
 }
 
 function renderComment(c) {
   return `
     <div class="comment-item">
-      <div class="avatar" style="width:32px;height:32px;font-size:13px;flex-shrink:0">${(c.authorUsername||'?')[0].toUpperCase()}</div>
+      ${avatarHtml(c.authorUsername, null, 32)}
       <div class="comment-body">
         <div class="comment-author" onclick="closeModal('recipe-detail-modal');showPage('profile',${c.authorId})">${esc(c.authorUsername)}</div>
         <div class="comment-text">${esc(c.content)}</div>
@@ -940,7 +1133,7 @@ async function postComment(recipeId) {
   try {
     const comment = await api(`/api/recipes/${recipeId}/comments`, {method:'POST',body:JSON.stringify({content})});
     const list    = document.getElementById(`comments-list-${recipeId}`);
-    if (list.children.length === 0 || list.firstElementChild?.tagName === 'P') list.innerHTML = '';
+    if (!list.children.length || list.firstElementChild?.tagName === 'P') list.innerHTML = '';
     list.innerHTML += renderComment(comment);
     input.value = '';
     toast('Comment added!', 'ok');
@@ -952,14 +1145,11 @@ async function toggleLike(recipeId, btn) {
   if (!ME) { openModal('login-modal'); return; }
   try {
     const result = await api(`/api/recipes/${recipeId}/like`, {method:'POST'});
-    // Update all like buttons for this recipe
     document.querySelectorAll('.like-btn').forEach(b => {
       if (b.getAttribute('onclick')?.includes(recipeId)) {
-        const countEl = b.querySelector('.like-count');
-        if (countEl) countEl.textContent = result.likesCount;
         b.className = `like-btn${result.liked?' liked':''}`;
-        b.innerHTML = `${result.liked?'❤️':'🤍'} <span class="like-count">${result.likesCount}</span>`;
-        if (b.id === 'detail-like-btn') b.innerHTML += ' likes';
+        const isDetail = b.id === 'detail-like-btn';
+        b.innerHTML = `${result.liked?'❤️':'🤍'} <span class="like-count">${result.likesCount}</span>${isDetail?' likes':''}`;
       }
     });
   } catch (e) { toast(e.message, 'err'); }
@@ -969,16 +1159,16 @@ async function toggleLike(recipeId, btn) {
 function openNewRecipeModal() {
   if (!ME) { openModal('login-modal'); return; }
   buildFlavorPicker('r-flavor-picker', []);
-  document.getElementById('recipe-edit-id').value = '';
+  document.getElementById('recipe-edit-id').value   = '';
   document.getElementById('recipe-modal-title').textContent = '✍️ Share a Recipe';
-  document.getElementById('r-title').value = '';
-  document.getElementById('r-description').value = '';
-  document.getElementById('r-drinktype').value = 'POUR_OVER';
-  document.getElementById('r-brewtime').value = '5';
-  document.getElementById('r-difficulty').value = 'MEDIUM';
-  document.getElementById('r-ingredients').value = '';
-  document.getElementById('r-instructions').value = '';
-  document.getElementById('r-imageurl').value = '';
+  document.getElementById('r-title').value          = '';
+  document.getElementById('r-description').value    = '';
+  document.getElementById('r-drinktype').value      = 'POUR_OVER';
+  document.getElementById('r-brewtime').value       = '5';
+  document.getElementById('r-difficulty').value     = 'MEDIUM';
+  document.getElementById('r-ingredients').value    = '';
+  document.getElementById('r-instructions').value   = '';
+  document.getElementById('r-imageurl').value       = '';
   openModal('new-recipe-modal');
 }
 
@@ -986,16 +1176,16 @@ async function openEditRecipe(recipeId) {
   try {
     const r = await api(`/api/recipes/${recipeId}`);
     buildFlavorPicker('r-flavor-picker', r.flavorTags || []);
-    document.getElementById('recipe-edit-id').value = recipeId;
+    document.getElementById('recipe-edit-id').value   = recipeId;
     document.getElementById('recipe-modal-title').textContent = '✏️ Edit Recipe';
-    document.getElementById('r-title').value = r.title;
-    document.getElementById('r-description').value = r.description || '';
-    document.getElementById('r-drinktype').value = r.drinkType || 'POUR_OVER';
-    document.getElementById('r-brewtime').value = r.brewTime || 5;
-    document.getElementById('r-difficulty').value = r.difficulty || 'MEDIUM';
-    document.getElementById('r-ingredients').value = r.ingredients || '';
-    document.getElementById('r-instructions').value = r.instructions || '';
-    document.getElementById('r-imageurl').value = r.imageUrl || '';
+    document.getElementById('r-title').value          = r.title;
+    document.getElementById('r-description').value    = r.description || '';
+    document.getElementById('r-drinktype').value      = r.drinkType || 'POUR_OVER';
+    document.getElementById('r-brewtime').value       = r.brewTime || 5;
+    document.getElementById('r-difficulty').value     = r.difficulty || 'MEDIUM';
+    document.getElementById('r-ingredients').value    = r.ingredients || '';
+    document.getElementById('r-instructions').value   = r.instructions || '';
+    document.getElementById('r-imageurl').value       = r.imageUrl || '';
     closeModal('recipe-detail-modal');
     openModal('new-recipe-modal');
   } catch (e) { toast(e.message, 'err'); }
@@ -1003,7 +1193,7 @@ async function openEditRecipe(recipeId) {
 
 async function saveRecipe() {
   if (!ME) return;
-  const id = document.getElementById('recipe-edit-id').value;
+  const id   = document.getElementById('recipe-edit-id').value;
   const body = {
     title:        document.getElementById('r-title').value.trim(),
     description:  document.getElementById('r-description').value.trim(),
@@ -1048,7 +1238,7 @@ async function loadCafes() {
   try {
     const cafes = await api(url);
     document.getElementById('cafes-grid').innerHTML = cafes.length
-      ? `<div class="cafe-grid">${cafes.map(c=>renderCafeCard(c)).join('')}</div>`
+      ? cafes.map(c => renderCafeCard(c)).join('')
       : emptyState('☕','No cafes found');
   } catch (e) { toast(e.message, 'err'); }
 }
@@ -1093,7 +1283,7 @@ async function openCafeDetail(id) {
     const img = c.imageUrl || `https://picsum.photos/seed/cafe${c.id}/800/300`;
 
     document.getElementById('cafe-detail-content').innerHTML = `
-      <img src="${img}" class="detail-img" alt="${esc(c.name)}" onerror="this.src='https://picsum.photos/seed/c${c.id+20}/800/300'"/>
+      <img src="${img}" class="detail-img" alt="${esc(c.name)}" onerror="this.src='https://picsum.photos/seed/c${c.id+20}/800/300'" loading="lazy"/>
       <div class="detail-body">
         <div class="detail-title">${esc(c.name)}</div>
         <div class="detail-meta">
@@ -1108,6 +1298,7 @@ async function openCafeDetail(id) {
           <span style="color:var(--muted);font-size:14px">(${c.ratingCount} reviews)</span>
         </div>
         ${c.description ? `<p style="font-size:14px;line-height:1.7;color:#555;margin-bottom:20px">${esc(c.description)}</p>` : ''}
+        ${c.submittedByUsername ? `<p style="font-size:12px;color:var(--muted);margin-bottom:16px">Added by <span style="cursor:pointer;color:var(--caramel);font-weight:600" onclick="closeModal('cafe-detail-modal');showPage('profile',${c.submittedBy})">${esc(c.submittedByUsername)}</span></p>` : ''}
 
         ${ME ? `
         <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:16px">
@@ -1116,18 +1307,17 @@ async function openCafeDetail(id) {
             ${[1,2,3,4,5].map(i=>`<span onclick="setRating(${c.id},${i})" data-rating="${i}" style="color:${i<=(c.currentUserRating||0)?'#F5A623':'#ddd'};transition:.15s"
               onmouseover="hoverStars(${c.id},${i})" onmouseout="unhoverStars(${c.id},${c.currentUserRating||0})">★</span>`).join('')}
           </div>
-          <textarea id="rate-review-${c.id}" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;resize:vertical;min-height:60px;margin-bottom:8px" placeholder="Write a review (optional)…">${c.currentUserReview||''}</textarea>
+          <textarea id="rate-review-${c.id}" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;resize:vertical;min-height:60px;margin-bottom:8px;font-family:inherit" placeholder="Write a review (optional)…">${esc(c.currentUserReview||'')}</textarea>
           <button class="btn btn-primary btn-sm" onclick="submitRating(${c.id})" id="rate-btn-${c.id}">
             ${c.currentUserRating ? 'Update Rating' : 'Submit Rating'}
           </button>
         </div>` : `<p style="font-size:13px;color:var(--muted)"><a href="#" onclick="closeModal('cafe-detail-modal');openModal('login-modal')" style="color:var(--caramel);font-weight:700">Log in</a> to rate this cafe.</p>`}
       </div>`;
 
-    // Store current user rating
     document._cafeRatings = document._cafeRatings || {};
     document._cafeRatings[c.id] = c.currentUserRating || 0;
   } catch (e) {
-    document.getElementById('cafe-detail-content').innerHTML = `<div class="modal-body"><p style="color:var(--danger)">${e.message}</p></div>`;
+    document.getElementById('cafe-detail-content').innerHTML = `<div class="modal-body"><p style="color:var(--danger)">${esc(e.message)}</p></div>`;
   }
 }
 
@@ -1188,30 +1378,46 @@ async function loadProfile(userId) {
         <div class="empty-msg">Log in to view your profile</div>
         <button class="btn btn-primary" onclick="openModal('login-modal')">Log In</button>
       </div>`;
+    document.getElementById('profile-tab-content').innerHTML = '';
     return;
   }
   viewingUserId = userId;
+  currentProfileTab = 'recipes';
+  // Reset tabs
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-recipes').classList.add('active');
+
   document.getElementById('profile-header').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-  document.getElementById('profile-recipes').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  document.getElementById('profile-tab-content').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
   try {
     const [user, recipes] = await Promise.all([
       api(`/api/users/${userId}`),
       api(`/api/users/${userId}/recipes`)
     ]);
-    const isMe       = ME && ME.id === userId;
+    const isMe        = ME && ME.id === userId;
     const isFollowing = user.isFollowing;
 
     document.getElementById('profile-header').innerHTML = `
-      <div class="profile-avatar">${user.username[0].toUpperCase()}</div>
+      <div class="profile-avatar">
+        ${user.avatarUrl
+          ? `<img src="${esc(user.avatarUrl)}" alt="${esc(user.username)}" onerror="this.outerHTML='<span style=font-size:32px>${user.username[0].toUpperCase()}</span>'">`
+          : user.username[0].toUpperCase()}
+      </div>
       <div class="profile-info">
         <div class="profile-name">${esc(user.username)}</div>
         <span class="profile-level level-${user.expertiseLevel}">${cap(user.expertiseLevel)}</span>
-        <div class="profile-bio">${esc(user.bio || 'No bio yet')}</div>
+        <div class="profile-bio">${esc(user.bio || 'No bio yet.')}</div>
         ${user.flavorPrefs?.length ? `<div class="flavor-tags" style="margin-bottom:12px">${user.flavorPrefs.map(f=>`<span class="flavor-tag">${f.toLowerCase()}</span>`).join('')}</div>` : ''}
         <div class="profile-stats">
-          <div class="stat-item"><div class="stat-num">${user.recipeCount}</div><div class="stat-lbl">Recipes</div></div>
-          <div class="stat-item"><div class="stat-num">${user.followerCount}</div><div class="stat-lbl">Followers</div></div>
-          <div class="stat-item"><div class="stat-num">${user.followingCount}</div><div class="stat-lbl">Following</div></div>
+          <div class="stat-item" onclick="profileTab('recipes',document.getElementById('tab-recipes'))">
+            <div class="stat-num">${user.recipeCount}</div><div class="stat-lbl">Recipes</div>
+          </div>
+          <div class="stat-item" onclick="openUserListModal('followers',${userId})">
+            <div class="stat-num">${user.followerCount}</div><div class="stat-lbl">Followers</div>
+          </div>
+          <div class="stat-item" onclick="openUserListModal('following',${userId})">
+            <div class="stat-num">${user.followingCount}</div><div class="stat-lbl">Following</div>
+          </div>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;align-self:flex-start">
@@ -1225,12 +1431,60 @@ async function loadProfile(userId) {
         ` : ''}
       </div>`;
 
-    document.getElementById('profile-recipes').innerHTML = recipes.length
-      ? recipes.map(r => renderRecipeCard(r)).join('')
-      : emptyState('📖', 'No recipes yet');
+    document.getElementById('profile-tab-content').innerHTML =
+      recipes.length ? recipes.map(r => renderRecipeCard(r)).join('') : emptyState('📖', 'No recipes yet');
   } catch (e) {
-    document.getElementById('profile-header').innerHTML = `<p style="color:var(--danger)">${e.message}</p>`;
+    document.getElementById('profile-header').innerHTML = `<p style="color:var(--danger)">${esc(e.message)}</p>`;
   }
+}
+
+async function profileTab(name, btn) {
+  currentProfileTab = name;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const el = document.getElementById('profile-tab-content');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  el.className = name === 'following' || name === 'followers'
+    ? '' : 'recipe-grid';
+  try {
+    if (name === 'recipes') {
+      const items = await api(`/api/users/${viewingUserId}/recipes`);
+      el.innerHTML = items.length ? items.map(r => renderRecipeCard(r)).join('') : emptyState('📖','No recipes yet');
+    } else if (name === 'liked') {
+      const items = await api(`/api/users/${viewingUserId}/liked`);
+      el.innerHTML = items.length ? items.map(r => renderRecipeCard(r)).join('') : emptyState('❤️','No liked recipes yet');
+    } else if (name === 'following') {
+      const items = await api(`/api/users/${viewingUserId}/following`);
+      el.innerHTML = items.length
+        ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">${items.map(u => renderUserCard(u)).join('')}</div>`
+        : emptyState('👥','Not following anyone yet');
+    } else if (name === 'followers') {
+      const items = await api(`/api/users/${viewingUserId}/followers`);
+      el.innerHTML = items.length
+        ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">${items.map(u => renderUserCard(u)).join('')}</div>`
+        : emptyState('👥','No followers yet');
+    }
+  } catch (e) { el.innerHTML = emptyState('⚠️', e.message); }
+}
+
+async function openUserListModal(type, userId) {
+  const title = type === 'followers' ? 'Followers' : 'Following';
+  document.getElementById('user-list-title').textContent = title;
+  document.getElementById('user-list-content').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  openModal('user-list-modal');
+  try {
+    const users = await api(`/api/users/${userId}/${type}`);
+    document.getElementById('user-list-content').innerHTML = users.length
+      ? users.map(u => `
+          <div class="user-list-item" onclick="closeModal('user-list-modal');showPage('profile',${u.id})">
+            ${avatarHtml(u.username, u.avatarUrl, 40)}
+            <div>
+              <div class="user-list-name">${esc(u.username)}</div>
+              <div class="user-list-meta">${u.recipeCount} recipes · ${u.followerCount} followers</div>
+            </div>
+          </div>`).join('')
+      : `<p style="color:var(--muted);font-size:14px;text-align:center;padding:20px 0">No ${title.toLowerCase()} yet.</p>`;
+  } catch (e) { document.getElementById('user-list-content').innerHTML = `<p style="color:var(--danger)">${esc(e.message)}</p>`; }
 }
 
 async function toggleFollow(userId) {
@@ -1241,12 +1495,12 @@ async function toggleFollow(userId) {
     if (isFollowing) {
       await api(`/api/users/${userId}/follow`, {method:'DELETE'});
       btn.textContent = '+ Follow';
-      btn.className = 'btn btn-primary';
+      btn.className   = 'btn btn-primary';
       toast('Unfollowed', 'info');
     } else {
       await api(`/api/users/${userId}/follow`, {method:'POST'});
       btn.textContent = '✓ Following';
-      btn.className = 'btn btn-secondary';
+      btn.className   = 'btn btn-secondary';
       toast('Following!', 'ok');
     }
     loadProfile(userId);
@@ -1255,74 +1509,36 @@ async function toggleFollow(userId) {
 
 function openEditProfile() {
   if (!ME) return;
-  const user = ME;
-  document.getElementById('p-bio').value   = user.bio || '';
-  document.getElementById('p-level').value = user.expertiseLevel || 'BEGINNER';
-  buildFlavorPicker('p-flavor-picker', user.flavorPrefs || []);
+  document.getElementById('p-bio').value      = ME.bio || '';
+  document.getElementById('p-level').value    = ME.expertiseLevel || 'BEGINNER';
+  document.getElementById('p-avatarurl').value = ME.avatarUrl || '';
+  buildFlavorPicker('p-flavor-picker', ME.flavorPrefs || []);
   openModal('edit-profile-modal');
 }
 
 async function saveProfile() {
+  const avatarUrl = document.getElementById('p-avatarurl').value.trim();
   const body = {
     bio:           document.getElementById('p-bio').value.trim(),
     expertiseLevel:document.getElementById('p-level').value,
-    flavorPrefs:   getSelectedFlavors('p-flavor-picker')
+    flavorPrefs:   getSelectedFlavors('p-flavor-picker'),
+    avatarUrl:     avatarUrl
   };
   try {
     ME = await api('/api/users/me', {method:'PUT', body:JSON.stringify(body)});
     closeModal('edit-profile-modal');
     toast('Profile updated!', 'ok');
+    updateNavUser();
     loadProfile(ME.id);
-    document.getElementById('nav-username').textContent = ME.username;
   } catch (e) { toast(e.message, 'err'); }
-}
-
-// ── Explore / search users ────────────────────────────────────────────────────
-async function searchUsers() {
-  const q = document.getElementById('explore-search').value.trim();
-  if (!q) {
-    document.getElementById('explore-results').innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-msg">Search for coffee enthusiasts</div></div>`;
-    return;
-  }
-  try {
-    const users = await api(`/api/users/search?q=${encodeURIComponent(q)}`);
-    document.getElementById('explore-results').innerHTML = users.length
-      ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
-          ${users.map(u => `
-            <div class="card card-hover" style="padding:16px;cursor:pointer" onclick="showPage('profile',${u.id})">
-              <div style="display:flex;gap:12px;align-items:center">
-                <div class="avatar" style="width:50px;height:50px;font-size:22px;flex-shrink:0">${u.username[0].toUpperCase()}</div>
-                <div>
-                  <div style="font-size:15px;font-weight:700">${esc(u.username)}</div>
-                  <span class="profile-level level-${u.expertiseLevel}" style="font-size:10px">${cap(u.expertiseLevel)}</span>
-                  <div style="font-size:12px;color:var(--muted);margin-top:2px">${u.recipeCount} recipes · ${u.followerCount} followers</div>
-                </div>
-              </div>
-              ${u.bio ? `<p style="font-size:13px;color:#555;margin-top:10px;line-height:1.4">${esc(u.bio).substring(0,80)}${u.bio.length>80?'…':''}</p>` : ''}
-              ${u.flavorPrefs?.length ? `<div class="flavor-tags" style="margin-top:8px">${u.flavorPrefs.slice(0,3).map(f=>`<span class="flavor-tag">${f.toLowerCase()}</span>`).join('')}</div>` : ''}
-            </div>`).join('')}
-         </div>`
-      : emptyState('🔍', `No users found for "${q}"`);
-  } catch (e) { toast(e.message, 'err'); }
-}
-
-async function globalSearch(q) {
-  if (!q) return;
-  showPage('explore');
-  document.getElementById('explore-search').value = q;
-  await searchUsers();
 }
 
 // ── Flavor picker ─────────────────────────────────────────────────────────────
 function buildFlavorPicker(containerId, selectedFlavors) {
   const container = document.getElementById(containerId);
   container.innerHTML = FLAVORS.map(f => `
-    <span class="flavor-opt${selectedFlavors.includes(f)?' selected':''}" onclick="toggleFlavor(this,'${f}')">${f.toLowerCase()}</span>
+    <span class="flavor-opt${selectedFlavors.includes(f)?' selected':''}" onclick="this.classList.toggle('selected')">${f.toLowerCase()}</span>
   `).join('');
-}
-
-function toggleFlavor(el, flavor) {
-  el.classList.toggle('selected');
 }
 
 function getSelectedFlavors(containerId) {
@@ -1342,17 +1558,16 @@ function switchModal(from, to) {
   openModal(to);
 }
 
-// Close modal on overlay click
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', e => {
     if (e.target === overlay) overlay.classList.remove('open');
   });
 });
 
-// Keyboard shortcuts
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+    document.getElementById('mobile-nav').classList.remove('open');
   }
 });
 
@@ -1383,17 +1598,25 @@ function diffIcon(d) {
 
 function timeAgo(ts) {
   if (!ts) return '';
-  const now  = Date.now();
   const date = new Date(ts.replace('T',' ').replace(/\.\d+$/,''));
-  const diff = Math.floor((now - date.getTime()) / 1000);
-  if (diff < 60)   return 'just now';
-  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 60)    return 'just now';
+  if (diff < 3600)  return Math.floor(diff/60) + 'm ago';
   if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
   return Math.floor(diff/86400) + 'd ago';
 }
 
 function emptyState(icon, msg) {
   return `<div class="empty-state"><div class="empty-icon">${icon}</div><div class="empty-msg">${msg}</div></div>`;
+}
+
+function avatarHtml(username, avatarUrl, size=36) {
+  const letter = (username||'?')[0].toUpperCase();
+  const sz = `width:${size}px;height:${size}px;font-size:${Math.round(size*0.42)}px;flex-shrink:0`;
+  if (avatarUrl) {
+    return `<img src="${esc(avatarUrl)}" class="avatar" style="${sz}" alt="${letter}" onerror="this.outerHTML='<div class=&quot;avatar&quot; style=&quot;${sz}&quot;>${letter}</div>'"/>`;
+  }
+  return `<div class="avatar" style="${sz}">${letter}</div>`;
 }
 
 // Debounce
@@ -1407,15 +1630,10 @@ function debounce(fn, ms) {
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 (async () => {
-  // Init flavor pickers
   buildFlavorPicker('r-flavor-picker', []);
   buildFlavorPicker('p-flavor-picker', []);
-
-  // Restore session
   await loadMe();
   updateNavUser();
-
-  // Show initial page
   showPage(ME ? 'feed' : 'recipes');
 })();
 </script>

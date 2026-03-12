@@ -180,14 +180,25 @@ public class BorgolRepository {
     }
 
     public void updateUser(int id, String bio, String avatarUrl, String expertiseLevel) {
-        String sql = "UPDATE borgol_users SET bio=?, avatar_url=?, expertise_level=? WHERE id=?";
-        try (PreparedStatement ps = conn().prepareStatement(sql)) {
-            ps.setString(1, bio);
-            ps.setString(2, avatarUrl);
-            ps.setString(3, expertiseLevel);
-            ps.setInt(4, id);
-            ps.executeUpdate();
-        } catch (SQLException e) { throw new RuntimeException(e); }
+        // Only update avatar_url when a non-blank value is provided, to avoid clearing it
+        if (avatarUrl != null && !avatarUrl.isBlank()) {
+            String sql = "UPDATE borgol_users SET bio=?, avatar_url=?, expertise_level=? WHERE id=?";
+            try (PreparedStatement ps = conn().prepareStatement(sql)) {
+                ps.setString(1, bio);
+                ps.setString(2, avatarUrl);
+                ps.setString(3, expertiseLevel);
+                ps.setInt(4, id);
+                ps.executeUpdate();
+            } catch (SQLException e) { throw new RuntimeException(e); }
+        } else {
+            String sql = "UPDATE borgol_users SET bio=?, expertise_level=? WHERE id=?";
+            try (PreparedStatement ps = conn().prepareStatement(sql)) {
+                ps.setString(1, bio);
+                ps.setString(2, expertiseLevel);
+                ps.setInt(3, id);
+                ps.executeUpdate();
+            } catch (SQLException e) { throw new RuntimeException(e); }
+        }
     }
 
     public List<String> getUserFlavorPrefs(int userId) {
@@ -755,6 +766,78 @@ public class BorgolRepository {
             c.setCurrentUserReview(nullToEmpty(rs.getString("user_review")));
         }
         return c;
+    }
+
+    // ── Extra user/recipe queries ─────────────────────────────────────────────
+
+    public List<User> findAllUsers(int limit) {
+        String sql = """
+            SELECT * FROM borgol_users
+            ORDER BY (SELECT COUNT(*) FROM user_follows WHERE following_id = borgol_users.id) DESC,
+                     created_at DESC
+            LIMIT ?
+            """;
+        List<User> users = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) users.add(mapUser(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return users;
+    }
+
+    public List<Recipe> getLikedRecipes(int userId, int currentUserId) {
+        String sql = """
+            SELECT r.*, u.username AS author_username
+            FROM recipe_likes rl
+            JOIN recipes r ON rl.recipe_id = r.id
+            JOIN borgol_users u ON r.author_id = u.id
+            WHERE rl.user_id = ?
+            ORDER BY rl.created_at DESC
+            """;
+        List<Recipe> recipes = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) recipes.add(mapRecipe(rs, currentUserId));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return recipes;
+    }
+
+    public List<User> getFollowingUsers(int userId) {
+        String sql = """
+            SELECT u.* FROM borgol_users u
+            JOIN user_follows f ON f.following_id = u.id
+            WHERE f.follower_id = ?
+            ORDER BY f.created_at DESC
+            """;
+        List<User> users = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) users.add(mapUser(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return users;
+    }
+
+    public List<User> getFollowerUsers(int userId) {
+        String sql = """
+            SELECT u.* FROM borgol_users u
+            JOIN user_follows f ON f.follower_id = u.id
+            WHERE f.following_id = ?
+            ORDER BY f.created_at DESC
+            """;
+        List<User> users = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) users.add(mapUser(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return users;
     }
 
     // ── Utilities ─────────────────────────────────────────────────────────────

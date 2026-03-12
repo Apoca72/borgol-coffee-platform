@@ -83,12 +83,16 @@ public class BorgolApiServer {
         app.get ("/api/auth/me",       this::getMe);
 
         // Users
-        app.get   ("/api/users/search",       this::searchUsers);
-        app.get   ("/api/users/{id}",         this::getUserProfile);
-        app.put   ("/api/users/me",           this::updateProfile);
-        app.post  ("/api/users/{id}/follow",  this::followUser);
-        app.delete("/api/users/{id}/follow",  this::unfollowUser);
-        app.get   ("/api/users/{id}/recipes", this::getUserRecipes);
+        app.get   ("/api/users",                  this::getAllUsers);
+        app.get   ("/api/users/search",            this::searchUsers);
+        app.get   ("/api/users/{id}",              this::getUserProfile);
+        app.put   ("/api/users/me",                this::updateProfile);
+        app.post  ("/api/users/{id}/follow",       this::followUser);
+        app.delete("/api/users/{id}/follow",       this::unfollowUser);
+        app.get   ("/api/users/{id}/recipes",      this::getUserRecipes);
+        app.get   ("/api/users/{id}/liked",        this::getUserLiked);
+        app.get   ("/api/users/{id}/following",    this::getUserFollowing);
+        app.get   ("/api/users/{id}/followers",    this::getUserFollowers);
 
         // Recipes
         app.get   ("/api/recipes",               this::getRecipes);
@@ -208,10 +212,45 @@ public class BorgolApiServer {
         }
     }
 
+    private void getAllUsers(Context ctx) {
+        int currentId = authOptional(ctx);
+        ctx.json(borgol.getAllUsers(currentId));
+    }
+
     private void searchUsers(Context ctx) {
         String query  = ctx.queryParam("q");
         int currentId = authOptional(ctx);
         ctx.json(borgol.searchUsers(query, currentId));
+    }
+
+    private void getUserLiked(Context ctx) {
+        try {
+            int userId    = intParam(ctx, "id");
+            int currentId = authOptional(ctx);
+            ctx.json(borgol.getLikedRecipes(userId, currentId));
+        } catch (IllegalArgumentException e) {
+            ctx.status(404).json(err(e.getMessage()));
+        }
+    }
+
+    private void getUserFollowing(Context ctx) {
+        try {
+            int userId    = intParam(ctx, "id");
+            int currentId = authOptional(ctx);
+            ctx.json(borgol.getFollowingUsers(userId, currentId));
+        } catch (IllegalArgumentException e) {
+            ctx.status(404).json(err(e.getMessage()));
+        }
+    }
+
+    private void getUserFollowers(Context ctx) {
+        try {
+            int userId    = intParam(ctx, "id");
+            int currentId = authOptional(ctx);
+            ctx.json(borgol.getFollowerUsers(userId, currentId));
+        } catch (IllegalArgumentException e) {
+            ctx.status(404).json(err(e.getMessage()));
+        }
     }
 
     private void getUserRecipes(Context ctx) {
