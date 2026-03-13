@@ -229,6 +229,23 @@ public class BorgolService {
         return getCafe(cafeId, userId);
     }
 
+    /** Update GPS pin for a cafe (seed use). */
+    public void updateCafeCoordinates(int cafeId, double lat, double lng) {
+        repo.updateCafeCoordinates(cafeId, lat, lng);
+    }
+
+    /**
+     * Return cafes within {@code radiusKm} kilometres of (lat, lng).
+     * Uses equirectangular bounding-box approximation — accurate enough for city-scale distances.
+     */
+    public List<CafeListing> getCafesNearby(int currentUserId, double lat, double lng, double radiusKm) {
+        double latDelta = radiusKm / 111.0;
+        double lngDelta = radiusKm / (111.0 * Math.cos(Math.toRadians(lat)));
+        return repo.findCafesNearby(currentUserId,
+            lat - latDelta, lat + latDelta,
+            lng - lngDelta, lng + lngDelta);
+    }
+
     // ── Extra queries ─────────────────────────────────────────────────────────
 
     public List<UserView> getAllUsers(int currentUserId) {

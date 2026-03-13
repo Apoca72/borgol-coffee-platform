@@ -108,10 +108,11 @@ public class BorgolApiServer {
         app.get("/api/feed", this::getFeed);
 
         // Cafes
-        app.get ("/api/cafes",          this::getCafes);
-        app.get ("/api/cafes/{id}",     this::getCafe);
-        app.post("/api/cafes",          this::createCafe);
-        app.post("/api/cafes/{id}/rate",this::rateCafe);
+        app.get ("/api/cafes",               this::getCafes);
+        app.get ("/api/cafes/nearby",        this::getCafesNearby);
+        app.get ("/api/cafes/{id}",          this::getCafe);
+        app.post("/api/cafes",               this::createCafe);
+        app.post("/api/cafes/{id}/rate",     this::rateCafe);
 
         // Brew Journal
         app.get   ("/api/journal",      this::getJournal);
@@ -375,6 +376,19 @@ public class BorgolApiServer {
         String search    = ctx.queryParam("search");
         String district  = ctx.queryParam("district");
         ctx.json(borgol.getCafes(currentId, search, district));
+    }
+
+    /** GET /api/cafes/nearby?lat=X&lng=Y&radius=10 */
+    private void getCafesNearby(Context ctx) {
+        int currentId = authOptional(ctx);
+        try {
+            double lat    = Double.parseDouble(ctx.queryParamAsClass("lat",    String.class).get());
+            double lng    = Double.parseDouble(ctx.queryParamAsClass("lng",    String.class).get());
+            double radius = Double.parseDouble(ctx.queryParamAsClass("radius", String.class).getOrDefault("10"));
+            ctx.json(borgol.getCafesNearby(currentId, lat, lng, radius));
+        } catch (NumberFormatException | NullPointerException e) {
+            ctx.status(400).json(err("lat and lng are required numeric query parameters"));
+        }
     }
 
     private void getCafe(Context ctx) {

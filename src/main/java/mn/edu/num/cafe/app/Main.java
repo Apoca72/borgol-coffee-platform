@@ -55,6 +55,9 @@ public class Main {
         // ── 6. Seed static content (brew guides + learn articles) ─────────────
         borgolService.seedStaticContent();
 
+        // ── 6b. Seed GPS coordinates for demo cafes (idempotent) ─────────────
+        seedCafeCoordinates(borgolService);
+
         // ── 7. Start web server ───────────────────────────────────────────────
         BorgolApiServer server = new BorgolApiServer(borgolService, menuService);
         server.start(PORT);
@@ -184,5 +187,26 @@ public class Main {
         svc.rateCafe(id2, 3, 4, "The suutei tsai here is authentic and delicious.");
 
         System.out.println("  [SEED] Demo data seeded successfully.");
+    }
+
+    /**
+     * Sets real Ulaanbaatar GPS coordinates on the three demo cafes.
+     * Idempotent: skips any cafe that already has a latitude set.
+     *
+     *   Blue Sky Cafe        → Sukhbaatar District, Seoul Street area
+     *   Nomadic Beans        → Khan-Uul District, Zaisan
+     *   The Yurt Coffee House → Bayanzurkh District, Peace Avenue
+     */
+    private static void seedCafeCoordinates(BorgolService svc) {
+        var cafes = svc.getCafes(0, null, null);
+        for (var cafe : cafes) {
+            if (cafe.getLat() != null) continue; // already pinned
+            switch (cafe.getName()) {
+                case "Blue Sky Cafe"          -> svc.updateCafeCoordinates(cafe.getId(), 47.9176, 106.9176);
+                case "Nomadic Beans"          -> svc.updateCafeCoordinates(cafe.getId(), 47.8740, 106.8638);
+                case "The Yurt Coffee House"  -> svc.updateCafeCoordinates(cafe.getId(), 47.9135, 106.9487);
+            }
+        }
+        System.out.println("  [SEED] Cafe GPS coordinates set.");
     }
 }

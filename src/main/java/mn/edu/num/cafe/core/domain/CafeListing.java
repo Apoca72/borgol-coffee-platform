@@ -21,6 +21,8 @@ public class CafeListing {
     private String currentUserReview;
     private String imageUrl;
     private String createdAt;
+    private Double lat;   // GPS latitude  (nullable — null = no pin yet)
+    private Double lng;   // GPS longitude (nullable)
 
     public CafeListing() {}
 
@@ -42,6 +44,8 @@ public class CafeListing {
     public String getCurrentUserReview()   { return currentUserReview; }
     public String getImageUrl()            { return imageUrl; }
     public String getCreatedAt()           { return createdAt; }
+    public Double getLat()                 { return lat; }
+    public Double getLng()                 { return lng; }
 
     // ── Setters ───────────────────────────────────────────────────────────────
 
@@ -61,4 +65,6 @@ public class CafeListing {
     public void setCurrentUserReview(String review)        { this.currentUserReview = review; }
     public void setImageUrl(String imageUrl)               { this.imageUrl = imageUrl; }
     public void setCreatedAt(String createdAt)             { this.createdAt = createdAt; }
+    public void setLat(Double lat)                         { this.lat = lat; }
+    public void setLng(Double lng)                         { this.lng = lng; }
 }

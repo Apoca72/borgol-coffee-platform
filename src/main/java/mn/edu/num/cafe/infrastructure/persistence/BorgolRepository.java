@@ -112,6 +112,9 @@ public class BorgolRepository {
                     created_at     TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (submitted_by) REFERENCES borgol_users(id) ON DELETE SET NULL
                 )""");
+            // Migration: add GPS columns if they don't exist yet (safe on existing DBs)
+            s.execute("ALTER TABLE cafes ADD COLUMN IF NOT EXISTS lat DOUBLE DEFAULT NULL");
+            s.execute("ALTER TABLE cafes ADD COLUMN IF NOT EXISTS lng DOUBLE DEFAULT NULL");
             s.execute("""
                 CREATE TABLE IF NOT EXISTS cafe_ratings (
                     user_id    INT,
@@ -635,8 +638,8 @@ public class BorgolRepository {
 
     public CafeListing createCafe(CafeListing c) {
         String sql = """
-            INSERT INTO cafes (name, address, district, city, phone, description, hours, image_url, submitted_by)
-            VALUES (?,?,?,?,?,?,?,?,?)
+            INSERT INTO cafes (name, address, district, city, phone, description, hours, image_url, submitted_by, lat, lng)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)
             """;
         try (PreparedStatement ps = conn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, c.getName());
@@ -649,6 +652,8 @@ public class BorgolRepository {
             ps.setString(8, nvl(c.getImageUrl()));
             if (c.getSubmittedBy() > 0) ps.setInt(9, c.getSubmittedBy());
             else ps.setNull(9, Types.INTEGER);
+            if (c.getLat() != null) ps.setDouble(10, c.getLat()); else ps.setNull(10, Types.DOUBLE);
+            if (c.getLng() != null) ps.setDouble(11, c.getLng()); else ps.setNull(11, Types.DOUBLE);
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) {
@@ -657,6 +662,47 @@ public class BorgolRepository {
             }
         } catch (SQLException e) { throw new RuntimeException(e); }
         throw new RuntimeException("Cafe creation failed");
+    }
+
+    public void updateCafeCoordinates(int cafeId, double lat, double lng) {
+        String sql = "UPDATE cafes SET lat = ?, lng = ? WHERE id = ?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setDouble(1, lat);
+            ps.setDouble(2, lng);
+            ps.setInt(3, cafeId);
+            ps.executeUpdate();
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    /** Returns cafes within a bounding box (lat/lng range). Cafes with no coordinates are excluded. */
+    public List<CafeListing> findCafesNearby(int currentUserId,
+                                              double minLat, double maxLat,
+                                              double minLng, double maxLng) {
+        String sql = """
+            SELECT c.*,
+                   u.username AS submitted_by_username,
+                   cr.rating  AS user_rating,
+                   cr.review  AS user_review
+            FROM cafes c
+            LEFT JOIN borgol_users u ON c.submitted_by = u.id
+            LEFT JOIN cafe_ratings cr ON cr.cafe_id = c.id AND cr.user_id = ?
+            WHERE c.lat IS NOT NULL AND c.lng IS NOT NULL
+              AND c.lat BETWEEN ? AND ?
+              AND c.lng BETWEEN ? AND ?
+            ORDER BY c.avg_rating DESC
+            """;
+        List<CafeListing> result = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, currentUserId);
+            ps.setDouble(2, minLat);
+            ps.setDouble(3, maxLat);
+            ps.setDouble(4, minLng);
+            ps.setDouble(5, maxLng);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) result.add(mapCafe(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return result;
     }
 
     public boolean rateCafe(int userId, int cafeId, int rating, String review) {
@@ -803,7 +849,9 @@ public class BorgolRepository {
         c.setImageUrl(nullToEmpty(rs.getString("image_url")));
         Timestamp ts = rs.getTimestamp("created_at");
         if (ts != null) c.setCreatedAt(ts.toLocalDateTime().toString());
-
+        // GPS coordinates (nullable)
+        double lat = rs.getDouble("lat"); if (!rs.wasNull()) c.setLat(lat);
+        double lng = rs.getDouble("lng"); if (!rs.wasNull()) c.setLng(lng);
         // User's rating
         int userRating = rs.getInt("user_rating");
         if (!rs.wasNull()) {
