@@ -7,19 +7,17 @@ import mn.edu.num.cafe.core.ports.IMenuRepository;
 import mn.edu.num.cafe.infrastructure.config.DatabaseConnection;
 import mn.edu.num.cafe.infrastructure.persistence.BorgolRepository;
 import mn.edu.num.cafe.infrastructure.persistence.RepositoryFactory;
-import mn.edu.num.cafe.ui.web.BorgolApiServer;
+import mn.edu.num.cafe.ui.desktop.BorgolApp;
 
 /**
  * Application entry point — Composition Root.
  *
  * Wires together:
  *   - DatabaseConnection (Singleton)
- *   - BorgolRepository   → BorgolService   → BorgolApiServer (new platform)
- *   - IMenuRepository    → MenuService      → BorgolApiServer (legacy menu CRUD)
+ *   - BorgolRepository   → BorgolService   → BorgolApp (JavaFX desktop)
+ *   - IMenuRepository    → MenuService      (legacy, kept for backward compat)
  */
 public class Main {
-
-    private static final int PORT = 7000;
 
     public static void main(String[] args) {
 
@@ -58,20 +56,33 @@ public class Main {
         // ── 6b. Seed GPS coordinates for demo cafes (idempotent) ─────────────
         seedCafeCoordinates(borgolService);
 
-        // ── 7. Start web server ───────────────────────────────────────────────
-        BorgolApiServer server = new BorgolApiServer(borgolService, menuService);
-        server.start(PORT);
+        // ── 7. Launch JavaFX desktop app ─────────────────────────────────────
+        BorgolApp.setService(borgolService);
+        javafx.application.Application.launch(BorgolApp.class, args);
     }
 
     private static void seedDemoData(BorgolService svc) {
-        // Only seed if no users exist
-        try {
-            svc.getMe(1);
-            return; // users exist, skip seeding
-        } catch (Exception ignored) {}
+        // Seed base 3 users if not present
+        boolean baseMissing = false;
+        try { svc.getMe(1); } catch (Exception ignored) { baseMissing = true; }
 
-        System.out.println("  [SEED] Seeding Borgol demo data...");
+        if (baseMissing) {
+            System.out.println("  [SEED] Seeding Borgol demo data...");
+            seedBaseUsers(svc);
+            System.out.println("  [SEED] Demo data seeded successfully.");
+        }
 
+        // Seed extra 5 users if not present (id=4 would be first extra user)
+        boolean extraMissing = false;
+        try { svc.getMe(4); } catch (Exception ignored) { extraMissing = true; }
+        if (extraMissing) {
+            System.out.println("  [SEED] Seeding extra demo users...");
+            seedExtraUsers(svc);
+            System.out.println("  [SEED] Extra users seeded.");
+        }
+    }
+
+    private static void seedBaseUsers(BorgolService svc) {
         // Demo users
         var u1 = svc.register("coffee_master", "coffee@borgol.mn", "password123");
         var u2 = svc.register("barista_sara",  "sara@borgol.mn",   "password123");
@@ -185,8 +196,90 @@ public class Main {
         svc.rateCafe(id3, 2, 5, "My favorite place to work. Fast WiFi and excellent cold brew.");
         svc.rateCafe(id1, 3, 4, "Unique experience! Great for visitors wanting authentic Mongolia.");
         svc.rateCafe(id2, 3, 4, "The suutei tsai here is authentic and delicious.");
+    }
 
-        System.out.println("  [SEED] Demo data seeded successfully.");
+    private static void seedExtraUsers(BorgolService svc) {
+        var u4 = svc.register("latte_king",       "latte@borgol.mn",   "password123");
+        var u5 = svc.register("espresso_pro",      "espresso@borgol.mn","password123");
+        var u6 = svc.register("cold_brew_queen",   "coldbrew@borgol.mn","password123");
+        var u7 = svc.register("matcha_monk",       "matcha@borgol.mn",  "password123");
+        var u8 = svc.register("roast_master",      "roast@borgol.mn",   "password123");
+
+        int id4 = u4.user().id();
+        int id5 = u5.user().id();
+        int id6 = u6.user().id();
+        int id7 = u7.user().id();
+        int id8 = u8.user().id();
+
+        svc.updateProfile(id4, "Latte art enthusiast. Rosettes and tulips are my jam.",
+            "", "BARISTA", java.util.List.of("CARAMEL", "SWEET", "MILKY"));
+        svc.updateProfile(id5, "Espresso purist. Single origin, no shortcuts.",
+            "", "EXPERT", java.util.List.of("BITTER", "EARTHY", "CHOCOLATEY"));
+        svc.updateProfile(id6, "Cold brew devotee. 24-hour steeps only.",
+            "", "ENTHUSIAST", java.util.List.of("SMOOTH", "FRUITY", "SWEET"));
+        svc.updateProfile(id7, "Japanese matcha meets specialty coffee culture.",
+            "", "ENTHUSIAST", java.util.List.of("FLORAL", "GRASSY", "UMAMI"));
+        svc.updateProfile(id8, "Roast profiler and home roasting geek.",
+            "", "EXPERT", java.util.List.of("SMOKY", "CHOCOLATEY", "EARTHY"));
+
+        // Follow network — everyone follows coffee_master (id=1)
+        svc.followUser(id4, 1); svc.followUser(id5, 1);
+        svc.followUser(id6, 1); svc.followUser(id7, 2);
+        svc.followUser(id8, 1); svc.followUser(id4, id5);
+        svc.followUser(id6, id8); svc.followUser(id7, id6);
+
+        // Recipes
+        svc.createRecipe(id4, "Honey Oat Milk Latte",
+            "Creamy oat milk latte sweetened with wildflower honey. Silky smooth.",
+            "LATTE",
+            "Double espresso (18g dark roast)\n220ml oat milk\n1 tbsp wildflower honey",
+            "1. Pull double espresso into warmed glass\n2. Steam oat milk to 60°C with microfoam\n3. Stir honey into espresso\n4. Pour oat milk with slow-speed pour for layered effect",
+            4, "MEDIUM",
+            java.util.List.of("CARAMEL", "SWEET", "NUTTY"),
+            "https://images.unsplash.com/photo-1545665277-5937489579f2?w=600");
+
+        svc.createRecipe(id5, "Ristretto-Based Flat White",
+            "Two ristretto shots with velvety microfoam. The Australian classic, done right.",
+            "ESPRESSO",
+            "18g espresso blend (ristretto pull: 1:1.5 ratio)\n100ml whole milk",
+            "1. Dial in ristretto: 18g in, 27g out in 25s\n2. Steam 120ml milk to 60°C — aim for silky paint texture\n3. Pour from high to create contrast, then fold microfoam close",
+            6, "HARD",
+            java.util.List.of("BITTER", "CHOCOLATEY", "SWEET"),
+            "https://images.unsplash.com/photo-1534040385115-33dcb3acba5b?w=600");
+
+        svc.createRecipe(id6, "Kyoto-Style Slow Cold Brew",
+            "Drip cold brew inspired by Kyoto drip towers. Delicate and complex.",
+            "COLD_BREW",
+            "40g light roast, coarse grind\n500ml filtered water (ice cold)\n500g ice",
+            "1. Load coarse ground coffee into filter\n2. Place ice layer on top\n3. Drip at 1 drop/second (approximately)\n4. Collect over 8-12 hours in refrigerator\n5. Dilute 1:1 with water before serving",
+            8, "EASY",
+            java.util.List.of("FRUITY", "FLORAL", "SWEET"),
+            "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?w=600");
+
+        svc.createRecipe(id7, "Matcha Espresso Fusion",
+            "Ceremonial matcha meets espresso. Bold, earthy, energizing — and surprisingly harmonious.",
+            "TEA",
+            "2g ceremonial grade matcha\n60ml hot water (75°C)\n1 shot espresso\n120ml oat milk",
+            "1. Sift matcha into bowl\n2. Whisk with 60ml water at 75°C until frothy\n3. Pull espresso shot\n4. Steam oat milk\n5. Layer: espresso → oat milk → matcha on top",
+            5, "MEDIUM",
+            java.util.List.of("FLORAL", "EARTHY", "BITTER"),
+            "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600");
+
+        svc.createRecipe(id8, "Ethiopian Natural Aeropress",
+            "Showcasing the fruit-forward character of Ethiopian naturals via Aeropress.",
+            "POUR_OVER",
+            "15g Ethiopian natural, medium-coarse grind\n200ml water at 85°C",
+            "1. Inverted Aeropress method — flip and add filter\n2. Add coffee, pour 200ml water, stir 10 times\n3. Steep for 90 seconds\n4. Flip and press slowly over 30 seconds",
+            3, "MEDIUM",
+            java.util.List.of("FRUITY", "SWEET", "FLORAL"),
+            "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600");
+
+        // Likes on extra recipes
+        svc.toggleLike(1, 6); svc.toggleLike(2, 6); svc.toggleLike(3, 6);
+        svc.toggleLike(1, 7); svc.toggleLike(3, 7);
+        svc.toggleLike(2, 8); svc.toggleLike(id7, 8);
+        svc.toggleLike(1, 9); svc.toggleLike(id4, 9);
+        svc.toggleLike(2, 10); svc.toggleLike(id5, 10);
     }
 
     /**

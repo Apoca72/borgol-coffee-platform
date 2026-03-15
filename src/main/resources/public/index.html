@@ -93,6 +93,8 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
 /* ── Layout ──────────────────────────────────────────────────────────────── */
 .page{display:none;max-width:1100px;margin:0 auto;padding:28px 24px}
 .page.active{display:block;animation:fadeUp .35s ease}
+/* Map page must NOT use transform-based animation — breaks Leaflet tile positioning */
+#page-map.active{animation:fadeIn .25s ease}
 .two-col{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start}
 .section-title{font-size:22px;font-weight:700;color:var(--roast);margin-bottom:20px;display:flex;align-items:center;gap:8px}
 
@@ -401,6 +403,30 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
   .page{padding:16px 12px}
   .navbar{padding:0 16px}
 }
+
+/* ── Settings ────────────────────────────────────────────────────────────── */
+.setting-group{margin-bottom:22px}
+.setting-group:last-child{margin-bottom:0}
+.setting-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px}
+.setting-toggle{display:flex;background:var(--cream);border-radius:10px;padding:3px;gap:3px}
+.setting-toggle-btn{flex:1;padding:9px 14px;border-radius:8px;border:none;background:transparent;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;transition:.2s;text-align:center}
+.setting-toggle-btn.active{background:var(--caramel);color:#fff;box-shadow:0 2px 8px rgba(168,98,30,.3)}
+.setting-toggle-btn:hover:not(.active){background:var(--border);color:var(--text)}
+.btn-settings{padding:7px 10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.8);border-radius:8px;font-size:16px;line-height:1;transition:.2s}
+.btn-settings:hover{background:rgba(255,255,255,.2);color:#fff}
+
+/* ── Equipment ────────────────────────────────────────────────────────────── */
+.equipment-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:8px}
+.equipment-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:relative;transition:.2s}
+.equipment-card:hover{border-color:var(--caramel);box-shadow:var(--shadow)}
+.equipment-cat-badge{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--caramel);background:rgba(168,98,30,.1);border-radius:6px;padding:2px 8px;margin-bottom:6px}
+.equipment-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px}
+.equipment-brand{font-size:12px;color:var(--muted)}
+.equipment-notes{font-size:12px;color:var(--muted);margin-top:4px;border-top:1px solid var(--border);padding-top:6px}
+.equipment-del{position:absolute;top:10px;right:10px;background:none;border:none;font-size:15px;color:var(--muted);cursor:pointer;opacity:0;transition:.15s;padding:2px 5px;border-radius:6px}
+.equipment-del:hover{background:var(--danger);color:#fff;opacity:1!important}
+.equipment-card:hover .equipment-del{opacity:.5}
+.eq-cat-icon{font-size:28px;margin-bottom:6px;display:block}
 </style>
 </head>
 <body>
@@ -409,22 +435,22 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
 <nav class="navbar">
   <div class="nav-brand" onclick="showPage(ME?'feed':'recipes')"><span>🫘</span> Borgol</div>
   <div class="nav-links">
-    <button class="nav-link" onclick="showPage('feed')">🏠 Feed</button>
-    <button class="nav-link" onclick="showPage('recipes')">📖 Recipes</button>
-    <button class="nav-link" onclick="showPage('cafes')">☕ Cafes</button>
-    <button class="nav-link" onclick="showPage('explore')">🔭 Explore</button>
-    <button class="nav-link" onclick="showPage('journal')">📓 Journal</button>
-    <button class="nav-link" onclick="showPage('learn')">🎓 Learn</button>
-    <button class="nav-link" onclick="showPage('map')">🗺️ Map</button>
+    <button class="nav-link" onclick="showPage('feed')" data-i18n="feed">🏠 Feed</button>
+    <button class="nav-link" onclick="showPage('recipes')" data-i18n="recipes">📖 Recipes</button>
+    <button class="nav-link" onclick="showPage('cafes')" data-i18n="cafes">☕ Cafes</button>
+    <button class="nav-link" onclick="showPage('explore')" data-i18n="explore">🔭 Explore</button>
+    <button class="nav-link" onclick="showPage('journal')" data-i18n="journal">📓 Journal</button>
+    <button class="nav-link" onclick="showPage('learn')" data-i18n="learn">🎓 Learn</button>
+    <button class="nav-link" onclick="showPage('map')" data-i18n="map">🗺️ Map</button>
   </div>
   <div class="nav-right">
     <div class="search-wrap">
-      <input class="nav-search" type="text" placeholder="Search…" id="nav-search"
+      <input class="nav-search" type="text" placeholder="Search…" id="nav-search" data-i18n-ph="searchPlaceholder"
         onkeydown="if(event.key==='Enter')globalSearch(this.value)"/>
     </div>
     <div id="auth-buttons">
-      <button class="btn-login" onclick="openModal('login-modal')">Log in</button>
-      <button class="btn-login" style="background:transparent;border:1px solid rgba(255,255,255,.4);margin-left:4px" onclick="openModal('register-modal')">Sign up</button>
+      <button class="btn-login" onclick="openModal('login-modal')" data-i18n="logIn">Log in</button>
+      <button class="btn-login" style="background:transparent;border:1px solid rgba(255,255,255,.4);margin-left:4px" onclick="openModal('register-modal')" data-i18n="signUp">Sign up</button>
     </div>
     <div id="user-menu" style="display:none">
       <button class="user-pill" onclick="showPage('profile')">
@@ -432,6 +458,7 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
         <span id="nav-username">User</span>
       </button>
     </div>
+    <button class="btn-settings" onclick="openSettings()" title="Settings">⚙️</button>
     <button class="hamburger" onclick="toggleMobileNav()" aria-label="Menu">☰</button>
   </div>
 </nav>
@@ -442,22 +469,23 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
     <div class="nav-brand" style="color:#fff"><span>🫘</span> Borgol</div>
     <button class="mobile-close" onclick="toggleMobileNav()">✕</button>
   </div>
-  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('feed')">🏠 Feed</button>
-  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('recipes')">📖 Recipes</button>
-  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('cafes')">☕ Cafes</button>
-  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('explore')">🔭 Explore</button>
-  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('journal')">📓 Journal</button>
-  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('learn')">🎓 Learn</button>
-  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('map')">🗺️ Map</button>
+  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('feed')" data-i18n="feed">🏠 Feed</button>
+  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('recipes')" data-i18n="recipes">📖 Recipes</button>
+  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('cafes')" data-i18n="cafes">☕ Cafes</button>
+  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('explore')" data-i18n="explore">🔭 Explore</button>
+  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('journal')" data-i18n="journal">📓 Journal</button>
+  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('learn')" data-i18n="learn">🎓 Learn</button>
+  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('map')" data-i18n="map">🗺️ Map</button>
   <hr class="mobile-divider"/>
   <div id="mobile-auth-section">
-    <button class="mobile-nav-link" onclick="toggleMobileNav();openModal('login-modal')">🔑 Log In</button>
-    <button class="mobile-nav-link" onclick="toggleMobileNav();openModal('register-modal')">📝 Sign Up</button>
+    <button class="mobile-nav-link" onclick="toggleMobileNav();openModal('login-modal')" data-i18n="logIn">🔑 Log In</button>
+    <button class="mobile-nav-link" onclick="toggleMobileNav();openModal('register-modal')" data-i18n="signUp">📝 Sign Up</button>
   </div>
   <div id="mobile-user-section" style="display:none">
-    <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('profile')">👤 My Profile</button>
-    <button class="mobile-nav-link" onclick="toggleMobileNav();openNewRecipeModal()">✍️ New Recipe</button>
-    <button class="mobile-nav-link" style="color:#EF9A9A" onclick="toggleMobileNav();logout()">🚪 Log Out</button>
+    <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('profile')" data-i18n="myProfile">👤 My Profile</button>
+    <button class="mobile-nav-link" onclick="toggleMobileNav();openNewRecipeModal()" data-i18n="newRecipe">✍️ New Recipe</button>
+    <button class="mobile-nav-link" onclick="toggleMobileNav();openSettings()" data-i18n="settings">⚙️ Settings</button>
+    <button class="mobile-nav-link" style="color:#EF9A9A" onclick="toggleMobileNav();logout()" data-i18n="logOut">🚪 Log Out</button>
   </div>
 </div>
 
@@ -568,6 +596,7 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
     <button class="tab-btn"        id="tab-liked"     onclick="profileTab('liked',this)">❤️ Liked</button>
     <button class="tab-btn"        id="tab-following" onclick="profileTab('following',this)">Following</button>
     <button class="tab-btn"        id="tab-followers" onclick="profileTab('followers',this)">Followers</button>
+    <button class="tab-btn"        id="tab-equipment" onclick="profileTab('equipment',this)">🔧 Equipment</button>
   </div>
   <div id="profile-tab-content" class="recipe-grid"></div>
 </div>
@@ -579,8 +608,9 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
     <div class="section-title">📓 My Brew Journal</div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-secondary" onclick="exportJournalPDF()" id="btn-export-journal" title="Export as PDF">📄 Export PDF</button>
-      <button class="btn btn-primary" onclick="openNewJournalModal()" id="btn-new-journal">+ New Entry</button>
+      <button class="btn btn-secondary" onclick="exportJournalPDF()" id="btn-export-journal" title="Export as PDF" data-i18n="exportPDF">📄 Export PDF</button>
+      <button class="btn btn-secondary" onclick="exportJournalCSV()" id="btn-export-csv" title="Export as CSV" data-i18n="exportCSV">📊 Export CSV</button>
+      <button class="btn btn-primary" onclick="openNewJournalModal()" id="btn-new-journal" data-i18n="newEntry">+ New Entry</button>
     </div>
   </div>
   <div id="journal-grid" class="journal-grid">
@@ -942,6 +972,66 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
   </div>
 </div>
 
+<!-- Settings -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title">⚙️ <span data-i18n="settings">Settings</span></div>
+      <button class="modal-close" onclick="closeModal('settings-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="setting-group">
+        <div class="setting-label">🌐 Language / Хэл</div>
+        <div class="setting-toggle">
+          <button class="setting-toggle-btn lang-btn" data-lang="en" onclick="saveLang('en')">🇬🇧 English</button>
+          <button class="setting-toggle-btn lang-btn" data-lang="mn" onclick="saveLang('mn')">🇲🇳 Монгол</button>
+        </div>
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">🌡️ Temperature Unit</div>
+        <div class="setting-toggle">
+          <button class="setting-toggle-btn temp-btn" data-temp="C" onclick="saveTempUnit('C')">°C Celsius</button>
+          <button class="setting-toggle-btn temp-btn" data-temp="F" onclick="saveTempUnit('F')">°F Fahrenheit</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeModal('settings-modal')">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Equipment -->
+<div class="modal-overlay" id="add-equipment-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title">🔧 Add Equipment</div>
+      <button class="modal-close" onclick="closeModal('add-equipment-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Category</label>
+        <select id="eq-category">
+          <option value="GRINDER">☕ Grinder</option>
+          <option value="BREWER">🫗 Brewer / Dripper</option>
+          <option value="KETTLE">♨️ Kettle</option>
+          <option value="SCALE">⚖️ Scale</option>
+          <option value="TAMPER">🔩 Tamper</option>
+          <option value="MACHINE">🤖 Espresso Machine</option>
+          <option value="OTHER">📦 Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Name *</label><input id="eq-name" type="text" placeholder="e.g. Comandante C40"/></div>
+      <div class="field"><label>Brand</label><input id="eq-brand" type="text" placeholder="e.g. Comandante"/></div>
+      <div class="field"><label>Notes</label><textarea id="eq-notes" rows="2" placeholder="Settings, impressions, purchase date…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('add-equipment-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEquipment()">Add Equipment</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -949,6 +1039,61 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
 <!-- JAVASCRIPT -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <script>
+// ── i18n / Settings ───────────────────────────────────────────────────────────
+const LANGS = {
+  en: {
+    feed:'🏠 Feed',recipes:'📖 Recipes',cafes:'☕ Cafes',explore:'🔭 Explore',
+    journal:'📓 Journal',learn:'🎓 Learn',map:'🗺️ Map',
+    myProfile:'👤 My Profile',newRecipe:'✍️ New Recipe',logOut:'🚪 Log Out',
+    logIn:'🔑 Log In',signUp:'📝 Sign Up',settings:'⚙️ Settings',
+    searchPlaceholder:'Search…',exportPDF:'📄 Export PDF',exportCSV:'📊 Export CSV',
+    newEntry:'+ New Entry',
+  },
+  mn: {
+    feed:'🏠 Мэдээлэл',recipes:'📖 Жорууд',cafes:'☕ Кофе газар',explore:'🔭 Хайх',
+    journal:'📓 Журнал',learn:'🎓 Суралцах',map:'🗺️ Газрын зураг',
+    myProfile:'👤 Профайл',newRecipe:'✍️ Шинэ жор',logOut:'🚪 Гарах',
+    logIn:'🔑 Нэвтрэх',signUp:'📝 Бүртгүүлэх',settings:'⚙️ Тохиргоо',
+    searchPlaceholder:'Хайх…',exportPDF:'📄 PDF экспорт',exportCSV:'📊 CSV экспорт',
+    newEntry:'+ Шинэ тэмдэглэл',
+  }
+};
+let LANG      = localStorage.getItem('borgol_lang') || 'en';
+let TEMP_UNIT = localStorage.getItem('borgol_temp') || 'C';
+
+function t(key) { return (LANGS[LANG]||LANGS.en)[key] || LANGS.en[key] || key; }
+
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+  document.documentElement.lang = LANG;
+}
+
+function openSettings() {
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === LANG));
+  document.querySelectorAll('.temp-btn').forEach(b => b.classList.toggle('active', b.dataset.temp === TEMP_UNIT));
+  openModal('settings-modal');
+}
+
+function saveLang(lang) {
+  LANG = lang;
+  localStorage.setItem('borgol_lang', lang);
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  applyLang();
+}
+
+function saveTempUnit(unit) {
+  TEMP_UNIT = unit;
+  localStorage.setItem('borgol_temp', unit);
+  document.querySelectorAll('.temp-btn').forEach(b => b.classList.toggle('active', b.dataset.temp === unit));
+}
+
+// Convert °C → °F display when needed
+function fmtTemp(c) {
+  if (TEMP_UNIT === 'F') return Math.round(c * 9/5 + 32) + '°F';
+  return c + '°C';
+}
+
 // ── State ─────────────────────────────────────────────────────────────────────
 let TOKEN         = localStorage.getItem('borgol_token') || null;
 let ME            = null;
@@ -1757,6 +1902,9 @@ async function profileTab(name, btn) {
       el.innerHTML = items.length
         ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">${items.map(u => renderUserCard(u)).join('')}</div>`
         : emptyState('👥','No followers yet');
+    } else if (name === 'equipment') {
+      el.className = '';
+      el.innerHTML = await loadEquipment();
     }
   } catch (e) { el.innerHTML = emptyState('⚠️', e.message); }
 }
@@ -2379,7 +2527,7 @@ function loadMap() {
 }
 
 function initMap(center, zoom) {
-  if (_map) { _map.setView(center, zoom); return; }
+  if (_map) { _map.setView(center, zoom); setTimeout(() => _map.invalidateSize(), 50); return; }
   _map = L.map('borgol-map').setView(center, zoom);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
@@ -2388,6 +2536,8 @@ function initMap(center, zoom) {
   // Blue dot for user position
   L.circleMarker(center, { radius: 9, color: '#1565C0', fillColor: '#42A5F5', fillOpacity: 1, weight: 2 })
     .addTo(_map).bindPopup('<b>📍 You are here</b>');
+  // Allow the DOM to finish rendering before Leaflet calculates tile positions
+  setTimeout(() => _map.invalidateSize(), 100);
 }
 
 async function fetchNearbyCafes(lat, lng) {
@@ -2479,8 +2629,99 @@ function locateMe() {
 
 function closeMapPopup() { if (_map) _map.closePopup(); }
 
+// ── Equipment ─────────────────────────────────────────────────────────────────
+const EQ_ICONS = {GRINDER:'☕',BREWER:'🫗',KETTLE:'♨️',SCALE:'⚖️',TAMPER:'🔩',MACHINE:'🤖',OTHER:'📦'};
+
+async function loadEquipment() {
+  if (!ME) return '<div class="empty-state"><div class="empty-icon">🔧</div><div class="empty-msg">Log in to track your equipment</div></div>';
+  try {
+    const list = await api('/api/equipment');
+    if (!list.length) {
+      return `<div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">🔧</div>
+        <div class="empty-msg">No equipment tracked yet. Add your grinder, brewer, and more!</div>
+        <button class="btn btn-primary" onclick="openModal('add-equipment-modal')">+ Add Equipment</button>
+      </div>`;
+    }
+    return `<div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+      <button class="btn btn-primary" onclick="openModal('add-equipment-modal')">+ Add Equipment</button>
+    </div>
+    <div class="equipment-grid">
+      ${list.map(eq => `
+        <div class="equipment-card">
+          <button class="equipment-del" onclick="deleteEquipment(${eq.id})" title="Remove">🗑️</button>
+          <span class="eq-cat-icon">${EQ_ICONS[eq.category]||'📦'}</span>
+          <div class="equipment-cat-badge">${eq.category}</div>
+          <div class="equipment-name">${esc(eq.name)}</div>
+          ${eq.brand ? `<div class="equipment-brand">${esc(eq.brand)}</div>` : ''}
+          ${eq.notes ? `<div class="equipment-notes">${esc(eq.notes)}</div>` : ''}
+        </div>`).join('')}
+    </div>`;
+  } catch(e) {
+    return `<div class="empty-state"><div class="empty-msg">⚠️ ${esc(e.message)}</div></div>`;
+  }
+}
+
+async function saveEquipment() {
+  const name = document.getElementById('eq-name').value.trim();
+  if (!name) { showToast('Name is required','error'); return; }
+  const body = {
+    category: document.getElementById('eq-category').value,
+    name,
+    brand: document.getElementById('eq-brand').value.trim(),
+    notes: document.getElementById('eq-notes').value.trim(),
+  };
+  try {
+    await api('/api/equipment', 'POST', body);
+    closeModal('add-equipment-modal');
+    showToast('Equipment added!');
+    // Refresh equipment tab if active
+    if (currentProfileTab === 'equipment') {
+      const content = document.getElementById('profile-tab-content');
+      content.innerHTML = await loadEquipment();
+    }
+  } catch(e) { showToast(e.message,'error'); }
+}
+
+async function deleteEquipment(id) {
+  if (!confirm('Remove this equipment?')) return;
+  try {
+    await api(`/api/equipment/${id}`, 'DELETE');
+    showToast('Removed');
+    if (currentProfileTab === 'equipment') {
+      const content = document.getElementById('profile-tab-content');
+      content.innerHTML = await loadEquipment();
+    }
+  } catch(e) { showToast(e.message,'error'); }
+}
+
+// ── Journal CSV Export ────────────────────────────────────────────────────────
+function exportJournalCSV() {
+  if (!JOURNAL_ENTRIES.length) { showToast('No entries to export','error'); return; }
+  const cols = ['id','coffeeBean','origin','roastLevel','brewMethod','grindSize',
+    'waterTempC','doseGrams','yieldGrams','brewTimeSec',
+    'ratingAroma','ratingFlavor','ratingAcidity','ratingBody','ratingSweetness','ratingFinish','notes','createdAt'];
+  const header = cols.join(',');
+  const rows = JOURNAL_ENTRIES.map(e =>
+    cols.map(c => {
+      const v = e[c] ?? '';
+      return typeof v === 'string' && (v.includes(',') || v.includes('"') || v.includes('\n'))
+        ? `"${v.replace(/"/g,'""')}"` : v;
+    }).join(',')
+  );
+  const csv = [header, ...rows].join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), {href:url, download:'borgol-journal.csv'});
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+  showToast('CSV downloaded!');
+}
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 (async () => {
+  applyLang();
   buildFlavorPicker('r-flavor-picker', []);
   buildFlavorPicker('p-flavor-picker', []);
   await loadMe();

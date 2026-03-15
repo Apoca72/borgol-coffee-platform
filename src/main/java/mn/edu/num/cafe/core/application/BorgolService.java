@@ -575,6 +575,21 @@ public class BorgolService {
         repo.seedLearnArticle(a);
     }
 
+    // ── Equipment ─────────────────────────────────────────────────────────────
+
+    public List<Equipment> getEquipment(int userId) {
+        return repo.getEquipmentByUser(userId);
+    }
+
+    public Equipment addEquipment(int userId, String category, String name, String brand, String notes) {
+        if (name == null || name.isBlank()) throw new IllegalArgumentException("Name is required");
+        return repo.addEquipment(userId, category, name.trim(), brand, notes);
+    }
+
+    public void deleteEquipment(int equipmentId, int userId) {
+        repo.deleteEquipment(equipmentId, userId);
+    }
+
     // ── View mapping ──────────────────────────────────────────────────────────
 
     public record UserView(

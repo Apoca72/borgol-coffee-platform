@@ -120,6 +120,11 @@ public class BorgolApiServer {
         app.put   ("/api/journal/{id}", this::updateJournalEntry);
         app.delete("/api/journal/{id}", this::deleteJournalEntry);
 
+        // Equipment
+        app.get   ("/api/equipment",      this::getEquipment);
+        app.post  ("/api/equipment",      this::addEquipment);
+        app.delete("/api/equipment/{id}", this::deleteEquipment);
+
         // Brew Guides
         app.get("/api/brew-guides",      this::getBrewGuides);
         app.get("/api/brew-guides/{id}", this::getBrewGuide);
@@ -474,6 +479,32 @@ public class BorgolApiServer {
         }
     }
 
+    // ── Equipment handlers ────────────────────────────────────────────────────
+
+    private void getEquipment(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.getEquipment(userId));
+    }
+
+    private void addEquipment(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        try {
+            var req = ctx.bodyAsClass(EquipmentReq.class);
+            ctx.status(201).json(borgol.addEquipment(userId, req.category, req.name, req.brand, req.notes));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(err(e.getMessage()));
+        }
+    }
+
+    private void deleteEquipment(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        borgol.deleteEquipment(intParam(ctx, "id"), userId);
+        ctx.status(204);
+    }
+
     // ── Brew Guide handlers ───────────────────────────────────────────────────
 
     private void getBrewGuides(Context ctx) {
@@ -583,6 +614,13 @@ public class BorgolApiServer {
         public String  category  = "COFFEE";
         public double  price;
         public boolean available = true;
+    }
+
+    public static class EquipmentReq {
+        public String category = "OTHER";
+        public String name     = "";
+        public String brand    = "";
+        public String notes    = "";
     }
 
     public static class JournalReq {

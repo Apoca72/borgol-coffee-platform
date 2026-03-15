@@ -16,6 +16,7 @@
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <javafx.version>21.0.2</javafx.version>
   </properties>
 
   <dependencies>
@@ -26,25 +27,49 @@
       <version>2.2.224</version>
     </dependency>
 
-    <!-- Javalin — embedded web server (REST API + static file serving) -->
+    <!-- JavaFX — desktop UI -->
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-controls</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-fxml</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
+
+    <!-- Javalin — kept for web API layer (dual-mode support) -->
     <dependency>
       <groupId>io.javalin</groupId>
       <artifactId>javalin</artifactId>
       <version>6.3.0</version>
     </dependency>
 
-    <!-- Jackson — JSON serialization for REST responses -->
+    <!-- Jackson — JSON serialization -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <version>2.17.0</version>
     </dependency>
 
-    <!-- SLF4J — logging backend required by Javalin -->
+    <!-- SLF4J — required by Javalin -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
       <version>2.0.9</version>
+    </dependency>
+
+    <!-- Ikonli — FontAwesome 5 vector icons for JavaFX -->
+    <dependency>
+      <groupId>org.kordamp.ikonli</groupId>
+      <artifactId>ikonli-javafx</artifactId>
+      <version>12.3.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.kordamp.ikonli</groupId>
+      <artifactId>ikonli-fontawesome5-pack</artifactId>
+      <version>12.3.1</version>
     </dependency>
 
     <!-- JUnit 5 -->
@@ -63,6 +88,18 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.2.2</version>
       </plugin>
+
+      <!-- JavaFX Maven Plugin — run with: mvn javafx:run -->
+      <plugin>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-maven-plugin</artifactId>
+        <version>0.0.8</version>
+        <configuration>
+          <mainClass>mn.edu.num.cafe.app.Main</mainClass>
+        </configuration>
+      </plugin>
+
+      <!-- exec plugin kept for web mode: mvn exec:java -Dmode=web -->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>

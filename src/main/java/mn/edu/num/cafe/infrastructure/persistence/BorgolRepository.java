@@ -171,6 +171,17 @@ public class BorgolRepository {
                     read_time_min INT          DEFAULT 3,
                     created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
                 )""");
+            s.execute("""
+                CREATE TABLE IF NOT EXISTS user_equipment (
+                    id         INT PRIMARY KEY AUTO_INCREMENT,
+                    user_id    INT          NOT NULL,
+                    category   VARCHAR(30)  DEFAULT 'OTHER',
+                    name       VARCHAR(100) NOT NULL,
+                    brand      VARCHAR(100) DEFAULT '',
+                    notes      TEXT         DEFAULT '',
+                    created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES borgol_users(id) ON DELETE CASCADE
+                )""");
         } catch (SQLException e) {
             throw new RuntimeException("Schema initialization failed", e);
         }
@@ -1202,4 +1213,70 @@ public class BorgolRepository {
     private static String nvl(String s)           { return s != null ? s : ""; }
     private static String nvl(String s, String d) { return (s != null && !s.isBlank()) ? s : d; }
     private static String nullToEmpty(String s)    { return s != null ? s : ""; }
+
+    // ── Equipment ──────────────────────────────────────────────────────────────
+
+    public List<Equipment> getEquipmentByUser(int userId) {
+        String sql = "SELECT * FROM user_equipment WHERE user_id = ? ORDER BY created_at DESC";
+        List<Equipment> list = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapEquipment(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return list;
+    }
+
+    public Equipment addEquipment(int userId, String category, String name, String brand, String notes) {
+        String sql = "INSERT INTO user_equipment (user_id, category, name, brand, notes) VALUES (?,?,?,?,?)";
+        try (PreparedStatement ps = conn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, userId);
+            ps.setString(2, nvl(category, "OTHER"));
+            ps.setString(3, name);
+            ps.setString(4, nvl(brand));
+            ps.setString(5, nvl(notes));
+            ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    int id = keys.getInt(1);
+                    return getEquipmentById(id).orElseThrow();
+                }
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        throw new RuntimeException("Failed to create equipment");
+    }
+
+    public Optional<Equipment> getEquipmentById(int id) {
+        String sql = "SELECT * FROM user_equipment WHERE id = ?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return Optional.of(mapEquipment(rs));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return Optional.empty();
+    }
+
+    public void deleteEquipment(int id, int userId) {
+        String sql = "DELETE FROM user_equipment WHERE id = ? AND user_id = ?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.setInt(2, userId);
+            ps.executeUpdate();
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    private Equipment mapEquipment(ResultSet rs) throws SQLException {
+        Equipment eq = new Equipment();
+        eq.setId(rs.getInt("id"));
+        eq.setUserId(rs.getInt("user_id"));
+        eq.setCategory(nullToEmpty(rs.getString("category")));
+        eq.setName(nullToEmpty(rs.getString("name")));
+        eq.setBrand(nullToEmpty(rs.getString("brand")));
+        eq.setNotes(nullToEmpty(rs.getString("notes")));
+        Timestamp ts = rs.getTimestamp("created_at");
+        if (ts != null) eq.setCreatedAt(ts.toLocalDateTime().toString());
+        return eq;
+    }
 }
