@@ -109,17 +109,7 @@ public class MainWindow {
         box.getStyleClass().add("sidebar-user-section");
 
         if (AppSession.loggedIn()) {
-            String initial = AppSession.username().substring(0, 1).toUpperCase();
-            Label avatar = new Label(initial);
-            avatar.setStyle(
-                "-fx-background-color:#D4621A;" +
-                "-fx-text-fill:white;" +
-                "-fx-font-weight:bold;" +
-                "-fx-font-size:20px;" +
-                "-fx-min-width:52px;-fx-min-height:52px;" +
-                "-fx-max-width:52px;-fx-max-height:52px;" +
-                "-fx-background-radius:26px;" +
-                "-fx-alignment:center;");
+            Label avatar = UiUtils.createAvatar(AppSession.username(), 52);
 
             Label username = new Label("@" + AppSession.username());
             username.getStyleClass().add("sidebar-username");

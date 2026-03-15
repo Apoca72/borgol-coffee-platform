@@ -61,7 +61,6 @@ public class FeedPane {
     // ── Three-column layout ───────────────────────────────────────────────────
 
     private HBox buildMainArea() {
-        // Feed scroll
         feedBox = new VBox(16);
         feedBox.setPadding(new Insets(20, 16, 20, 20));
         feedBox.setStyle("-fx-background-color:#F0F2F5;");
@@ -72,7 +71,6 @@ public class FeedPane {
         feedScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         HBox.setHgrow(feedScroll, Priority.ALWAYS);
 
-        // Right panel
         rightPanel = new VBox(16);
         rightPanel.setPadding(new Insets(20, 16, 20, 4));
         rightPanel.setMinWidth(264);
@@ -87,9 +85,7 @@ public class FeedPane {
         rightScroll.setMinWidth(264);
         rightScroll.setMaxWidth(264);
 
-        HBox area = new HBox(0, feedScroll, rightScroll);
-        area.setStyle("-fx-background-color:#F0F2F5;");
-        return area;
+        return new HBox(0, feedScroll, rightScroll);
     }
 
     // ── Data ──────────────────────────────────────────────────────────────────
@@ -99,7 +95,7 @@ public class FeedPane {
         rightPanel.getChildren().clear();
 
         if (!AppSession.loggedIn()) {
-            feedBox.getChildren().add(emptyState(
+            feedBox.getChildren().add(UiUtils.emptyState(
                 "\uD83D\uDCF0", "Your feed is empty",
                 "Log in and follow other users to see their recipes here."));
             buildRightPanel();
@@ -113,7 +109,7 @@ public class FeedPane {
         }
 
         if (items.isEmpty()) {
-            feedBox.getChildren().add(emptyState(
+            feedBox.getChildren().add(UiUtils.emptyState(
                 "\uD83D\uDC64", "No posts yet",
                 "Follow some coffee enthusiasts to see their recipes here."));
         } else {
@@ -127,7 +123,7 @@ public class FeedPane {
 
     private void buildRightPanel() {
         // Suggested users
-        VBox suggestCard = rightCard("PEOPLE YOU MAY KNOW");
+        VBox suggestCard = UiUtils.rightCard("PEOPLE YOU MAY KNOW");
         try {
             int uid = AppSession.loggedIn() ? AppSession.userId() : 0;
             List<UserView> users = service.getAllUsers(uid);
@@ -147,7 +143,7 @@ public class FeedPane {
         rightPanel.getChildren().add(suggestCard);
 
         // Trending recipes
-        VBox trendCard = rightCard("TRENDING RECIPES");
+        VBox trendCard = UiUtils.rightCard("TRENDING RECIPES");
         try {
             int uid = AppSession.loggedIn() ? AppSession.userId() : 0;
             List<Recipe> all = service.getRecipes(uid, "", "ALL", "POPULAR");
@@ -165,31 +161,17 @@ public class FeedPane {
         rightPanel.getChildren().add(trendCard);
     }
 
-    private VBox rightCard(String heading) {
-        VBox card = new VBox(10);
-        card.setStyle("-fx-background-color:white;-fx-background-radius:12;" +
-            "-fx-padding:16;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.07),8,0,0,1);");
-        Label h = new Label(heading);
-        h.getStyleClass().add("detail-heading");
-        card.getChildren().add(h);
-        return card;
-    }
-
     private HBox buildSuggestRow(UserView u) {
         HBox row = new HBox(10);
         row.setAlignment(Pos.CENTER_LEFT);
 
-        String ini = u.username() != null && !u.username().isEmpty()
-            ? u.username().substring(0, 1).toUpperCase() : "?";
-        Label av = new Label(ini);
-        av.setStyle("-fx-background-color:" + MainWindow.avatarColor(u.username()) + ";-fx-text-fill:white;" +
-            "-fx-font-weight:bold;-fx-font-size:12px;" +
-            "-fx-min-width:32px;-fx-min-height:32px;-fx-max-width:32px;-fx-max-height:32px;" +
-            "-fx-background-radius:16px;-fx-alignment:center;");
+        Label av = UiUtils.createAvatar(u.username(), 32);
 
         VBox info = new VBox(1);
         Label name = new Label("@" + u.username());
-        name.setStyle("-fx-font-weight:700;-fx-font-size:12px;-fx-text-fill:#1C1E21;");
+        name.setStyle("-fx-font-weight:700;-fx-font-size:12px;-fx-text-fill:#1C1E21;" +
+            "-fx-cursor:hand;");
+        name.setOnMouseClicked(e -> UiUtils.showUserProfileDialog(service, u.id()));
         Label sub = new Label(u.followerCount() + " followers");
         sub.setStyle("-fx-font-size:11px;-fx-text-fill:#65676B;");
         info.getChildren().addAll(name, sub);
@@ -219,8 +201,8 @@ public class FeedPane {
         titleLbl.setStyle("-fx-font-size:12px;-fx-font-weight:700;-fx-text-fill:#1C1E21;");
         titleLbl.setWrapText(true);
 
-        Label meta = new Label("\u2764 " + r.getLikesCount() +
-            "  \u00B7  @" + r.getAuthorUsername() +
+        Label meta = new Label((r.isLikedByCurrentUser() ? "\u2764 " : "\u2661 ") +
+            r.getLikesCount() + "  \u00B7  @" + r.getAuthorUsername() +
             "  \u00B7  " + r.getDrinkType());
         meta.setStyle("-fx-font-size:11px;-fx-text-fill:#65676B;");
 
@@ -240,22 +222,16 @@ public class FeedPane {
         header.setPadding(new Insets(16, 20, 12, 20));
         header.setAlignment(Pos.CENTER_LEFT);
 
-        String initial = r.getAuthorUsername() != null && !r.getAuthorUsername().isEmpty()
-            ? r.getAuthorUsername().substring(0, 1).toUpperCase() : "?";
-        Label avatar = new Label(initial);
-        avatar.setStyle(
-            "-fx-background-color:" + MainWindow.avatarColor(r.getAuthorUsername()) + ";-fx-text-fill:white;" +
-            "-fx-font-weight:bold;-fx-font-size:14px;" +
-            "-fx-min-width:36px;-fx-min-height:36px;" +
-            "-fx-max-width:36px;-fx-max-height:36px;" +
-            "-fx-background-radius:18px;-fx-alignment:center;");
+        Label avatar = UiUtils.createAvatar(r.getAuthorUsername(), 36);
 
         VBox authorInfo = new VBox(1);
         Label authorLabel = new Label("@" + r.getAuthorUsername());
-        authorLabel.setStyle("-fx-font-weight:700;-fx-font-size:14px;-fx-text-fill:#1C1E21;");
-        Label timeLabel = new Label(r.getDrinkType() + "  \u00B7  " + r.getDifficulty());
-        timeLabel.setStyle("-fx-font-size:12px;-fx-text-fill:#65676B;");
-        authorInfo.getChildren().addAll(authorLabel, timeLabel);
+        authorLabel.getStyleClass().add("username-link");
+        authorLabel.setOnMouseClicked(e -> UiUtils.showUserProfileDialog(service, r.getAuthorId()));
+
+        Label subtitleLbl = new Label(r.getDrinkType() + "  \u00B7  " + r.getDifficulty());
+        subtitleLbl.setStyle("-fx-font-size:12px;-fx-text-fill:#65676B;");
+        authorInfo.getChildren().addAll(authorLabel, subtitleLbl);
 
         Region hSpacer = new Region();
         HBox.setHgrow(hSpacer, Priority.ALWAYS);
@@ -291,8 +267,10 @@ public class FeedPane {
         footer.setPadding(new Insets(10, 20, 14, 20));
         footer.setAlignment(Pos.CENTER_LEFT);
 
-        Button likeBtn = new Button("\u2764  " + r.getLikesCount());
-        likeBtn.setStyle("-fx-background-color:transparent;-fx-text-fill:#65676B;" +
+        boolean liked = r.isLikedByCurrentUser();
+        Button likeBtn = new Button((liked ? "\u2764" : "\u2661") + "  " + r.getLikesCount());
+        if (liked) likeBtn.getStyleClass().add("liked-heart");
+        else likeBtn.setStyle("-fx-background-color:transparent;-fx-text-fill:#65676B;" +
             "-fx-font-weight:600;-fx-cursor:hand;-fx-border-width:0;-fx-font-size:13px;");
         likeBtn.setOnAction(e -> {
             if (!AppSession.loggedIn()) { MainWindow.alert("Login required", "Please log in."); return; }
@@ -303,26 +281,18 @@ public class FeedPane {
         Label timeInfo = new Label("\u23F1  " + r.getBrewTime() + " min");
         timeInfo.setStyle("-fx-font-size:13px;-fx-text-fill:#65676B;");
 
-        footer.getChildren().addAll(likeBtn, timeInfo);
+        Region btnSpacer = new Region();
+        HBox.setHgrow(btnSpacer, Priority.ALWAYS);
+
+        Button viewBtn = new Button("View");
+        viewBtn.setStyle("-fx-background-color:#F0F2F5;-fx-text-fill:#1C1E21;" +
+            "-fx-font-weight:600;-fx-font-size:12px;-fx-padding:5 12 5 12;" +
+            "-fx-background-radius:8;-fx-border-width:0;-fx-cursor:hand;");
+        viewBtn.setOnAction(e -> UiUtils.showRecipeDetailDialog(service, r, this::loadData));
+
+        footer.getChildren().addAll(likeBtn, timeInfo, btnSpacer, viewBtn);
         card.getChildren().addAll(header, body, sep, footer);
         return card;
-    }
-
-    // ── Empty state ───────────────────────────────────────────────────────────
-
-    private VBox emptyState(String emoji, String heading, String sub) {
-        Label icon = new Label(emoji); icon.setStyle("-fx-font-size:48px;");
-        Label h = new Label(heading);
-        h.setStyle("-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#1C1E21;");
-        Label s = new Label(sub);
-        s.setStyle("-fx-font-size:14px;-fx-text-fill:#65676B;");
-        s.setWrapText(true);
-        VBox box = new VBox(10, icon, h, s);
-        box.setAlignment(Pos.CENTER);
-        box.setPadding(new Insets(60, 40, 40, 40));
-        box.setStyle("-fx-background-color:white;-fx-background-radius:12;");
-        box.setMaxWidth(480);
-        return box;
     }
 
     public BorderPane getRoot() { return root; }

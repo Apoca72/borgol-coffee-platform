@@ -437,6 +437,55 @@
     -fx-background-color: #E4E6EA;
 }
 
+/* ── Liked heart button ──────────────────────────────────────────────────── */
+.liked-heart {
+    -fx-background-color: transparent;
+    -fx-text-fill: #D4621A;
+    -fx-font-weight: 700;
+    -fx-font-size: 13px;
+    -fx-cursor: hand;
+    -fx-border-width: 0;
+}
+
+.liked-heart:hover {
+    -fx-text-fill: #BF5518;
+}
+
+/* ── Clickable username link ─────────────────────────────────────────────── */
+.username-link {
+    -fx-font-weight: 700;
+    -fx-font-size: 14px;
+    -fx-text-fill: #1C1E21;
+    -fx-cursor: hand;
+}
+
+.username-link:hover {
+    -fx-text-fill: #D4621A;
+    -fx-underline: true;
+}
+
+/* ── Active filter chip ──────────────────────────────────────────────────── */
+.chip-active {
+    -fx-background-color: #D4621A;
+    -fx-text-fill: white;
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-padding: 4 10 4 10;
+    -fx-background-radius: 12;
+    -fx-border-width: 0;
+    -fx-cursor: hand;
+}
+
+/* ── Liked detail chip variant ───────────────────────────────────────────── */
+.detail-chip-liked {
+    -fx-background-color: #FDECEA;
+    -fx-text-fill: #D4621A;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-padding: 4 14 4 14;
+    -fx-background-radius: 20;
+}
+
 /* ── Ikonli nav icons ────────────────────────────────────────────────────── */
 .nav-item .ikonli-font-icon {
     -fx-icon-color: #4B4F58;

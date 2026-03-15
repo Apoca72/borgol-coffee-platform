@@ -134,10 +134,19 @@ public class LearnPane {
         return box;
     }
 
+    /** Converts newline-separated steps into a numbered string for display. */
     private static String formatSteps(String steps) {
         if (steps == null || steps.isBlank()) return "";
-        // Steps are stored as newline-separated strings
-        return steps;
+        StringBuilder sb = new StringBuilder();
+        int n = 1;
+        for (String line : steps.split("\\n")) {
+            String t = line.trim();
+            if (!t.isEmpty()) {
+                if (sb.length() > 0) sb.append("\n");
+                sb.append(n++).append(". ").append(t);
+            }
+        }
+        return sb.toString();
     }
 
     public BorderPane getRoot() { return root; }

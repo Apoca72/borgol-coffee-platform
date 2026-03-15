@@ -8,11 +8,12 @@ import javafx.scene.layout.*;
 import mn.edu.num.cafe.core.application.BorgolService;
 import mn.edu.num.cafe.core.application.BorgolService.UserView;
 import mn.edu.num.cafe.core.domain.Equipment;
+import mn.edu.num.cafe.core.domain.Recipe;
 
 import java.util.List;
 
 /**
- * Profile pane — view/edit own profile, manage equipment.
+ * Profile pane — view/edit own profile, manage equipment, browse own recipes + liked.
  */
 public class ProfilePane {
 
@@ -29,20 +30,19 @@ public class ProfilePane {
     private void build() {
         if (!AppSession.loggedIn()) {
             Label msg = new Label("Please log in to view your profile.");
-            msg.setStyle("-fx-text-fill:#8A7054;-fx-font-size:14px;");
-            StackPane placeholder = new StackPane(msg);
-            root.setCenter(placeholder);
+            msg.setStyle("-fx-text-fill:#65676B;-fx-font-size:14px;");
+            root.setCenter(new StackPane(msg));
             return;
         }
 
         TabPane tabs = new TabPane();
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-
         tabs.getTabs().addAll(
-            new Tab("👤 Profile", buildProfileTab()),
-            new Tab("🔧 Equipment", buildEquipmentTab())
+            new Tab("\uD83D\uDC64 Profile",    buildProfileTab()),
+            new Tab("\uD83D\uDCD6 My Recipes", buildMyRecipesTab()),
+            new Tab("\u2764 Liked",             buildLikedTab()),
+            new Tab("\uD83D\uDD27 Equipment",   buildEquipmentTab())
         );
-
         root.setCenter(tabs);
     }
 
@@ -65,15 +65,8 @@ public class ProfilePane {
             return scroll;
         }
 
-        // Header card
-        // Avatar
-        String initial = profile.username().substring(0, 1).toUpperCase();
-        Label avatar = new Label(initial);
-        avatar.setStyle(
-            "-fx-background-color:#D4621A;-fx-text-fill:white;-fx-font-weight:bold;" +
-            "-fx-font-size:26px;-fx-min-width:64px;-fx-min-height:64px;" +
-            "-fx-max-width:64px;-fx-max-height:64px;" +
-            "-fx-background-radius:32px;-fx-alignment:center;");
+        // ── Header card ──────────────────────────────────────────────────────
+        Label avatar = UiUtils.createAvatar(profile.username(), 64);
 
         Label username = new Label("@" + profile.username());
         username.setStyle("-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#1C1E21;");
@@ -87,19 +80,25 @@ public class ProfilePane {
         HBox titleRow = new HBox(10, username, levelChip);
         titleRow.setAlignment(Pos.CENTER_LEFT);
 
-        Label stats = new Label(
-            profile.recipeCount() + " recipes  \u00B7  " +
-            profile.followerCount() + " followers  \u00B7  " +
-            profile.followingCount() + " following");
-        stats.setStyle("-fx-text-fill:#65676B;-fx-font-size:13px;");
+        // Clickable stats
+        Label recipesLbl = clickableStat(profile.recipeCount() + " recipes", null);
+        Label sepDot1 = dot();
+        Label followersLbl = clickableStat(profile.followerCount() + " followers",
+            () -> UiUtils.showFollowersDialog(service, AppSession.userId(), true));
+        Label sepDot2 = dot();
+        Label followingLbl = clickableStat(profile.followingCount() + " following",
+            () -> UiUtils.showFollowersDialog(service, AppSession.userId(), false));
 
-        VBox nameBox = new VBox(4, titleRow, email, stats);
+        HBox statsRow = new HBox(4, recipesLbl, sepDot1, followersLbl, sepDot2, followingLbl);
+        statsRow.setAlignment(Pos.CENTER_LEFT);
+
+        VBox nameBox = new VBox(4, titleRow, email, statsRow);
         HBox header = new HBox(16, avatar, nameBox);
         header.setAlignment(Pos.CENTER_LEFT);
         header.setStyle("-fx-background-color:white;-fx-padding:20;-fx-background-radius:12;" +
             "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.07),8,0,0,1);");
 
-        // Bio section
+        // ── Bio card ─────────────────────────────────────────────────────────
         Label bioHeading = new Label("BIO");
         bioHeading.getStyleClass().add("detail-heading");
 
@@ -108,7 +107,6 @@ public class ProfilePane {
         bioText.setWrapText(true);
         bioText.setStyle("-fx-text-fill:#1C1E21;-fx-font-size:14px;");
 
-        // Flavor prefs
         Label prefsHeading = new Label("FLAVOR PREFERENCES");
         prefsHeading.getStyleClass().add("detail-heading");
 
@@ -116,18 +114,35 @@ public class ProfilePane {
             ? "\uD83E\uDEB7  " + String.join("  \u00B7  ", profile.flavorPrefs()) : "(none set)");
         prefsText.setStyle("-fx-text-fill:#65676B;-fx-font-size:13px;");
 
-        // Edit button
-        Button btnEdit = new Button("✏ Edit Profile");
+        VBox bioCard = new VBox(8, bioHeading, bioText, prefsHeading, prefsText);
+        bioCard.setStyle("-fx-background-color:white;-fx-padding:16;-fx-background-radius:12;" +
+            "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.07),8,0,0,1);");
+
+        Button btnEdit = new Button("\u270F Edit Profile");
         btnEdit.getStyleClass().add("btn-primary");
         btnEdit.setOnAction(e -> showEditProfileDialog());
 
-        VBox bioCard = new VBox(8);
-        bioCard.setStyle("-fx-background-color:white;-fx-padding:16;-fx-background-radius:12;" +
-            "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.07),8,0,0,1);");
-        bioCard.getChildren().addAll(bioHeading, bioText, prefsHeading, prefsText);
-
         box.getChildren().addAll(header, bioCard, btnEdit);
         return scroll;
+    }
+
+    private Label clickableStat(String text, Runnable onClick) {
+        Label l = new Label(text);
+        l.setStyle("-fx-text-fill:#65676B;-fx-font-size:13px;" +
+            (onClick != null ? "-fx-cursor:hand;" : ""));
+        if (onClick != null) {
+            l.setOnMouseClicked(e -> onClick.run());
+            l.setOnMouseEntered(e -> l.setStyle(l.getStyle() + "-fx-underline:true;"));
+            l.setOnMouseExited(e -> l.setStyle(
+                "-fx-text-fill:#65676B;-fx-font-size:13px;-fx-cursor:hand;"));
+        }
+        return l;
+    }
+
+    private static Label dot() {
+        Label l = new Label("  \u00B7  ");
+        l.setStyle("-fx-text-fill:#65676B;-fx-font-size:13px;");
+        return l;
     }
 
     private void showEditProfileDialog() {
@@ -140,13 +155,12 @@ public class ProfilePane {
         dlg.setHeaderText(null);
         ButtonType saveBtn = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
         dlg.getDialogPane().getButtonTypes().addAll(saveBtn, ButtonType.CANCEL);
-        dlg.getDialogPane().getStylesheets().add(
-            ProfilePane.class.getResource("/style.css").toExternalForm());
+        UiUtils.addStylesheet(dlg, ProfilePane.class);
         dlg.getDialogPane().setPrefWidth(460);
 
         GridPane grid = MainWindow.formGrid();
 
-        TextArea bioArea = MainWindow.styledArea("Tell the community about yourself…", 3);
+        TextArea bioArea = MainWindow.styledArea("Tell the community about yourself\u2026", 3);
         bioArea.setText(profile.bio() != null ? profile.bio() : "");
 
         ComboBox<String> levelBox = new ComboBox<>(
@@ -154,32 +168,85 @@ public class ProfilePane {
         levelBox.setValue(profile.expertiseLevel() != null ? profile.expertiseLevel() : "BEGINNER");
         levelBox.getStyleClass().add("form-field");
 
-        TextField flavorField = MainWindow.styledField("FLORAL, FRUITY, BITTER…");
+        TextField flavorField = MainWindow.styledField("FLORAL, FRUITY, BITTER\u2026");
         flavorField.setText(profile.flavorPrefs() != null
             ? String.join(", ", profile.flavorPrefs()) : "");
 
-        grid.add(lbl("Bio"),           0, 0); grid.add(bioArea,     1, 0);
-        grid.add(lbl("Level"),         0, 1); grid.add(levelBox,    1, 1);
-        grid.add(lbl("Flavor Prefs"),  0, 2); grid.add(flavorField, 1, 2);
+        grid.add(lbl("Bio"),          0, 0); grid.add(bioArea,     1, 0);
+        grid.add(lbl("Level"),        0, 1); grid.add(levelBox,    1, 1);
+        grid.add(lbl("Flavor Prefs"), 0, 2); grid.add(flavorField, 1, 2);
         dlg.getDialogPane().setContent(grid);
 
         dlg.showAndWait().ifPresent(bt -> {
             if (bt.getButtonData() == ButtonBar.ButtonData.OK_DONE) {
                 try {
                     List<String> prefs = List.of(flavorField.getText().split(","))
-                        .stream()
-                        .map(String::trim)
-                        .filter(s -> !s.isBlank())
-                        .toList();
+                        .stream().map(String::trim).filter(s -> !s.isBlank()).toList();
                     service.updateProfile(AppSession.userId(),
-                        bioArea.getText().trim(), "",
-                        levelBox.getValue(), prefs);
-                    // Rebuild to reflect changes
+                        bioArea.getText().trim(), "", levelBox.getValue(), prefs);
                     root.getChildren().clear();
                     build();
                 } catch (Exception ex) { MainWindow.alert("Error", ex.getMessage()); }
             }
         });
+    }
+
+    // ── My Recipes tab ────────────────────────────────────────────────────────
+
+    private ScrollPane buildMyRecipesTab() {
+        VBox box = new VBox(12);
+        box.setPadding(new Insets(20, 24, 24, 24));
+        box.setStyle("-fx-background-color:#F0F2F5;");
+
+        try {
+            int uid = AppSession.userId();
+            List<Recipe> recipes = service.getUserRecipes(uid, uid);
+            if (recipes.isEmpty()) {
+                box.getChildren().add(UiUtils.emptyState(
+                    "\uD83D\uDCD6", "No recipes yet",
+                    "Share your first coffee recipe!"));
+            } else {
+                for (Recipe r : recipes)
+                    box.getChildren().add(UiUtils.buildMiniCard(service, r));
+            }
+        } catch (Exception e) {
+            box.getChildren().add(new Label("Failed to load: " + e.getMessage()));
+        }
+
+        ScrollPane scroll = new ScrollPane(box);
+        scroll.setFitToWidth(true);
+        scroll.setStyle("-fx-background-color:#F0F2F5;-fx-background:#F0F2F5;");
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        return scroll;
+    }
+
+    // ── Liked tab ─────────────────────────────────────────────────────────────
+
+    private ScrollPane buildLikedTab() {
+        VBox box = new VBox(12);
+        box.setPadding(new Insets(20, 24, 24, 24));
+        box.setStyle("-fx-background-color:#F0F2F5;");
+
+        try {
+            int uid = AppSession.userId();
+            List<Recipe> liked = service.getLikedRecipes(uid, uid);
+            if (liked.isEmpty()) {
+                box.getChildren().add(UiUtils.emptyState(
+                    "\u2661", "Nothing liked yet",
+                    "Like recipes in the feed to save them here."));
+            } else {
+                for (Recipe r : liked)
+                    box.getChildren().add(UiUtils.buildMiniCard(service, r));
+            }
+        } catch (Exception e) {
+            box.getChildren().add(new Label("Failed to load: " + e.getMessage()));
+        }
+
+        ScrollPane scroll = new ScrollPane(box);
+        scroll.setFitToWidth(true);
+        scroll.setStyle("-fx-background-color:#F0F2F5;-fx-background:#F0F2F5;");
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        return scroll;
     }
 
     // ── Equipment tab ─────────────────────────────────────────────────────────
@@ -188,7 +255,6 @@ public class ProfilePane {
         BorderPane pane = new BorderPane();
         pane.setStyle("-fx-background-color:#F0F2F5;");
 
-        // Toolbar
         HBox bar = new HBox(8);
         bar.getStyleClass().add("toolbar");
         bar.setAlignment(Pos.CENTER_LEFT);
@@ -203,18 +269,15 @@ public class ProfilePane {
         bar.getChildren().addAll(title, spacer, btnAdd, btnDel);
         pane.setTop(bar);
 
-        // List
         ListView<Equipment> list = new ListView<>();
         list.getStyleClass().add("list-view");
         list.setCellFactory(lv -> new ListCell<>() {
             @Override protected void updateItem(Equipment eq, boolean empty) {
                 super.updateItem(eq, empty);
-                if (empty || eq == null) { setText(null); }
-                else {
-                    String brand = eq.getBrand() != null && !eq.getBrand().isBlank()
-                        ? " · " + eq.getBrand() : "";
-                    setText("[" + eq.getCategory() + "]  " + eq.getName() + brand);
-                }
+                if (empty || eq == null) { setText(null); setGraphic(null); return; }
+                String brand = eq.getBrand() != null && !eq.getBrand().isBlank()
+                    ? " \u00B7 " + eq.getBrand() : "";
+                setText("[" + eq.getCategory() + "]  " + eq.getName() + brand);
             }
         });
         pane.setCenter(list);
@@ -224,10 +287,16 @@ public class ProfilePane {
         btnDel.setOnAction(e -> {
             Equipment sel = list.getSelectionModel().getSelectedItem();
             if (sel == null) { MainWindow.info("Select item", "Select an equipment item to delete."); return; }
-            try {
-                service.deleteEquipment(sel.getId(), AppSession.userId());
-                loadEquipment(list);
-            } catch (Exception ex) { MainWindow.alert("Error", ex.getMessage()); }
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                "Delete \"" + sel.getName() + "\"?", ButtonType.YES, ButtonType.NO);
+            confirm.showAndWait().ifPresent(bt -> {
+                if (bt == ButtonType.YES) {
+                    try {
+                        service.deleteEquipment(sel.getId(), AppSession.userId());
+                        loadEquipment(list);
+                    } catch (Exception ex) { MainWindow.alert("Error", ex.getMessage()); }
+                }
+            });
         });
 
         return pane;
@@ -244,8 +313,7 @@ public class ProfilePane {
         dlg.setHeaderText(null);
         ButtonType saveBtn = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
         dlg.getDialogPane().getButtonTypes().addAll(saveBtn, ButtonType.CANCEL);
-        dlg.getDialogPane().getStylesheets().add(
-            ProfilePane.class.getResource("/style.css").toExternalForm());
+        UiUtils.addStylesheet(dlg, ProfilePane.class);
         dlg.getDialogPane().setPrefWidth(440);
 
         GridPane grid = MainWindow.formGrid();
@@ -255,12 +323,12 @@ public class ProfilePane {
         catBox.getStyleClass().add("form-field");
         TextField nameField  = MainWindow.styledField("e.g. Fellow Ode");
         TextField brandField = MainWindow.styledField("e.g. Fellow");
-        TextArea  notesArea  = MainWindow.styledArea("Notes…", 2);
+        TextArea  notesArea  = MainWindow.styledArea("Notes\u2026", 2);
 
-        grid.add(lbl("Category"), 0, 0); grid.add(catBox,    1, 0);
-        grid.add(lbl("Name *"),   0, 1); grid.add(nameField, 1, 1);
-        grid.add(lbl("Brand"),    0, 2); grid.add(brandField,1, 2);
-        grid.add(lbl("Notes"),    0, 3); grid.add(notesArea, 1, 3);
+        grid.add(lbl("Category"), 0, 0); grid.add(catBox,     1, 0);
+        grid.add(lbl("Name *"),   0, 1); grid.add(nameField,  1, 1);
+        grid.add(lbl("Brand"),    0, 2); grid.add(brandField, 1, 2);
+        grid.add(lbl("Notes"),    0, 3); grid.add(notesArea,  1, 3);
         dlg.getDialogPane().setContent(grid);
 
         dlg.showAndWait().ifPresent(bt -> {
@@ -278,9 +346,7 @@ public class ProfilePane {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static Label lbl(String t) {
-        Label l = new Label(t);
-        l.getStyleClass().add("form-label");
-        return l;
+        Label l = new Label(t); l.getStyleClass().add("form-label"); return l;
     }
 
     public BorderPane getRoot() { return root; }

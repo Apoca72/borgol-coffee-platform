@@ -1,12 +1,12 @@
 package mn.edu.num.cafe.ui.desktop;
 
+import javafx.animation.Timeline;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import mn.edu.num.cafe.core.application.BorgolService;
 import mn.edu.num.cafe.core.application.BorgolService.UserView;
-import mn.edu.num.cafe.core.domain.Recipe;
 
 import java.util.List;
 
@@ -19,6 +19,7 @@ public class PeoplePane {
     private final BorgolService service;
     private VBox listBox;
     private String lastQuery = "";
+    private Timeline searchDebounce;
 
     public PeoplePane(BorgolService service) {
         this.service = service;
@@ -27,6 +28,7 @@ public class PeoplePane {
         root.setStyle("-fx-background-color:#F0F2F5;");
         root.setTop(buildToolbar());
         root.setCenter(buildScrollList());
+        searchDebounce = UiUtils.debounce(300, () -> loadData(lastQuery));
         loadData("");
     }
 
@@ -45,7 +47,7 @@ public class PeoplePane {
         search.getStyleClass().add("search-field");
         search.textProperty().addListener((o, old, v) -> {
             lastQuery = v;
-            loadData(v);
+            searchDebounce.playFromStart();
         });
 
         bar.getChildren().addAll(title, search);
@@ -100,16 +102,7 @@ public class PeoplePane {
         card.setMaxWidth(680);
 
         // Avatar
-        String initial = u.username() != null && !u.username().isEmpty()
-            ? u.username().substring(0, 1).toUpperCase() : "?";
-        Label avatar = new Label(initial);
-        avatar.setStyle(
-            "-fx-background-color:#E4E6EA;" +
-            "-fx-text-fill:#65676B;" +
-            "-fx-font-weight:bold;-fx-font-size:16px;" +
-            "-fx-min-width:44px;-fx-min-height:44px;" +
-            "-fx-max-width:44px;-fx-max-height:44px;" +
-            "-fx-background-radius:22px;-fx-alignment:center;");
+        Label avatar = UiUtils.createAvatar(u.username(), 44);
 
         // Info
         VBox info = new VBox(3);
@@ -150,7 +143,7 @@ public class PeoplePane {
         profileBtn.setStyle("-fx-background-color:#E4E6EA;-fx-text-fill:#1C1E21;" +
             "-fx-font-weight:600;-fx-font-size:13px;-fx-padding:6 14 6 14;" +
             "-fx-background-radius:8;-fx-border-width:0;-fx-cursor:hand;");
-        profileBtn.setOnAction(e -> viewProfile(u.id()));
+        profileBtn.setOnAction(e -> UiUtils.showUserProfileDialog(service, u.id()));
 
         if (AppSession.loggedIn()) {
             if (u.isFollowing()) {
@@ -180,93 +173,6 @@ public class PeoplePane {
 
         card.getChildren().addAll(avatar, info, spacer, actions);
         return card;
-    }
-
-    // ── Profile dialog ────────────────────────────────────────────────────────
-
-    private void viewProfile(int userId) {
-        UserView profile;
-        try {
-            int uid = AppSession.loggedIn() ? AppSession.userId() : 0;
-            profile = service.getUserProfile(userId, uid);
-        } catch (Exception e) { MainWindow.alert("Error", e.getMessage()); return; }
-
-        Dialog<ButtonType> dlg = new Dialog<>();
-        dlg.setTitle("@" + profile.username());
-        dlg.setHeaderText(null);
-        dlg.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
-        dlg.getDialogPane().getStylesheets().add(
-            PeoplePane.class.getResource("/style.css").toExternalForm());
-        dlg.getDialogPane().setPrefWidth(520);
-
-        VBox box = new VBox(14);
-        box.setPadding(new Insets(16));
-
-        // Profile header
-        String initial = profile.username().substring(0, 1).toUpperCase();
-        Label avatar = new Label(initial);
-        avatar.setStyle("-fx-background-color:#D4621A;-fx-text-fill:white;" +
-            "-fx-font-weight:bold;-fx-font-size:22px;" +
-            "-fx-min-width:56px;-fx-min-height:56px;-fx-max-width:56px;-fx-max-height:56px;" +
-            "-fx-background-radius:28px;-fx-alignment:center;");
-
-        Label nameLabel = new Label("@" + profile.username());
-        nameLabel.setStyle("-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:#1C1E21;");
-
-        Label levelChip = new Label(profile.expertiseLevel() != null ? profile.expertiseLevel() : "BEGINNER");
-        levelChip.getStyleClass().add("detail-chip");
-
-        HBox nameRow = new HBox(10, nameLabel, levelChip);
-        nameRow.setAlignment(Pos.CENTER_LEFT);
-
-        Label stats = new Label(
-            profile.recipeCount() + " recipes  \u00B7  " +
-            profile.followerCount() + " followers  \u00B7  " +
-            profile.followingCount() + " following");
-        stats.setStyle("-fx-font-size:13px;-fx-text-fill:#65676B;");
-
-        HBox headerRow = new HBox(14, avatar, new VBox(6, nameRow, stats));
-        headerRow.setAlignment(Pos.CENTER_LEFT);
-
-        box.getChildren().add(headerRow);
-
-        if (profile.bio() != null && !profile.bio().isBlank()) {
-            Label bio = new Label(profile.bio());
-            bio.setStyle("-fx-font-size:14px;-fx-text-fill:#1C1E21;");
-            bio.setWrapText(true);
-            box.getChildren().add(bio);
-        }
-
-        if (!profile.flavorPrefs().isEmpty()) {
-            Label prefs = new Label("\uD83E\uDEB7  " + String.join("  \u00B7  ", profile.flavorPrefs()));
-            prefs.setStyle("-fx-font-size:13px;-fx-text-fill:#65676B;");
-            box.getChildren().add(prefs);
-        }
-
-        // Recipes
-        Separator sep = new Separator();
-        Label recipesHeading = new Label("RECIPES");
-        recipesHeading.getStyleClass().add("detail-heading");
-        box.getChildren().addAll(sep, recipesHeading);
-
-        ListView<Recipe> recipeList = new ListView<>();
-        recipeList.setPrefHeight(180);
-        recipeList.getStyleClass().add("list-view");
-        recipeList.setCellFactory(lv -> new ListCell<>() {
-            @Override protected void updateItem(Recipe r, boolean empty) {
-                super.updateItem(r, empty);
-                if (empty || r == null) setText(null);
-                else setText(r.getTitle() + "  \u00B7  " + r.getDrinkType() + "  \u00B7  \u2764 " + r.getLikesCount());
-            }
-        });
-        try {
-            int uid = AppSession.loggedIn() ? AppSession.userId() : 0;
-            recipeList.getItems().setAll(service.getUserRecipes(profile.id(), uid));
-        } catch (Exception ignored) {}
-
-        box.getChildren().add(recipeList);
-        dlg.getDialogPane().setContent(box);
-        dlg.showAndWait();
     }
 
     private Label emptyLabel(String text) {
