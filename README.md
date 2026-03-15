@@ -1,4 +1,4 @@
-# 🪴 Borgol — Coffee Enthusiast Platform
+# 🪴 Borgol — Кофе Сонирхогчдын Платформ
 
 **Хичээл:** ICSI486 Программ хангамжийн бүтээлт
 **Оюутан:** С.Тэмүүлэн — 22B1NUM6637
@@ -6,187 +6,187 @@
 
 ---
 
-## Overview
+## Тойм
 
-Borgol is a full-featured **JavaFX desktop social platform** for coffee enthusiasts. Users can share recipes, discover cafés, track brew sessions in a personal journal, follow other coffee lovers, and learn through guides and articles — all within a polished, responsive desktop app.
+Borgol бол кофе сонирхогчдод зориулсан **JavaFX desktop нийгмийн платформ** юм. Хэрэглэгчид жор хуваалцах, кафе нээн судлах, хувийн дэвтэрт буцалтын тэмдэглэл хөтлөх, бусад кофе сонирхогчдыг дагах, гарын авлага болон нийтлэлээр суралцах боломжтой — бүгдийг нь нэг тохилог, хариу мэдрэмжтэй desktop програмаас.
 
 ---
 
-## Screenshots
+## Дэлгэцийн зураг
 
-| Recipes Feed | Dark Mode | Journal Radar |
+| Жорын лент | Харанхуй горим | Дэвтрийн радар диаграм |
 |---|---|---|
-| Cards with image banners, likes, comments | Full dark theme toggle | Brew session radar chart |
+| Зурагтай карт, дуртай, сэтгэгдэл | Бүрэн харанхуй загвар | Буцалтын сессийн радар диаграм |
 
 ---
 
-## Features
+## Функцүүд
 
-### 🔐 Auth
-- Register / Login with JWT-based session (HMAC-SHA256, 7-day expiry)
-- Passwords stored as SHA-256 + random salt (`saltHex:hashHex`)
-- Session persisted in `AppSession` singleton
+### 🔐 Нэвтрэлт
+- JWT суурьтай бүртгэл / нэвтрэлт (HMAC-SHA256, 7 хоногийн хугацаа)
+- Нууц үгийг SHA-256 + санамсаргүй давс (`saltHex:hashHex`) хэлбэрээр хадгалдаг
+- Сесс `AppSession` singleton-д хадгалагдана
 
-### 📖 Recipes
-- Create, edit, delete coffee recipes with image URL banners
-- Like / unlike, comment threads per recipe
-- Sort: **Recent** or **Popular**
-- Filter by drink type: Espresso, Latte, Pour Over, Cold Brew, etc.
-- Right panel: Top Liked recipes + People to Follow suggestions
+### 📖 Жорууд
+- Зургийн URL баннертай кофений жор үүсгэх, засварлах, устгах
+- Дуртай / дургүй, жор тус бүрд сэтгэгдэл
+- Эрэмбэлэлт: **Шинэ** эсвэл **Алдартай**
+- Ундааны төрлөөр шүүх: Espresso, Latte, Pour Over, Cold Brew гэх мэт
+- Баруун самбар: Хамгийн их дуртай жорууд + Дагах санал болгох хэрэглэгчид
 
-### 📰 Feed
-- Recipes from users you follow
-- **Discover section** — shows popular recipes when not following anyone yet
+### 📰 Лент
+- Дагадаг хэрэглэгчдийн жорууд
+- **Нээн судлах хэсэг** — хэн ч дагаагүй үед алдартай жорууд харагдана
 
-### ☕ Cafés
-- Browse and add café listings with ratings and reviews
-- **📍 Near Me** — filter by GPS coordinates and radius (defaults to Ulaanbaatar)
-- Star ratings with personal review text
+### ☕ Кафенүүд
+- Кафений жагсаалт харах, нэмэх, үнэлгээ болон шүүмж бичих
+- **📍 Ойролцоо** — GPS координат болон радиусаар шүүх (Улаанбаатар анхдагч)
+- Одон үнэлгээ болон хувийн шүүмж
 
-### 📓 Brew Journal
-- Personal brew log entries with bean, method, roast, dose, water temp, brew time, yield
-- 6-axis **radar chart** (Aroma, Flavor, Acidity, Body, Sweet, Finish) rendered via JavaFX Canvas
-- Export entries as **CSV** file
+### 📓 Буцалтын дэвтэр
+- Буурцаг, арга, шарсан байдал, тун, усны температур, буцалтын хугацаа, гарц бүхий хувийн тэмдэглэл
+- JavaFX Canvas-ээр дүрсэлсэн 6 тэнхлэгтэй **радар диаграм** (Аромат, Амт, Хүчиллэг, Бие, Амтат, Төгсгөл)
+- Тэмдэглэлийг **CSV** файл болгон экспортлох
 
-### 📚 Learn & Brew Guides
-- 6 curated Brew Guides: Pour Over (V60), French Press, AeroPress, Espresso, Cold Brew, Moka Pot
-- 6 Learn Articles: Roast Levels, Extraction Science, Water Quality, Flavor Tasting, Arabica vs Robusta, Grind Size
+### 📚 Сурах & Буцалтын гарын авлагууд
+- 6 эмхэтгэсэн Буцалтын гарын авлага: Pour Over (V60), French Press, AeroPress, Espresso, Cold Brew, Moka Pot
+- 6 Сурах нийтлэл: Шарсан түвшин, Гарцын шинжлэх ухаан, Усны чанар, Амт мэдрэх, Arabica vs Robusta, Нунтаглалтын хэмжээ
 
-### 👥 People
-- Follow / unfollow users
-- View public profiles with recipe lists and follower stats
-- People You May Know suggestions
+### 👥 Хүмүүс
+- Хэрэглэгч дагах / дагахаа болих
+- Жорын жагсаалт болон дагагчийн статистиктай нийтийн профайл харах
+- Танд тохирох хүмүүсийн санал болгох
 
-### 👤 Profile
-- Edit bio, equipment list, expertise level, flavor preferences
-- Tabs: My Recipes, Liked Recipes, Equipment
-- Sidebar stats refresh via callback (no full rebuild)
+### 👤 Профайл
+- Намтар, тоног төхөөрөмжийн жагсаалт, мэргэжлийн түвшин, амт уул сонголтыг засварлах
+- Табууд: Миний жорууд, Дуртай жорууд, Тоног төхөөрөмж
+- Callback-ээр sidebar статистик шинэчлэх (бүрэн дахин барихгүй)
 
-### 🌙 Dark Mode
-- Full dark theme (Facebook dark palette: `#18191A` / `#242526` / `#3A3B3C`)
-- Toggle button in sidebar — rebuilds all panes instantly
-- All inline styles use `UiUtils` theme helpers (`bg()`, `card()`, `text()`, `sub()`, etc.)
+### 🌙 Харанхуй горим
+- Бүрэн харанхуй загвар (Facebook харанхуй өнгөний палитр: `#18191A` / `#242526` / `#3A3B3C`)
+- Sidebar дахь товч — бүх хавтангийг тэр даруй дахин барина
+- Бүх inline стиль `UiUtils` загварын туслах функцүүд (`bg()`, `card()`, `text()`, `sub()` гэх мэт) ашиглана
 
-### 🔔 Toast Notifications
-- Amber fade-in/out overlay on recipe save, journal entry, profile update, etc.
+### 🔔 Toast мэдэгдэл
+- Жор хадгалах, дэвтрийн тэмдэглэл, профайл шинэчлэх үед шар өнгийн fade-in/out overlay
 
 ---
 
-## Tech Stack
+## Технологийн стек
 
-| Layer | Technology |
+| Давхарга | Технологи |
 |---|---|
 | UI | JavaFX 21 (BorderPane, VBox, HBox, StackPane, Canvas, ScrollPane) |
 | Backend | Javalin 6.3 (REST API, JSON) |
-| Database | H2 (file-based, MERGE INTO for upserts) |
-| Auth | Custom HMAC-SHA256 JWT (no external library) |
-| Build | Maven Wrapper (`mvnw.cmd`) |
-| Language | Java 21 |
+| Өгөгдлийн сан | H2 (файл дээр суурилсан, upsert-д MERGE INTO) |
+| Нэвтрэлт | Гадаад сангүй өөрийн HMAC-SHA256 JWT |
+| Бүтээх | Maven Wrapper (`mvnw.cmd`) |
+| Хэл | Java 21 |
 
 ---
 
-## Architecture
+## Архитектур
 
 ```
 mn.edu.num.cafe
 ├── app/
-│   └── Main.java                    — Composition root, seeds demo data, launches JavaFX
+│   └── Main.java                    — Composition root, туршилтын өгөгдөл тарих, JavaFX эхлүүлэх
 ├── core/
-│   ├── domain/                      — Entity classes
+│   ├── domain/                      — Entity ангиуд
 │   │   ├── User, Recipe, CafeListing
 │   │   ├── RecipeComment, BrewJournalEntry
 │   │   ├── BrewGuide, LearnArticle
 │   │   └── MenuItem (legacy)
 │   └── application/
-│       ├── BorgolService.java       — All business logic
-│       └── MenuService.java         — Legacy menu service
+│       ├── BorgolService.java       — Бүх бизнесийн логик
+│       └── MenuService.java         — Legacy цэсний сервис
 ├── infrastructure/
 │   ├── persistence/
-│   │   └── BorgolRepository.java   — All SQL / H2 queries
+│   │   └── BorgolRepository.java   — Бүх SQL / H2 хүсэлт
 │   └── security/
 │       ├── JwtUtil.java             — HMAC-SHA256 JWT
-│       └── PasswordUtil.java        — SHA-256 + salt hashing
+│       └── PasswordUtil.java        — SHA-256 + давс хэшлэлт
 └── ui/
     ├── web/
-    │   └── BorgolApiServer.java     — 30+ REST endpoints (Javalin)
+    │   └── BorgolApiServer.java     — 30+ REST endpoint (Javalin)
     └── desktop/
-        ├── BorgolApp.java           — JavaFX Application entry
-        ├── MainWindow.java          — BorderPane root, sidebar, dark mode
-        ├── UiUtils.java             — Shared helpers: avatars, toasts, dialogs, theme colors
-        ├── AppSession.java          — Logged-in user state
-        ├── RecipesPane.java         — Recipe feed with CRUD
-        ├── FeedPane.java            — Social feed + Discover fallback
-        ├── CafesPane.java           — Café cards + Near Me
-        ├── JournalPane.java         — Brew journal + radar chart
-        ├── LearnPane.java           — Guides & articles
-        ├── PeoplePane.java          — User discovery
-        └── ProfilePane.java         — Profile editor + tabs
+        ├── BorgolApp.java           — JavaFX Application оруулах цэг
+        ├── MainWindow.java          — BorderPane үндэс, sidebar, харанхуй горим
+        ├── UiUtils.java             — Хуваалцсан туслах: avatar, toast, dialog, загварын өнгө
+        ├── AppSession.java          — Нэвтэрсэн хэрэглэгчийн төлөв
+        ├── RecipesPane.java         — CRUD бүхий жорын лент
+        ├── FeedPane.java            — Нийгмийн лент + Нээн судлах
+        ├── CafesPane.java           — Кафений карт + Ойролцоо
+        ├── JournalPane.java         — Буцалтын дэвтэр + радар диаграм
+        ├── LearnPane.java           — Гарын авлага & нийтлэлүүд
+        ├── PeoplePane.java          — Хэрэглэгч нээн судлах
+        └── ProfilePane.java         — Профайл засварлах + табууд
 ```
 
 ---
 
-## Running the App
+## Програмыг ажиллуулах
 
-**Prerequisites:** Java 21, Maven (wrapper included)
+**Урьдчилсан нөхцөл:** Java 21, Maven (wrapper багтсан)
 
 ```cmd
 cd "C:\Users\thatu\OneDrive\Desktop\cafe-project"
 mvnw.cmd javafx:run
 ```
 
-The app seeds the H2 database on first launch and opens a desktop window.
+Програм анх ажиллахдаа H2 өгөгдлийн санг тарьж, desktop цонх нээнэ.
 
-> ⚠️ On **Windows Command Prompt** use `mvnw.cmd javafx:run` (no `./` prefix)
-> On **PowerShell / Git Bash** use `./mvnw.cmd javafx:run`
+> ⚠️ **Windows Command Prompt** дээр `mvnw.cmd javafx:run` (`./` угтваргүй) ашиглана
+> **PowerShell / Git Bash** дээр `./mvnw.cmd javafx:run` ашиглана
 
 ---
 
-## Demo Accounts
+## Туршилтын бүртгэлүүд
 
-| Email | Password | Username |
+| Имэйл | Нууц үг | Хэрэглэгчийн нэр |
 |---|---|---|
 | `coffee@borgol.mn` | `password123` | coffee_master |
 | `sara@borgol.mn` | `password123` | barista_sara |
 | `tea@borgol.mn` | `password123` | tea_lover |
 
-Plus 5 extra seeded users: `latte_king`, `espresso_pro`, `cold_brew_queen`, `matcha_monk`, `roast_geek`
+Нэмэлт 5 тарьсан хэрэглэгч: `latte_king`, `espresso_pro`, `cold_brew_queen`, `matcha_monk`, `roast_geek`
 
 ---
 
-## Design Patterns Used
+## Ашигласан дизайны хэв маягууд
 
-| Pattern | Where |
+| Хэв маяг | Хаана |
 |---|---|
 | **Singleton** | `DatabaseConnection` (DCL + volatile), `AppSession` |
-| **Factory** | `RepositoryFactory` (DB vs MEM mode) |
-| **DAO / Repository** | `BorgolRepository` — all SQL isolated behind service layer |
-| **Observer** | `MenuChangeObserver` (legacy menu service) |
-| **Hexagonal Architecture** | Core domain isolated from UI and DB layers |
-| **Callback / Runnable** | `ProfilePane(onProfileUpdated)` — sidebar refresh without full rebuild |
+| **Factory** | `RepositoryFactory` (DB болон MEM горим) |
+| **DAO / Repository** | `BorgolRepository` — бүх SQL сервисийн давхаргаас тусгаарлагдсан |
+| **Observer** | `MenuChangeObserver` (legacy цэсний сервис) |
+| **Hexagonal Architecture** | Core домэйн UI болон DB давхаргаас тусгаарлагдсан |
+| **Callback / Runnable** | `ProfilePane(onProfileUpdated)` — бүрэн дахин барихгүйгээр sidebar шинэчлэх |
 
 ---
 
-## API Endpoints (Web Layer)
+## API Endpoint-үүд (Вэб давхарга)
 
-| Group | Endpoints |
+| Бүлэг | Endpoint-үүд |
 |---|---|
-| Auth | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` |
-| Users | `GET /api/users`, `PUT /api/users/me`, `POST/DELETE /api/users/{id}/follow`, `GET /api/users/search` |
-| Recipes | `GET/POST /api/recipes`, `GET/PUT/DELETE /api/recipes/{id}`, `POST /api/recipes/{id}/like`, `GET/POST /api/recipes/{id}/comments` |
-| Feed | `GET /api/feed` |
-| Cafés | `GET/POST /api/cafes`, `GET /api/cafes/{id}`, `POST /api/cafes/{id}/rate` |
-| Journal | `GET/POST /api/journal`, `PUT/DELETE /api/journal/{id}` |
-| Learn | `GET /api/brew-guides`, `GET /api/brew-guides/{id}`, `GET /api/learn`, `GET /api/learn/{id}` |
+| Нэвтрэлт | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` |
+| Хэрэглэгчид | `GET /api/users`, `PUT /api/users/me`, `POST/DELETE /api/users/{id}/follow`, `GET /api/users/search` |
+| Жорууд | `GET/POST /api/recipes`, `GET/PUT/DELETE /api/recipes/{id}`, `POST /api/recipes/{id}/like`, `GET/POST /api/recipes/{id}/comments` |
+| Лент | `GET /api/feed` |
+| Кафенүүд | `GET/POST /api/cafes`, `GET /api/cafes/{id}`, `POST /api/cafes/{id}/rate` |
+| Дэвтэр | `GET/POST /api/journal`, `PUT/DELETE /api/journal/{id}` |
+| Суралцах | `GET /api/brew-guides`, `GET /api/brew-guides/{id}`, `GET /api/learn`, `GET /api/learn/{id}` |
 
 ---
 
-## Seeded Static Content
+## Тарьсан статик агуулга
 
-**Brew Guides:** Pour Over (V60), French Press, AeroPress, Espresso, Cold Brew, Moka Pot
-**Learn Articles:** Roast Levels, Extraction Science, Water Quality, Flavor Tasting, Arabica vs Robusta, Grind Size Guide
+**Буцалтын гарын авлага:** Pour Over (V60), French Press, AeroPress, Espresso, Cold Brew, Moka Pot
+**Сурах нийтлэлүүд:** Шарсан түвшин, Гарцын шинжлэх ухаан, Усны чанар, Амт мэдрэх, Arabica vs Robusta, Нунтаглалтын хэмжээ
 
 ---
 
-## Branch
+## Салбар
 
 `feature/borgol-platform` → [GitHub](https://github.com/Apoca72/borgol-coffee-platform)
