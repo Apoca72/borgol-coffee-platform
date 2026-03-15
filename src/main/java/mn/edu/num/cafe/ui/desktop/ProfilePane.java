@@ -19,9 +19,15 @@ public class ProfilePane {
 
     private final BorderPane root;
     private final BorgolService service;
+    private final Runnable onProfileUpdated;
 
     public ProfilePane(BorgolService service) {
+        this(service, null);
+    }
+
+    public ProfilePane(BorgolService service, Runnable onProfileUpdated) {
         this.service = service;
+        this.onProfileUpdated = onProfileUpdated;
         root = new BorderPane();
         root.getStyleClass().add("content-pane");
         build();
@@ -186,6 +192,8 @@ public class ProfilePane {
                         bioArea.getText().trim(), "", levelBox.getValue(), prefs);
                     root.getChildren().clear();
                     build();
+                    UiUtils.showToast("Profile updated!");
+                    if (onProfileUpdated != null) onProfileUpdated.run();
                 } catch (Exception ex) { MainWindow.alert("Error", ex.getMessage()); }
             }
         });
@@ -338,6 +346,7 @@ public class ProfilePane {
                         catBox.getValue(), nameField.getText().trim(),
                         brandField.getText().trim(), notesArea.getText().trim());
                     loadEquipment(list);
+                    UiUtils.showToast("Equipment added!");
                 } catch (Exception ex) { MainWindow.alert("Error", ex.getMessage()); }
             }
         });

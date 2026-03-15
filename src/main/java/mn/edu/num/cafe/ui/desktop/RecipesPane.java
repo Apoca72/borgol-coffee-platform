@@ -5,6 +5,8 @@ import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.layout.FlowPane;
 import mn.edu.num.cafe.core.application.BorgolService;
@@ -24,6 +26,7 @@ public class RecipesPane {
     private VBox rightPanel;
     private String lastSearch  = "";
     private String filterType  = "ALL";
+    private String sortOrder   = "RECENT";
     private Timeline searchDebounce;
 
     public RecipesPane(BorgolService service) {
@@ -58,12 +61,33 @@ public class RecipesPane {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
+        // Sort toggle
+        ToggleGroup sortGroup = new ToggleGroup();
+        ToggleButton tRecent  = new ToggleButton("Recent");
+        ToggleButton tPopular = new ToggleButton("Popular");
+        tRecent.setToggleGroup(sortGroup);
+        tPopular.setToggleGroup(sortGroup);
+        tRecent.setSelected(true);
+        String tActive = "-fx-background-color:#D4621A;-fx-text-fill:white;-fx-font-size:11px;" +
+            "-fx-font-weight:700;-fx-padding:6 12 6 12;-fx-cursor:hand;-fx-border-width:0;";
+        String tInact  = "-fx-background-color:#E4E6EA;-fx-text-fill:#1C1E21;-fx-font-size:11px;" +
+            "-fx-font-weight:600;-fx-padding:6 12 6 12;-fx-cursor:hand;-fx-border-width:0;";
+        tRecent.setStyle(tActive); tPopular.setStyle(tInact);
+        sortGroup.selectedToggleProperty().addListener((o, old, v) -> {
+            if (v == tRecent)   { sortOrder = "RECENT";  tRecent.setStyle(tActive);  tPopular.setStyle(tInact); }
+            else if (v == tPopular) { sortOrder = "POPULAR"; tPopular.setStyle(tActive); tRecent.setStyle(tInact); }
+            if (v != null) loadData();
+        });
+        HBox sortBox = new HBox(0, tRecent, tPopular);
+        sortBox.setStyle("-fx-border-radius:8;-fx-background-radius:8;" +
+            "-fx-border-color:#E4E6EA;-fx-border-width:1;");
+
         Button btnNew = new Button("+ New Recipe");
         btnNew.getStyleClass().add("btn-primary");
         btnNew.setOnAction(e -> showNewDialog());
         if (!AppSession.loggedIn()) btnNew.setDisable(true);
 
-        bar.getChildren().addAll(title, search, spacer, btnNew);
+        bar.getChildren().addAll(title, search, spacer, sortBox, btnNew);
         return bar;
     }
 
@@ -104,7 +128,7 @@ public class RecipesPane {
         rightPanel.getChildren().clear();
         try {
             int uid = AppSession.loggedIn() ? AppSession.userId() : 0;
-            List<Recipe> recipes = service.getRecipes(uid, lastSearch, filterType, "RECENT");
+            List<Recipe> recipes = service.getRecipes(uid, lastSearch, filterType, sortOrder);
             if (recipes.isEmpty()) {
                 feedBox.getChildren().add(UiUtils.emptyState(
                     "\uD83D\uDCD6", "No recipes yet",
@@ -221,6 +245,18 @@ public class RecipesPane {
         card.getStyleClass().add("recipe-card");
         card.setMaxWidth(680);
 
+        // Image banner (if imageUrl is present)
+        if (r.getImageUrl() != null && !r.getImageUrl().isBlank()) {
+            try {
+                Image img = new Image(r.getImageUrl(), 680, 160, false, true, true);
+                ImageView iv = new ImageView(img);
+                iv.setFitWidth(680); iv.setFitHeight(160);
+                iv.setPreserveRatio(false);
+                iv.setStyle("-fx-background-radius:12 12 0 0;");
+                card.getChildren().add(iv);
+            } catch (Exception ignored) {}
+        }
+
         // Header
         HBox header = new HBox(10);
         header.setPadding(new Insets(16, 20, 12, 20));
@@ -286,6 +322,9 @@ public class RecipesPane {
             loadData();
         });
 
+        Label commentLbl = new Label("\uD83D\uDCAC  " + r.getCommentCount());
+        commentLbl.setStyle("-fx-font-size:13px;-fx-text-fill:#65676B;");
+
         Button viewBtn = new Button("View");
         viewBtn.setStyle("-fx-background-color:#F0F2F5;-fx-text-fill:#1C1E21;" +
             "-fx-font-weight:600;-fx-font-size:12px;-fx-padding:5 12 5 12;" +
@@ -294,7 +333,7 @@ public class RecipesPane {
 
         Region btnSpacer = new Region();
         HBox.setHgrow(btnSpacer, Priority.ALWAYS);
-        footer.getChildren().addAll(likeBtn, btnSpacer, viewBtn);
+        footer.getChildren().addAll(likeBtn, commentLbl, btnSpacer, viewBtn);
 
         if (AppSession.loggedIn() && r.getAuthorId() == AppSession.userId()) {
             Button editBtn = new Button("Edit");
@@ -357,6 +396,7 @@ public class RecipesPane {
                         parseIntOr(time.getText(), 0), diff.getValue(),
                         List.of(), imgUrl.getText().trim());
                     loadData();
+                    UiUtils.showToast("Recipe saved!");
                 } catch (Exception ex) { MainWindow.alert("Error", ex.getMessage()); }
             }
         });

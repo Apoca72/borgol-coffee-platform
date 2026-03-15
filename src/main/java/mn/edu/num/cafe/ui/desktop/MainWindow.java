@@ -11,6 +11,7 @@ import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Main application window — Facebook-style left sidebar + content area.
@@ -25,6 +26,7 @@ public class MainWindow {
     private final BorgolService service;
     private final Stage stage;
     private VBox sidebar;
+    private boolean darkMode = false;
 
     public MainWindow(BorgolService service, Stage stage) {
         this.service = service;
@@ -40,6 +42,7 @@ public class MainWindow {
         root.setLeft(sidebar);
         root.setCenter(center);
 
+        UiUtils.setToastRoot(center);
         showPane("Recipes");
     }
 
@@ -56,7 +59,7 @@ public class MainWindow {
         LearnPane    lp = new LearnPane(service);
         FeedPane     fp = new FeedPane(service);
         PeoplePane   pp = new PeoplePane(service);
-        ProfilePane  pr = new ProfilePane(service);
+        ProfilePane  pr = new ProfilePane(service, this::refreshSidebarUser);
 
         panes.put("Recipes", rp.getRoot());
         panes.put("Cafes",   cp.getRoot());
@@ -108,13 +111,23 @@ public class MainWindow {
         VBox box = new VBox(8);
         box.getStyleClass().add("sidebar-user-section");
 
+        // Dark mode toggle (always visible)
+        Button darkBtn = new Button(darkMode ? "\u2600\uFE0F Light" : "\uD83C\uDF19 Dark");
+        darkBtn.getStyleClass().add("btn-secondary");
+        darkBtn.setMaxWidth(Double.MAX_VALUE);
+        darkBtn.setOnAction(e -> {
+            toggleDarkMode();
+            darkBtn.setText(darkMode ? "\u2600\uFE0F Light" : "\uD83C\uDF19 Dark");
+        });
+        box.getChildren().add(darkBtn);
+
         if (AppSession.loggedIn()) {
             Label avatar = UiUtils.createAvatar(AppSession.username(), 52);
 
             Label username = new Label("@" + AppSession.username());
             username.getStyleClass().add("sidebar-username");
 
-            // Stats row: recipes · followers · following
+            // Stats row: recipes · followers
             Label statsRow = new Label("\u2014");
             statsRow.setStyle("-fx-font-size:11px;-fx-text-fill:#65676B;");
             try {
@@ -166,6 +179,22 @@ public class MainWindow {
         }
         sidebar.getChildren().set(sidebar.getChildren().size() - 1, buildUserSection());
         showPane("Recipes");
+    }
+
+    /** Rebuilds only the user section (after profile edit) — cheaper than refreshAll(). */
+    private void refreshSidebarUser() {
+        sidebar.getChildren().set(sidebar.getChildren().size() - 1, buildUserSection());
+    }
+
+    private void toggleDarkMode() {
+        darkMode = !darkMode;
+        var sheets = stage.getScene().getStylesheets();
+        String darkCss;
+        try {
+            darkCss = Objects.requireNonNull(
+                getClass().getResource("/style-dark.css")).toExternalForm();
+        } catch (Exception e) { return; }
+        if (darkMode) sheets.add(darkCss); else sheets.remove(darkCss);
     }
 
     private void showPane(String name) {

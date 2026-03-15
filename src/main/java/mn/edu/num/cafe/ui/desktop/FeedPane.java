@@ -5,6 +5,8 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import mn.edu.num.cafe.core.application.BorgolService;
 import mn.edu.num.cafe.core.application.BorgolService.UserView;
@@ -217,6 +219,17 @@ public class FeedPane {
         card.getStyleClass().add("recipe-card");
         card.setMaxWidth(680);
 
+        // Image banner
+        if (r.getImageUrl() != null && !r.getImageUrl().isBlank()) {
+            try {
+                Image img = new Image(r.getImageUrl(), 680, 160, false, true, true);
+                ImageView iv = new ImageView(img);
+                iv.setFitWidth(680); iv.setFitHeight(160);
+                iv.setPreserveRatio(false);
+                card.getChildren().add(iv);
+            } catch (Exception ignored) {}
+        }
+
         // Header
         HBox header = new HBox(10);
         header.setPadding(new Insets(16, 20, 12, 20));
@@ -278,6 +291,9 @@ public class FeedPane {
             loadData();
         });
 
+        Label commentLbl = new Label("\uD83D\uDCAC  " + r.getCommentCount());
+        commentLbl.setStyle("-fx-font-size:13px;-fx-text-fill:#65676B;");
+
         Label timeInfo = new Label("\u23F1  " + r.getBrewTime() + " min");
         timeInfo.setStyle("-fx-font-size:13px;-fx-text-fill:#65676B;");
 
@@ -290,7 +306,7 @@ public class FeedPane {
             "-fx-background-radius:8;-fx-border-width:0;-fx-cursor:hand;");
         viewBtn.setOnAction(e -> UiUtils.showRecipeDetailDialog(service, r, this::loadData));
 
-        footer.getChildren().addAll(likeBtn, timeInfo, btnSpacer, viewBtn);
+        footer.getChildren().addAll(likeBtn, commentLbl, timeInfo, btnSpacer, viewBtn);
         card.getChildren().addAll(header, body, sep, footer);
         return card;
     }

@@ -1,11 +1,18 @@
 package mn.edu.num.cafe.ui.desktop;
 
+import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
 import javafx.animation.Timeline;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.util.Duration;
 import mn.edu.num.cafe.core.application.BorgolService;
 import mn.edu.num.cafe.core.application.BorgolService.UserView;
@@ -423,6 +430,91 @@ class UiUtils {
 
         card.getChildren().addAll(title, meta);
         return card;
+    }
+
+    // ── Toast notification ────────────────────────────────────────────────────
+
+    private static StackPane toastRoot;
+
+    static void setToastRoot(StackPane root) { toastRoot = root; }
+
+    static void showToast(String message) {
+        if (toastRoot == null) return;
+        Label toast = new Label(message);
+        toast.setStyle("-fx-background-color:#D4621A;-fx-text-fill:white;" +
+            "-fx-font-weight:700;-fx-font-size:13px;-fx-padding:10 22 10 22;" +
+            "-fx-background-radius:20;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.3),8,0,0,2);");
+        StackPane.setAlignment(toast, Pos.BOTTOM_CENTER);
+        StackPane.setMargin(toast, new Insets(0, 0, 36, 0));
+        toast.setOpacity(0);
+        toastRoot.getChildren().add(toast);
+
+        FadeTransition fadeIn  = new FadeTransition(Duration.millis(200), toast);
+        fadeIn.setFromValue(0); fadeIn.setToValue(1);
+        PauseTransition pause  = new PauseTransition(Duration.millis(2000));
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(400), toast);
+        fadeOut.setFromValue(1); fadeOut.setToValue(0);
+        fadeOut.setOnFinished(e -> toastRoot.getChildren().remove(toast));
+        new SequentialTransition(fadeIn, pause, fadeOut).play();
+    }
+
+    // ── Radar chart Canvas (6 axes: Aroma/Flavor/Acidity/Body/Sweet/Finish) ──
+
+    /**
+     * Builds a JavaFX Canvas radar chart for 6 rating dimensions.
+     * @param values  int[6] with values 0–10
+     * @param labels  String[6] axis labels
+     * @param size    canvas size in px (square)
+     */
+    static Canvas buildRadarCanvas(int[] values, String[] labels, int size) {
+        Canvas canvas = new Canvas(size, size);
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+        double cx = size / 2.0, cy = size / 2.0;
+        double maxR = size * 0.34;
+        int n = 6;
+
+        // Background rings
+        gc.setStroke(Color.web("#E4E6EA")); gc.setLineWidth(0.8);
+        for (int ring = 1; ring <= 5; ring++) {
+            double r = maxR * ring / 5.0;
+            double[] rpx = new double[n], rpy = new double[n];
+            for (int i = 0; i < n; i++) {
+                double a = Math.PI / 2 - i * 2 * Math.PI / n;
+                rpx[i] = cx + r * Math.cos(a); rpy[i] = cy - r * Math.sin(a);
+            }
+            gc.strokePolygon(rpx, rpy, n);
+        }
+
+        // Axis lines
+        for (int i = 0; i < n; i++) {
+            double a = Math.PI / 2 - i * 2 * Math.PI / n;
+            gc.strokeLine(cx, cy, cx + maxR * Math.cos(a), cy - maxR * Math.sin(a));
+        }
+
+        // Data polygon
+        double[] dpx = new double[n], dpy = new double[n];
+        for (int i = 0; i < n; i++) {
+            double a = Math.PI / 2 - i * 2 * Math.PI / n;
+            double r = maxR * Math.max(0, Math.min(10, values[i])) / 10.0;
+            dpx[i] = cx + r * Math.cos(a); dpy[i] = cy - r * Math.sin(a);
+        }
+        gc.setFill(Color.web("#D4621A", 0.22)); gc.fillPolygon(dpx, dpy, n);
+        gc.setStroke(Color.web("#D4621A")); gc.setLineWidth(2); gc.strokePolygon(dpx, dpy, n);
+
+        // Data dots
+        gc.setFill(Color.web("#D4621A"));
+        for (int i = 0; i < n; i++) gc.fillOval(dpx[i] - 3, dpy[i] - 3, 6, 6);
+
+        // Axis labels
+        gc.setFill(Color.web("#65676B")); gc.setFont(Font.font(9.5));
+        double labelR = maxR + 18;
+        for (int i = 0; i < n; i++) {
+            double a = Math.PI / 2 - i * 2 * Math.PI / n;
+            double lx = cx + labelR * Math.cos(a);
+            double ly = cy - labelR * Math.sin(a);
+            gc.fillText(labels[i], lx - labels[i].length() * 2.8, ly + 4);
+        }
+        return canvas;
     }
 
     // ── Followers / Following list dialog ─────────────────────────────────────
