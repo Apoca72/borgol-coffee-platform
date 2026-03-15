@@ -33,7 +33,7 @@ public class MainWindow {
         this.stage   = stage;
 
         center = new StackPane();
-        center.setStyle("-fx-background-color:#F0F2F5;");
+        center.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
 
         buildPanes();
 
@@ -188,6 +188,8 @@ public class MainWindow {
 
     private void toggleDarkMode() {
         darkMode = !darkMode;
+        UiUtils.dark = darkMode;
+
         var sheets = stage.getScene().getStylesheets();
         String darkCss;
         try {
@@ -195,6 +197,27 @@ public class MainWindow {
                 getClass().getResource("/style-dark.css")).toExternalForm();
         } catch (Exception e) { return; }
         if (darkMode) sheets.add(darkCss); else sheets.remove(darkCss);
+
+        // Rebuild all panes so new inline styles pick up the correct colors
+        buildPanes();
+        VBox navBox = (VBox) sidebar.getChildren().get(1);
+        navBox.getChildren().clear();
+        for (String name : panes.keySet()) {
+            Button btn = new Button("  " + name);
+            btn.setGraphic(navIcon(name));
+            btn.setGraphicTextGap(6);
+            btn.getStyleClass().add("nav-item");
+            btn.setMaxWidth(Double.MAX_VALUE);
+            btn.setOnAction(e -> showPane(name));
+            navBox.getChildren().add(btn);
+            navButtons.put(name, btn);
+        }
+        sidebar.getChildren().set(sidebar.getChildren().size() - 1, buildUserSection());
+
+        // Also fix center background
+        center.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
+
+        showPane("Recipes");
     }
 
     private void showPane(String name) {

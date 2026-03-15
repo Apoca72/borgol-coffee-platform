@@ -28,7 +28,7 @@ public class JournalPane {
         this.service = service;
         root = new BorderPane();
         root.getStyleClass().add("content-pane");
-        root.setStyle("-fx-background-color:#F0F2F5;");
+        root.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
         root.setTop(buildToolbar());
         root.setCenter(buildScrollList());
         loadData();
@@ -64,12 +64,12 @@ public class JournalPane {
     private ScrollPane buildScrollList() {
         listBox = new VBox(12);
         listBox.setPadding(new Insets(20, 40, 20, 40));
-        listBox.setStyle("-fx-background-color:#F0F2F5;");
+        listBox.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
         listBox.setMaxWidth(780);
 
         ScrollPane scroll = new ScrollPane(listBox);
         scroll.setFitToWidth(true);
-        scroll.setStyle("-fx-background-color:#F0F2F5;-fx-background:#F0F2F5;");
+        scroll.setStyle("-fx-background-color:" + UiUtils.bg() + ";-fx-background:" + UiUtils.bg() + ";");
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         return scroll;
     }
@@ -103,7 +103,7 @@ public class JournalPane {
 
     private VBox buildEntryCard(BrewJournalEntry e) {
         VBox card = new VBox(10);
-        card.setStyle("-fx-background-color:white;-fx-background-radius:12;" +
+        card.setStyle("-fx-background-color:" + UiUtils.card() + ";-fx-background-radius:12;" +
             "-fx-padding:16 20 14 20;" +
             "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.07),8,0,0,1);");
         card.setMaxWidth(740);
@@ -125,14 +125,14 @@ public class JournalPane {
             (e.getOrigin() != null && !e.getOrigin().isBlank()
             ? "  \u00B7  " + e.getOrigin() : "");
         Label beanLabel = new Label(beanText);
-        beanLabel.setStyle("-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#1C1E21;");
+        beanLabel.setStyle("-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:" + UiUtils.text() + ";");
         beanLabel.setWrapText(true);
 
         HBox subRow = new HBox(8);
         subRow.setAlignment(Pos.CENTER_LEFT);
 
         Label methodLabel = new Label(e.getBrewMethod() != null ? e.getBrewMethod() : "");
-        methodLabel.setStyle("-fx-font-size:12px;-fx-text-fill:#65676B;");
+        methodLabel.setStyle("-fx-font-size:12px;-fx-text-fill:" + UiUtils.sub() + ";");
 
         if (e.getRoastLevel() != null && !e.getRoastLevel().isBlank()) {
             Label roastChip = new Label(e.getRoastLevel());
@@ -163,7 +163,7 @@ public class JournalPane {
             String preview = e.getNotes().length() > 100
                 ? e.getNotes().substring(0, 100) + "\u2026" : e.getNotes();
             Label notesLabel = new Label(preview);
-            notesLabel.setStyle("-fx-font-size:13px;-fx-text-fill:#65676B;-fx-font-style:italic;");
+            notesLabel.setStyle("-fx-font-size:13px;-fx-text-fill:" + UiUtils.sub() + ";-fx-font-style:italic;");
             notesLabel.setWrapText(true);
             card.getChildren().addAll(headerRow, notesLabel);
         } else {
@@ -183,13 +183,13 @@ public class JournalPane {
         footerRow.setAlignment(Pos.CENTER_LEFT);
 
         Button detailBtn = new Button("\uD83D\uDCC8 Details");
-        detailBtn.setStyle("-fx-background-color:#F0F2F5;-fx-text-fill:#1C1E21;" +
+        detailBtn.setStyle("-fx-background-color:" + UiUtils.btn() + ";-fx-text-fill:" + UiUtils.text() + ";" +
             "-fx-font-weight:600;-fx-font-size:12px;-fx-padding:5 12 5 12;" +
             "-fx-background-radius:8;-fx-border-width:0;-fx-cursor:hand;");
         detailBtn.setOnAction(ev -> showDetailDialog(e));
 
         Button editBtn = new Button("Edit");
-        editBtn.setStyle("-fx-background-color:#F0F2F5;-fx-text-fill:#1C1E21;" +
+        editBtn.setStyle("-fx-background-color:" + UiUtils.btn() + ";-fx-text-fill:" + UiUtils.text() + ";" +
             "-fx-font-weight:600;-fx-font-size:12px;-fx-padding:5 12 5 12;" +
             "-fx-background-radius:8;-fx-border-width:0;-fx-cursor:hand;");
         editBtn.setOnAction(ev -> entryDialog("Edit Brew Entry", e));
@@ -219,26 +219,26 @@ public class JournalPane {
 
         VBox box = new VBox(16);
         box.setPadding(new Insets(20));
-        box.setStyle("-fx-background-color:#F8F9FA;");
+        box.setStyle("-fx-background-color:" + UiUtils.cardAlt() + ";");
 
         // Header card
         VBox headerCard = new VBox(6);
-        headerCard.setStyle("-fx-background-color:white;-fx-background-radius:12;" +
+        headerCard.setStyle("-fx-background-color:" + UiUtils.card() + ";-fx-background-radius:12;" +
             "-fx-padding:16;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.06),6,0,0,1);");
         Label titleLbl = new Label((e.getCoffeeBean() != null ? e.getCoffeeBean() : "—") +
             (e.getOrigin() != null && !e.getOrigin().isBlank() ? "  \u00B7  " + e.getOrigin() : ""));
-        titleLbl.setStyle("-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#1C1E21;");
+        titleLbl.setStyle("-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:" + UiUtils.text() + ";");
         titleLbl.setWrapText(true);
         Label methodLbl = new Label((e.getBrewMethod() != null ? e.getBrewMethod() : "") +
             (e.getRoastLevel() != null && !e.getRoastLevel().isBlank()
                 ? "  \u00B7  " + e.getRoastLevel() : ""));
-        methodLbl.setStyle("-fx-font-size:13px;-fx-text-fill:#65676B;");
+        methodLbl.setStyle("-fx-font-size:13px;-fx-text-fill:" + UiUtils.sub() + ";");
         headerCard.getChildren().addAll(titleLbl, methodLbl);
         box.getChildren().add(headerCard);
 
         // Brew parameters card
         VBox paramsCard = new VBox(6);
-        paramsCard.setStyle("-fx-background-color:white;-fx-background-radius:12;" +
+        paramsCard.setStyle("-fx-background-color:" + UiUtils.card() + ";-fx-background-radius:12;" +
             "-fx-padding:14 16 14 16;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.06),6,0,0,1);");
         Label paramsHeading = new Label("BREW PARAMETERS");
         paramsHeading.getStyleClass().add("detail-heading");
@@ -257,7 +257,7 @@ public class JournalPane {
 
         // Radar chart card
         VBox radarCard = new VBox(10);
-        radarCard.setStyle("-fx-background-color:white;-fx-background-radius:12;" +
+        radarCard.setStyle("-fx-background-color:" + UiUtils.card() + ";-fx-background-radius:12;" +
             "-fx-padding:14 16 14 16;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.06),6,0,0,1);");
         Label radarHeading = new Label("FLAVOR PROFILE");
         radarHeading.getStyleClass().add("detail-heading");
@@ -279,7 +279,7 @@ public class JournalPane {
             String starStr = "\u2605".repeat(Math.max(0, stars)) +
                              "\u2606".repeat(Math.max(0, 5 - stars));
             Label ratingRow = new Label(ratingNames[i] + ": " + starStr + "  " + vals[i] + "/10");
-            ratingRow.setStyle("-fx-font-size:12px;-fx-text-fill:#1C1E21;");
+            ratingRow.setStyle("-fx-font-size:12px;-fx-text-fill:" + UiUtils.text() + ";");
             ratingsList.getChildren().add(ratingRow);
         }
         chartRow.getChildren().add(ratingsList);
@@ -289,12 +289,12 @@ public class JournalPane {
         // Notes card
         if (e.getNotes() != null && !e.getNotes().isBlank()) {
             VBox notesCard = new VBox(6);
-            notesCard.setStyle("-fx-background-color:white;-fx-background-radius:12;" +
+            notesCard.setStyle("-fx-background-color:" + UiUtils.card() + ";-fx-background-radius:12;" +
                 "-fx-padding:14 16 14 16;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.06),6,0,0,1);");
             Label notesHeading = new Label("TASTING NOTES");
             notesHeading.getStyleClass().add("detail-heading");
             Label notesText = new Label(e.getNotes());
-            notesText.setStyle("-fx-font-size:14px;-fx-text-fill:#1C1E21;-fx-line-spacing:3;");
+            notesText.setStyle("-fx-font-size:14px;-fx-text-fill:" + UiUtils.text() + ";-fx-line-spacing:3;");
             notesText.setWrapText(true);
             notesCard.getChildren().addAll(notesHeading, notesText);
             box.getChildren().add(notesCard);
@@ -309,8 +309,8 @@ public class JournalPane {
 
     private static void addParamRow(GridPane grid, String label, String value, int row) {
         if (value == null || value.isBlank() || value.equals("0") || value.equals("0.0")) return;
-        Label k = new Label(label); k.setStyle("-fx-font-size:12px;-fx-text-fill:#65676B;-fx-font-weight:700;");
-        Label v = new Label(value); v.setStyle("-fx-font-size:12px;-fx-text-fill:#1C1E21;");
+        Label k = new Label(label); k.setStyle("-fx-font-size:12px;-fx-text-fill:" + UiUtils.sub() + ";-fx-font-weight:700;");
+        Label v = new Label(value); v.setStyle("-fx-font-size:12px;-fx-text-fill:" + UiUtils.text() + ";");
         grid.add(k, 0, row); grid.add(v, 1, row);
     }
 

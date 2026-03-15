@@ -8,6 +8,7 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import javafx.scene.shape.Rectangle;
 import mn.edu.num.cafe.core.application.BorgolService;
 import mn.edu.num.cafe.core.application.BorgolService.UserView;
 import mn.edu.num.cafe.core.domain.Recipe;
@@ -30,7 +31,7 @@ public class FeedPane {
         this.service = service;
         root = new BorderPane();
         root.getStyleClass().add("content-pane");
-        root.setStyle("-fx-background-color:#F0F2F5;");
+        root.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
         root.setTop(buildToolbar());
         root.setCenter(buildMainArea());
         loadData();
@@ -65,11 +66,12 @@ public class FeedPane {
     private HBox buildMainArea() {
         feedBox = new VBox(16);
         feedBox.setPadding(new Insets(20, 16, 20, 20));
-        feedBox.setStyle("-fx-background-color:#F0F2F5;");
+        feedBox.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
 
         ScrollPane feedScroll = new ScrollPane(feedBox);
         feedScroll.setFitToWidth(true);
         feedScroll.getStyleClass().add("feed-scroll");
+        feedScroll.setStyle("-fx-background-color:" + UiUtils.bg() + ";-fx-background:" + UiUtils.bg() + ";");
         feedScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         HBox.setHgrow(feedScroll, Priority.ALWAYS);
 
@@ -77,11 +79,11 @@ public class FeedPane {
         rightPanel.setPadding(new Insets(20, 16, 20, 4));
         rightPanel.setMinWidth(264);
         rightPanel.setMaxWidth(264);
-        rightPanel.setStyle("-fx-background-color:#F0F2F5;");
+        rightPanel.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
 
         ScrollPane rightScroll = new ScrollPane(rightPanel);
         rightScroll.setFitToWidth(true);
-        rightScroll.setStyle("-fx-background-color:#F0F2F5;-fx-background:#F0F2F5;");
+        rightScroll.setStyle("-fx-background-color:" + UiUtils.bg() + ";-fx-background:" + UiUtils.bg() + ";");
         rightScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         rightScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         rightScroll.setMinWidth(264);
@@ -111,9 +113,34 @@ public class FeedPane {
         }
 
         if (items.isEmpty()) {
-            feedBox.getChildren().add(UiUtils.emptyState(
-                "\uD83D\uDC64", "No posts yet",
-                "Follow some coffee enthusiasts to see their recipes here."));
+            // Discover fallback — show popular recipes from everyone
+            HBox discoverHeader = new HBox(8);
+            discoverHeader.setAlignment(Pos.CENTER_LEFT);
+            discoverHeader.setPadding(new Insets(0, 0, 4, 4));
+            Label star = new Label("\u2728");
+            star.setStyle("-fx-font-size:18px;");
+            Label discoverLbl = new Label("Discover Popular Recipes");
+            discoverLbl.setStyle("-fx-font-size:16px;-fx-font-weight:700;-fx-text-fill:#1C1E21;");
+            Label sub = new Label("  \u00B7  Follow people to personalise your feed");
+            sub.setStyle("-fx-font-size:13px;-fx-text-fill:#65676B;");
+            discoverHeader.getChildren().addAll(star, discoverLbl, sub);
+            feedBox.getChildren().add(discoverHeader);
+
+            try {
+                int uid = AppSession.loggedIn() ? AppSession.userId() : 0;
+                List<Recipe> popular = service.getRecipes(uid, "", "ALL", "POPULAR");
+                if (popular.isEmpty()) {
+                    feedBox.getChildren().add(UiUtils.emptyState(
+                        "\uD83D\uDC64", "No posts yet",
+                        "Follow some coffee enthusiasts to see their recipes here."));
+                } else {
+                    for (Recipe r : popular) feedBox.getChildren().add(buildRecipeCard(r));
+                }
+            } catch (Exception ignored) {
+                feedBox.getChildren().add(UiUtils.emptyState(
+                    "\uD83D\uDC64", "No posts yet",
+                    "Follow some coffee enthusiasts to see their recipes here."));
+            }
         } else {
             for (Recipe r : items) feedBox.getChildren().add(buildRecipeCard(r));
         }
@@ -219,14 +246,26 @@ public class FeedPane {
         card.getStyleClass().add("recipe-card");
         card.setMaxWidth(680);
 
-        // Image banner
+        // Image banner — preserves ratio, fills width, clips to banner height
         if (r.getImageUrl() != null && !r.getImageUrl().isBlank()) {
             try {
-                Image img = new Image(r.getImageUrl(), 680, 160, false, true, true);
+                Image img = new Image(r.getImageUrl(), 0, 0, true, true, true);
                 ImageView iv = new ImageView(img);
-                iv.setFitWidth(680); iv.setFitHeight(160);
-                iv.setPreserveRatio(false);
-                card.getChildren().add(iv);
+                iv.setPreserveRatio(true);
+
+                StackPane banner = new StackPane(iv);
+                banner.setPrefHeight(200);
+                banner.setMaxHeight(200);
+                banner.setStyle("-fx-background-color:#E4E6EA;");
+                StackPane.setAlignment(iv, Pos.CENTER);
+
+                Rectangle clip = new Rectangle();
+                clip.widthProperty().bind(banner.widthProperty());
+                clip.setHeight(200);
+                banner.setClip(clip);
+
+                iv.fitWidthProperty().bind(banner.widthProperty());
+                card.getChildren().add(banner);
             } catch (Exception ignored) {}
         }
 
@@ -259,7 +298,7 @@ public class FeedPane {
         body.setPadding(new Insets(0, 20, 16, 20));
 
         Label titleLabel = new Label(r.getTitle());
-        titleLabel.setStyle("-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#1C1E21;");
+        titleLabel.setStyle("-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:" + UiUtils.text() + ";");
         titleLabel.setWrapText(true);
         body.getChildren().add(titleLabel);
 
@@ -267,7 +306,7 @@ public class FeedPane {
             String excerpt = r.getDescription().length() > 140
                 ? r.getDescription().substring(0, 140) + "\u2026" : r.getDescription();
             Label desc = new Label(excerpt);
-            desc.setStyle("-fx-font-size:14px;-fx-text-fill:#65676B;-fx-line-spacing:2;");
+            desc.setStyle("-fx-font-size:14px;-fx-text-fill:" + UiUtils.sub() + ";-fx-line-spacing:2;");
             desc.setWrapText(true);
             body.getChildren().add(desc);
         }
@@ -301,7 +340,7 @@ public class FeedPane {
         HBox.setHgrow(btnSpacer, Priority.ALWAYS);
 
         Button viewBtn = new Button("View");
-        viewBtn.setStyle("-fx-background-color:#F0F2F5;-fx-text-fill:#1C1E21;" +
+        viewBtn.setStyle("-fx-background-color:" + UiUtils.btn() + ";-fx-text-fill:" + UiUtils.text() + ";" +
             "-fx-font-weight:600;-fx-font-size:12px;-fx-padding:5 12 5 12;" +
             "-fx-background-radius:8;-fx-border-width:0;-fx-cursor:hand;");
         viewBtn.setOnAction(e -> UiUtils.showRecipeDetailDialog(service, r, this::loadData));

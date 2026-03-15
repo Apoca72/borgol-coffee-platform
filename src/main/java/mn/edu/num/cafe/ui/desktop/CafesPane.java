@@ -25,7 +25,7 @@ public class CafesPane {
         this.service = service;
         root = new BorderPane();
         root.getStyleClass().add("content-pane");
-        root.setStyle("-fx-background-color:#F0F2F5;");
+        root.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
         root.setTop(buildToolbar());
         root.setCenter(buildScrollList());
         searchDebounce = UiUtils.debounce(300, () -> loadData(lastSearch));
@@ -70,12 +70,12 @@ public class CafesPane {
     private ScrollPane buildScrollList() {
         listBox = new VBox(12);
         listBox.setPadding(new Insets(20, 40, 20, 40));
-        listBox.setStyle("-fx-background-color:#F0F2F5;");
+        listBox.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
         listBox.setMaxWidth(780);
 
         ScrollPane scroll = new ScrollPane(listBox);
         scroll.setFitToWidth(true);
-        scroll.setStyle("-fx-background-color:#F0F2F5;-fx-background:#F0F2F5;");
+        scroll.setStyle("-fx-background-color:" + UiUtils.bg() + ";-fx-background:" + UiUtils.bg() + ";");
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         return scroll;
     }
@@ -101,7 +101,7 @@ public class CafesPane {
 
     private HBox buildCafeCard(CafeListing c) {
         HBox card = new HBox(16);
-        card.setStyle("-fx-background-color:white;-fx-background-radius:12;" +
+        card.setStyle("-fx-background-color:" + UiUtils.card() + ";-fx-background-radius:12;" +
             "-fx-padding:16 20 16 20;" +
             "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.07),8,0,0,1);");
         card.setAlignment(Pos.CENTER_LEFT);
@@ -118,7 +118,7 @@ public class CafesPane {
         HBox.setHgrow(info, Priority.ALWAYS);
 
         Label nameLabel = new Label(c.getName());
-        nameLabel.setStyle("-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:#1C1E21;");
+        nameLabel.setStyle("-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:" + UiUtils.text() + ";");
         nameLabel.setWrapText(true);
 
         int rounded = (int) Math.round(c.getAvgRating());
@@ -136,13 +136,13 @@ public class CafesPane {
             location += (location.isEmpty() ? "" : "  \u00B7  ") + c.getDistrict();
         if (!location.isEmpty()) {
             Label addrLabel = new Label("\uD83D\uDCCD  " + location);
-            addrLabel.setStyle("-fx-font-size:12px;-fx-text-fill:#65676B;");
+            addrLabel.setStyle("-fx-font-size:12px;-fx-text-fill:" + UiUtils.sub() + ";");
             addrLabel.setWrapText(true);
             info.getChildren().add(addrLabel);
         }
         if (c.getHours() != null && !c.getHours().isBlank()) {
             Label hoursLabel = new Label("\u23F0  " + c.getHours());
-            hoursLabel.setStyle("-fx-font-size:12px;-fx-text-fill:#65676B;");
+            hoursLabel.setStyle("-fx-font-size:12px;-fx-text-fill:" + UiUtils.sub() + ";");
             info.getChildren().add(hoursLabel);
         }
 
@@ -151,7 +151,7 @@ public class CafesPane {
         actions.setAlignment(Pos.CENTER);
 
         Button viewBtn = new Button("View");
-        viewBtn.setStyle("-fx-background-color:#E4E6EA;-fx-text-fill:#1C1E21;" +
+        viewBtn.setStyle("-fx-background-color:" + UiUtils.btn() + ";-fx-text-fill:" + UiUtils.text() + ";" +
             "-fx-font-weight:600;-fx-font-size:13px;-fx-padding:6 14 6 14;" +
             "-fx-background-radius:8;-fx-border-width:0;-fx-cursor:hand;");
         viewBtn.setOnAction(e -> showDetailDialog(c));
@@ -182,7 +182,7 @@ public class CafesPane {
         box.setPadding(new Insets(20));
 
         Label nameLabel = new Label(c.getName());
-        nameLabel.setStyle("-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#1C1E21;");
+        nameLabel.setStyle("-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:" + UiUtils.text() + ";");
         nameLabel.setWrapText(true);
 
         int rounded = (int) Math.round(c.getAvgRating());
@@ -219,7 +219,7 @@ public class CafesPane {
             Label descHeading = new Label("ABOUT");
             descHeading.getStyleClass().add("detail-heading");
             Label desc = new Label(c.getDescription());
-            desc.setStyle("-fx-font-size:14px;-fx-text-fill:#1C1E21;-fx-line-spacing:3;");
+            desc.setStyle("-fx-font-size:14px;-fx-text-fill:" + UiUtils.text() + ";-fx-line-spacing:3;");
             desc.setWrapText(true);
             box.getChildren().addAll(new Separator(), descHeading, desc);
         }
@@ -234,7 +234,7 @@ public class CafesPane {
             box.getChildren().addAll(new Separator(), myHead, myRating);
             if (c.getCurrentUserReview() != null && !c.getCurrentUserReview().isBlank()) {
                 Label myReview = new Label("\u201C" + c.getCurrentUserReview() + "\u201D");
-                myReview.setStyle("-fx-font-size:13px;-fx-text-fill:#65676B;-fx-font-style:italic;");
+                myReview.setStyle("-fx-font-size:13px;-fx-text-fill:" + UiUtils.sub() + ";-fx-font-style:italic;");
                 myReview.setWrapText(true);
                 box.getChildren().add(myReview);
             }
@@ -331,7 +331,7 @@ public class CafesPane {
         TextField lng    = MainWindow.styledField("106.9174");
         TextField radius = MainWindow.styledField("5.0");
         Label note = new Label("Default: Ulaanbaatar city center");
-        note.setStyle("-fx-text-fill:#65676B;-fx-font-size:12px;");
+        note.setStyle("-fx-text-fill:" + UiUtils.sub() + ";-fx-font-size:12px;");
 
         grid.add(lbl("Latitude"),    0, 0); grid.add(lat,    1, 0);
         grid.add(lbl("Longitude"),   0, 1); grid.add(lng,    1, 1);
@@ -363,20 +363,20 @@ public class CafesPane {
 
     private static Label infoLabel(String text) {
         Label l = new Label(text);
-        l.setStyle("-fx-font-size:13px;-fx-font-weight:700;-fx-text-fill:#65676B;-fx-min-width:100px;");
+        l.setStyle("-fx-font-size:13px;-fx-font-weight:700;-fx-text-fill:" + UiUtils.sub() + ";-fx-min-width:100px;");
         return l;
     }
 
     private static Label infoValue(String text) {
         Label l = new Label(text);
-        l.setStyle("-fx-font-size:14px;-fx-text-fill:#1C1E21;");
+        l.setStyle("-fx-font-size:14px;-fx-text-fill:" + UiUtils.text() + ";");
         l.setWrapText(true);
         return l;
     }
 
     private Label emptyLabel(String text) {
         Label l = new Label(text);
-        l.setStyle("-fx-text-fill:#65676B;-fx-font-size:14px;-fx-padding:20;");
+        l.setStyle("-fx-text-fill:" + UiUtils.sub() + ";-fx-font-size:14px;-fx-padding:20;");
         return l;
     }
 

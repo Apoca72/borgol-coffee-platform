@@ -30,6 +30,26 @@ class UiUtils {
 
     private UiUtils() {} // utility class, no instances
 
+    // ── Theme color helpers ───────────────────────────────────────────────────
+    // Set `dark = true` before rebuilding panes; these are read at construction time.
+
+    static boolean dark = false;
+
+    /** Main page / feed background */
+    static String bg()     { return dark ? "#18191A" : "#F0F2F5"; }
+    /** Card / panel background */
+    static String card()   { return dark ? "#242526" : "white";   }
+    /** Slightly-offset card background (dialog body, section bg) */
+    static String cardAlt(){ return dark ? "#1E1F20" : "#F8F9FA"; }
+    /** Primary text */
+    static String text()   { return dark ? "#E4E6EB" : "#1C1E21"; }
+    /** Secondary / muted text */
+    static String sub()    { return dark ? "#B0B3B8" : "#65676B"; }
+    /** Divider / border */
+    static String border() { return dark ? "#3E4042" : "#E4E6EA"; }
+    /** Neutral button / chip background */
+    static String btn()    { return dark ? "#3A3B3C" : "#F0F2F5"; }
+
     // ── Avatar ────────────────────────────────────────────────────────────────
 
     /** Creates a colored circular avatar Label for the given username and pixel size. */
@@ -50,18 +70,18 @@ class UiUtils {
 
     // ── Empty state ───────────────────────────────────────────────────────────
 
-    static VBox emptyState(String emoji, String heading, String sub) {
+    static VBox emptyState(String emoji, String heading, String subText) {
         Label icon = new Label(emoji);
         icon.setStyle("-fx-font-size:48px;");
         Label h = new Label(heading);
-        h.setStyle("-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#1C1E21;");
-        Label s = new Label(sub);
-        s.setStyle("-fx-font-size:14px;-fx-text-fill:#65676B;");
+        h.setStyle("-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:" + text() + ";");
+        Label s = new Label(subText);
+        s.setStyle("-fx-font-size:14px;-fx-text-fill:" + sub() + ";");
         s.setWrapText(true);
         VBox box = new VBox(10, icon, h, s);
         box.setAlignment(Pos.CENTER);
         box.setPadding(new Insets(60, 40, 40, 40));
-        box.setStyle("-fx-background-color:white;-fx-background-radius:12;");
+        box.setStyle("-fx-background-color:" + card() + ";-fx-background-radius:12;");
         box.setMaxWidth(480);
         return box;
     }
@@ -70,7 +90,7 @@ class UiUtils {
 
     static VBox rightCard(String heading) {
         VBox card = new VBox(10);
-        card.setStyle("-fx-background-color:white;-fx-background-radius:12;" +
+        card.setStyle("-fx-background-color:" + card() + ";-fx-background-radius:12;" +
             "-fx-padding:16;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.07),8,0,0,1);");
         Label h = new Label(heading);
         h.getStyleClass().add("detail-heading");
@@ -82,7 +102,7 @@ class UiUtils {
 
     static VBox sectionCard(String heading) {
         VBox s = new VBox(8);
-        s.setStyle("-fx-background-color:white;-fx-background-radius:10;" +
+        s.setStyle("-fx-background-color:" + card() + ";-fx-background-radius:10;" +
             "-fx-padding:14 16 14 16;" +
             "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.06),6,0,0,1);");
         Label h = new Label(heading);
@@ -127,10 +147,10 @@ class UiUtils {
         // ── Header ──────────────────────────────────────────────────────────
         VBox dlgHeader = new VBox(8);
         dlgHeader.setPadding(new Insets(20, 24, 16, 24));
-        dlgHeader.setStyle("-fx-background-color:white;");
+        dlgHeader.setStyle("-fx-background-color:" + card() + ";");
 
         Label titleLbl = new Label(r.getTitle());
-        titleLbl.setStyle("-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#1C1E21;");
+        titleLbl.setStyle("-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:" + text() + ";");
         titleLbl.setWrapText(true);
 
         HBox chips = new HBox(8);
@@ -154,11 +174,11 @@ class UiUtils {
         // ── Body ─────────────────────────────────────────────────────────────
         VBox dlgBody = new VBox(14);
         dlgBody.setPadding(new Insets(16, 24, 24, 24));
-        dlgBody.setStyle("-fx-background-color:#F8F9FA;");
+        dlgBody.setStyle("-fx-background-color:" + cardAlt() + ";");
 
         if (r.getDescription() != null && !r.getDescription().isBlank()) {
             Label desc = new Label(r.getDescription());
-            desc.setStyle("-fx-font-size:14px;-fx-text-fill:#1C1E21;-fx-line-spacing:3;");
+            desc.setStyle("-fx-font-size:14px;-fx-text-fill:" + text() + ";-fx-line-spacing:3;");
             desc.setWrapText(true);
             dlgBody.getChildren().add(desc);
         }
@@ -169,7 +189,7 @@ class UiUtils {
                 String t = line.trim();
                 if (!t.isEmpty()) {
                     Label item = new Label("\u2022  " + t);
-                    item.setStyle("-fx-font-size:14px;-fx-text-fill:#1C1E21;");
+                    item.setStyle("-fx-font-size:14px;-fx-text-fill:" + text() + ";");
                     item.setWrapText(true);
                     section.getChildren().add(item);
                 }
@@ -184,7 +204,7 @@ class UiUtils {
                 String t = line.trim();
                 if (!t.isEmpty()) {
                     Label item = new Label(step++ + ".  " + t);
-                    item.setStyle("-fx-font-size:14px;-fx-text-fill:#1C1E21;-fx-line-spacing:2;");
+                    item.setStyle("-fx-font-size:14px;-fx-text-fill:" + text() + ";-fx-line-spacing:2;");
                     item.setWrapText(true);
                     section.getChildren().add(item);
                 }
@@ -206,9 +226,9 @@ class UiUtils {
                 Label av2 = createAvatar(c.getAuthorUsername(), 24);
                 VBox info = new VBox(2);
                 Label name = new Label("@" + c.getAuthorUsername());
-                name.setStyle("-fx-font-weight:700;-fx-font-size:12px;-fx-text-fill:#1C1E21;");
+                name.setStyle("-fx-font-weight:700;-fx-font-size:12px;-fx-text-fill:" + text() + ";");
                 Label content = new Label(c.getContent());
-                content.setStyle("-fx-font-size:13px;-fx-text-fill:#65676B;");
+                content.setStyle("-fx-font-size:13px;-fx-text-fill:" + sub() + ";");
                 content.setWrapText(true);
                 info.getChildren().addAll(name, content);
                 row.getChildren().addAll(av2, info);
@@ -279,14 +299,14 @@ class UiUtils {
         // ── Profile banner ───────────────────────────────────────────────────
         VBox banner = new VBox(10);
         banner.setPadding(new Insets(20, 24, 16, 24));
-        banner.setStyle("-fx-background-color:white;" +
-            "-fx-border-color:transparent transparent #E4E6EA transparent;" +
+        banner.setStyle("-fx-background-color:" + card() + ";" +
+            "-fx-border-color:transparent transparent " + border() + " transparent;" +
             "-fx-border-width:0 0 1 0;");
 
         Label avatar = createAvatar(profile.username(), 56);
 
         Label nameLabel = new Label("@" + profile.username());
-        nameLabel.setStyle("-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:#1C1E21;");
+        nameLabel.setStyle("-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:" + text() + ";");
         Label levelChip = new Label(profile.expertiseLevel() != null ? profile.expertiseLevel() : "BEGINNER");
         levelChip.getStyleClass().add("detail-chip");
         HBox nameRow = new HBox(10, nameLabel, levelChip);
@@ -296,7 +316,7 @@ class UiUtils {
             profile.recipeCount() + " recipes  \u00B7  " +
             profile.followerCount() + " followers  \u00B7  " +
             profile.followingCount() + " following");
-        stats.setStyle("-fx-font-size:13px;-fx-text-fill:#65676B;");
+        stats.setStyle("-fx-font-size:13px;-fx-text-fill:" + sub() + ";");
 
         VBox infoBox = new VBox(4, nameRow, stats);
         if (profile.bio() != null && !profile.bio().isBlank()) {
@@ -329,7 +349,7 @@ class UiUtils {
         // ── Recipe list ──────────────────────────────────────────────────────
         VBox bodyBox = new VBox(0);
         bodyBox.setPadding(new Insets(16, 24, 24, 24));
-        bodyBox.setStyle("-fx-background-color:#F8F9FA;");
+        bodyBox.setStyle("-fx-background-color:" + cardAlt() + ";");
 
         Label recipesHeading = new Label("RECIPES");
         recipesHeading.getStyleClass().add("detail-heading");
@@ -384,15 +404,15 @@ class UiUtils {
             "-fx-border-width:0 0 1 0;");
 
         Label title = new Label(r.getTitle());
-        title.setStyle("-fx-font-size:13px;-fx-font-weight:700;-fx-text-fill:#1C1E21;");
+        title.setStyle("-fx-font-size:13px;-fx-font-weight:700;-fx-text-fill:" + text() + ";");
         title.setWrapText(true);
         Label meta = new Label(r.getDrinkType() + "  \u00B7  \u2764 " + r.getLikesCount());
-        meta.setStyle("-fx-font-size:11px;-fx-text-fill:#65676B;");
+        meta.setStyle("-fx-font-size:11px;-fx-text-fill:" + sub() + ";");
         VBox info = new VBox(2, title, meta);
         HBox.setHgrow(info, Priority.ALWAYS);
 
         Button viewBtn = new Button("View");
-        viewBtn.setStyle("-fx-background-color:#F0F2F5;-fx-text-fill:#1C1E21;-fx-font-weight:600;" +
+        viewBtn.setStyle("-fx-background-color:" + btn() + ";-fx-text-fill:" + text() + ";-fx-font-weight:600;" +
             "-fx-font-size:11px;-fx-padding:4 10 4 10;-fx-background-radius:6;" +
             "-fx-border-width:0;-fx-cursor:hand;");
         viewBtn.setOnAction(e -> showRecipeDetailDialog(service, r, null));
@@ -405,12 +425,12 @@ class UiUtils {
 
     static VBox buildMiniCard(BorgolService service, Recipe r) {
         VBox card = new VBox(6);
-        card.setStyle("-fx-background-color:white;-fx-background-radius:10;" +
+        card.setStyle("-fx-background-color:" + card() + ";-fx-background-radius:10;" +
             "-fx-padding:12 16 12 16;" +
             "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.06),6,0,0,1);");
 
         Label title = new Label(r.getTitle());
-        title.setStyle("-fx-font-size:14px;-fx-font-weight:700;-fx-text-fill:#1C1E21;");
+        title.setStyle("-fx-font-size:14px;-fx-font-weight:700;-fx-text-fill:" + text() + ";");
         title.setWrapText(true);
 
         HBox meta = new HBox(8);
@@ -418,11 +438,11 @@ class UiUtils {
         Label typeChip = new Label(r.getDrinkType());
         typeChip.getStyleClass().add("detail-chip");
         Label likes = new Label((r.isLikedByCurrentUser() ? "\u2764 " : "\u2661 ") + r.getLikesCount());
-        likes.setStyle("-fx-font-size:12px;-fx-text-fill:#65676B;");
+        likes.setStyle("-fx-font-size:12px;-fx-text-fill:" + sub() + ";");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         Button viewBtn = new Button("View");
-        viewBtn.setStyle("-fx-background-color:#F0F2F5;-fx-text-fill:#1C1E21;-fx-font-weight:600;" +
+        viewBtn.setStyle("-fx-background-color:" + btn() + ";-fx-text-fill:" + text() + ";-fx-font-weight:600;" +
             "-fx-font-size:12px;-fx-padding:4 12 4 12;-fx-background-radius:6;" +
             "-fx-border-width:0;-fx-cursor:hand;");
         viewBtn.setOnAction(e -> showRecipeDetailDialog(service, r, null));
@@ -547,13 +567,13 @@ class UiUtils {
                     HBox row = new HBox(10);
                     row.setAlignment(Pos.CENTER_LEFT);
                     row.setPadding(new Insets(6, 0, 6, 0));
-                    row.setStyle("-fx-border-color:transparent transparent #F0F2F5 transparent;" +
+                    row.setStyle("-fx-border-color:transparent transparent " + border() + " transparent;" +
                         "-fx-border-width:0 0 1 0;");
 
                     Label av = createAvatar(u.username(), 36);
                     VBox info = new VBox(2);
                     Label name = new Label("@" + u.username());
-                    name.setStyle("-fx-font-weight:700;-fx-font-size:13px;-fx-text-fill:#1C1E21;" +
+                    name.setStyle("-fx-font-weight:700;-fx-font-size:13px;-fx-text-fill:" + text() + ";" +
                         "-fx-cursor:hand;");
                     name.setOnMouseClicked(e -> {
                         dlg.close();

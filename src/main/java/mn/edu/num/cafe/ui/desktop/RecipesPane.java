@@ -8,6 +8,7 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.layout.FlowPane;
 import mn.edu.num.cafe.core.application.BorgolService;
 import mn.edu.num.cafe.core.application.BorgolService.UserView;
@@ -33,7 +34,7 @@ public class RecipesPane {
         this.service = service;
         root = new BorderPane();
         root.getStyleClass().add("content-pane");
-        root.setStyle("-fx-background-color:#F0F2F5;");
+        root.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
         root.setTop(buildToolbar());
         root.setCenter(buildMainArea());
         searchDebounce = UiUtils.debounce(300, this::loadData);
@@ -96,11 +97,12 @@ public class RecipesPane {
     private HBox buildMainArea() {
         feedBox = new VBox(16);
         feedBox.setPadding(new Insets(20, 16, 20, 20));
-        feedBox.setStyle("-fx-background-color:#F0F2F5;");
+        feedBox.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
 
         ScrollPane feedScroll = new ScrollPane(feedBox);
         feedScroll.setFitToWidth(true);
         feedScroll.getStyleClass().add("feed-scroll");
+        feedScroll.setStyle("-fx-background-color:" + UiUtils.bg() + ";-fx-background:" + UiUtils.bg() + ";");
         feedScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         HBox.setHgrow(feedScroll, Priority.ALWAYS);
 
@@ -108,11 +110,11 @@ public class RecipesPane {
         rightPanel.setPadding(new Insets(20, 16, 20, 4));
         rightPanel.setMinWidth(264);
         rightPanel.setMaxWidth(264);
-        rightPanel.setStyle("-fx-background-color:#F0F2F5;");
+        rightPanel.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
 
         ScrollPane rightScroll = new ScrollPane(rightPanel);
         rightScroll.setFitToWidth(true);
-        rightScroll.setStyle("-fx-background-color:#F0F2F5;-fx-background:#F0F2F5;");
+        rightScroll.setStyle("-fx-background-color:" + UiUtils.bg() + ";-fx-background:" + UiUtils.bg() + ";");
         rightScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         rightScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         rightScroll.setMinWidth(264);
@@ -208,11 +210,11 @@ public class RecipesPane {
         row.setStyle("-fx-border-color:transparent transparent #F0F2F5 transparent;" +
             "-fx-border-width:0 0 1 0;");
         Label titleLbl = new Label(r.getTitle());
-        titleLbl.setStyle("-fx-font-size:12px;-fx-font-weight:700;-fx-text-fill:#1C1E21;");
+        titleLbl.setStyle("-fx-font-size:12px;-fx-font-weight:700;-fx-text-fill:" + UiUtils.text() + ";");
         titleLbl.setWrapText(true);
         Label meta = new Label((r.isLikedByCurrentUser() ? "\u2764 " : "\u2661 ") +
             r.getLikesCount() + "  \u00B7  @" + r.getAuthorUsername());
-        meta.setStyle("-fx-font-size:11px;-fx-text-fill:#65676B;");
+        meta.setStyle("-fx-font-size:11px;-fx-text-fill:" + UiUtils.sub() + ";");
         row.getChildren().addAll(titleLbl, meta);
         return row;
     }
@@ -245,15 +247,26 @@ public class RecipesPane {
         card.getStyleClass().add("recipe-card");
         card.setMaxWidth(680);
 
-        // Image banner (if imageUrl is present)
+        // Image banner — preserves ratio, fills width, clips to banner height
         if (r.getImageUrl() != null && !r.getImageUrl().isBlank()) {
             try {
-                Image img = new Image(r.getImageUrl(), 680, 160, false, true, true);
+                Image img = new Image(r.getImageUrl(), 0, 0, true, true, true);
                 ImageView iv = new ImageView(img);
-                iv.setFitWidth(680); iv.setFitHeight(160);
-                iv.setPreserveRatio(false);
-                iv.setStyle("-fx-background-radius:12 12 0 0;");
-                card.getChildren().add(iv);
+                iv.setPreserveRatio(true);
+
+                StackPane banner = new StackPane(iv);
+                banner.setPrefHeight(200);
+                banner.setMaxHeight(200);
+                banner.setStyle("-fx-background-color:#E4E6EA;");
+                StackPane.setAlignment(iv, Pos.CENTER);
+
+                Rectangle clip = new Rectangle();
+                clip.widthProperty().bind(banner.widthProperty());
+                clip.setHeight(200);
+                banner.setClip(clip);
+
+                iv.fitWidthProperty().bind(banner.widthProperty());
+                card.getChildren().add(banner);
             } catch (Exception ignored) {}
         }
 
@@ -290,7 +303,7 @@ public class RecipesPane {
         VBox body = new VBox(6);
         body.setPadding(new Insets(0, 20, 14, 20));
         Label titleLabel = new Label(r.getTitle());
-        titleLabel.setStyle("-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#1C1E21;");
+        titleLabel.setStyle("-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:" + UiUtils.text() + ";");
         titleLabel.setWrapText(true);
         body.getChildren().add(titleLabel);
 
@@ -298,7 +311,7 @@ public class RecipesPane {
             String excerpt = r.getDescription().length() > 120
                 ? r.getDescription().substring(0, 120) + "\u2026" : r.getDescription();
             Label desc = new Label(excerpt);
-            desc.setStyle("-fx-font-size:13px;-fx-text-fill:#65676B;");
+            desc.setStyle("-fx-font-size:13px;-fx-text-fill:" + UiUtils.sub() + ";");
             desc.setWrapText(true);
             body.getChildren().add(desc);
         }
@@ -326,7 +339,7 @@ public class RecipesPane {
         commentLbl.setStyle("-fx-font-size:13px;-fx-text-fill:#65676B;");
 
         Button viewBtn = new Button("View");
-        viewBtn.setStyle("-fx-background-color:#F0F2F5;-fx-text-fill:#1C1E21;" +
+        viewBtn.setStyle("-fx-background-color:" + UiUtils.btn() + ";-fx-text-fill:" + UiUtils.text() + ";" +
             "-fx-font-weight:600;-fx-font-size:12px;-fx-padding:5 12 5 12;" +
             "-fx-background-radius:8;-fx-border-width:0;-fx-cursor:hand;");
         viewBtn.setOnAction(e -> UiUtils.showRecipeDetailDialog(service, r, this::loadData));
