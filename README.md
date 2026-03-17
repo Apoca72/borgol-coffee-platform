@@ -1,192 +1,151 @@
-# 🪴 Borgol — Кофе Сонирхогчдын Платформ
+# Borgol Coffee Enthusiast Platform
 
-**Хичээл:** ICSI486 Программ хангамжийн бүтээлт
-**Оюутан:** С.Тэмүүлэн — 22B1NUM6637
-**Бие даасан төсөл:** JavaFX Desktop App — Borgol Coffee Enthusiast Platform
+A full-stack coffee enthusiast platform with a web SPA and native desktop client, developed as an individual project for ICSI486 Software Construction.
 
----
-
-## Тойм
-
-Borgol бол кофе сонирхогчдод зориулсан **JavaFX desktop нийгмийн платформ** юм. Хэрэглэгчид жор хуваалцах, кафе нээн судлах, хувийн дэвтэрт буцалтын тэмдэглэл хөтлөх, бусад кофе сонирхогчдыг дагах, гарын авлага болон нийтлэлээр суралцах боломжтой — бүгдийг нь нэг тохилог, хариу мэдрэмжтэй desktop програмаас.
+**Stack:** Java 21 · JavaFX · Javalin 6.3 · H2 · Custom JWT · Maven
 
 ---
 
-## Дэлгэцийн зураг
+## What it does
 
-| Жорын лент | Харанхуй горим | Дэвтрийн радар диаграм |
+Borgol lets coffee enthusiasts share recipes, discover cafes, keep a brew journal, and learn about coffee in one platform.
+
+- **Authentication** — JWT-based login, SHA-256 + salt password hashing, 7-day token expiry
+- **Recipes** — create, edit, delete with images, likes, and comments
+- **Feed** — personalized social timeline; falls back to Discover when following list is empty
+- **Cafes** — listings with 1–5 star ratings and GPS proximity sorting
+- **Brew Journal** — personal entries with a 6-axis radar chart (Aroma, Flavor, Acidity, Body, Sweet, Finish) and PDF export
+- **Brew Guides** — step-by-step guides for Pour Over, French Press, AeroPress, Espresso, Cold Brew, Moka Pot
+- **Learn** — 6 educational articles covering roast levels, extraction science, water quality, and more
+- **Community** — follow/unfollow users, profile pages, followers/following lists, search
+- **Desktop client** — native JavaFX app with dark/light theme toggle, sharing the same backend service layer
+
+---
+
+## Architecture
+
+The project follows Clean Architecture with four explicit layers, each depending only inward:
+
+```
+UI (Javalin routes + JavaFX views)
+    |
+Application (BorgolService — business logic)
+    |
+Domain (User, Recipe, CafeListing, BrewJournalEntry, BrewGuide, LearnArticle)
+    |
+Infrastructure (BorgolRepository, DatabaseConnection, JwtUtil, PasswordUtil)
+```
+
+The Domain layer has zero framework dependencies — it is plain Java. This makes core logic independently testable and allows the same service to power both the web API and the desktop client without duplicating business rules.
+
+---
+
+## Design Patterns
+
+| Pattern | Where | Why |
 |---|---|---|
-| Зурагтай карт, дуртай, сэтгэгдэл | Бүрэн харанхуй загвар | Буцалтын сессийн радар диаграм |
+| Repository | `BorgolRepository` | Isolates all SQL behind a single interface; the service layer never touches JDBC directly |
+| Service Layer | `BorgolService` | Single orchestration point for business rules, sitting between controllers and repositories |
+| Singleton | `DatabaseConnection.getInstance()` | Ensures one shared H2 connection across the application lifetime |
+| Facade | `BorgolService` | Exposes simple methods that internally coordinate multiple repository calls |
+| DTO / Value Object | `User`, `Recipe`, etc. | Immutable data carriers that cross layer boundaries |
 
 ---
 
-## Функцүүд
+## Security
 
-### 🔐 Нэвтрэлт
-- JWT суурьтай бүртгэл / нэвтрэлт (HMAC-SHA256, 7 хоногийн хугацаа)
-- Нууц үгийг SHA-256 + санамсаргүй давс (`saltHex:hashHex`) хэлбэрээр хадгалдаг
-- Сесс `AppSession` singleton-д хадгалагдана
+**JWT** — implemented from scratch using HMAC-SHA256 without any third-party library. The token encodes user ID and expiry; the signature is verified on every protected request via a Javalin `before()` handler.
 
-### 📖 Жорууд
-- Зургийн URL баннертай кофений жор үүсгэх, засварлах, устгах
-- Дуртай / дургүй, жор тус бүрд сэтгэгдэл
-- Эрэмбэлэлт: **Шинэ** эсвэл **Алдартай**
-- Ундааны төрлөөр шүүх: Espresso, Latte, Pour Over, Cold Brew гэх мэт
-- Баруун самбар: Хамгийн их дуртай жорууд + Дагах санал болгох хэрэглэгчид
-
-### 📰 Лент
-- Дагадаг хэрэглэгчдийн жорууд
-- **Нээн судлах хэсэг** — хэн ч дагаагүй үед алдартай жорууд харагдана
-
-### ☕ Кафенүүд
-- Кафений жагсаалт харах, нэмэх, үнэлгээ болон шүүмж бичих
-- **📍 Ойролцоо** — GPS координат болон радиусаар шүүх (Улаанбаатар анхдагч)
-- Одон үнэлгээ болон хувийн шүүмж
-
-### 📓 Буцалтын дэвтэр
-- Буурцаг, арга, шарсан байдал, тун, усны температур, буцалтын хугацаа, гарц бүхий хувийн тэмдэглэл
-- JavaFX Canvas-ээр дүрсэлсэн 6 тэнхлэгтэй **радар диаграм** (Аромат, Амт, Хүчиллэг, Бие, Амтат, Төгсгөл)
-- Тэмдэглэлийг **CSV** файл болгон экспортлох
-
-### 📚 Сурах & Буцалтын гарын авлагууд
-- 6 эмхэтгэсэн Буцалтын гарын авлага: Pour Over (V60), French Press, AeroPress, Espresso, Cold Brew, Moka Pot
-- 6 Сурах нийтлэл: Шарсан түвшин, Гарцын шинжлэх ухаан, Усны чанар, Амт мэдрэх, Arabica vs Robusta, Нунтаглалтын хэмжээ
-
-### 👥 Хүмүүс
-- Хэрэглэгч дагах / дагахаа болих
-- Жорын жагсаалт болон дагагчийн статистиктай нийтийн профайл харах
-- Танд тохирох хүмүүсийн санал болгох
-
-### 👤 Профайл
-- Намтар, тоног төхөөрөмжийн жагсаалт, мэргэжлийн түвшин, амт уул сонголтыг засварлах
-- Табууд: Миний жорууд, Дуртай жорууд, Тоног төхөөрөмж
-- Callback-ээр sidebar статистик шинэчлэх (бүрэн дахин барихгүй)
-
-### 🌙 Харанхуй горим
-- Бүрэн харанхуй загвар (Facebook харанхуй өнгөний палитр: `#18191A` / `#242526` / `#3A3B3C`)
-- Sidebar дахь товч — бүх хавтангийг тэр даруй дахин барина
-- Бүх inline стиль `UiUtils` загварын туслах функцүүд (`bg()`, `card()`, `text()`, `sub()` гэх мэт) ашиглана
-
-### 🔔 Toast мэдэгдэл
-- Жор хадгалах, дэвтрийн тэмдэглэл, профайл шинэчлэх үед шар өнгийн fade-in/out overlay
+**Passwords** — SHA-256 hashed with a per-user random salt, stored as `saltHex:hashHex`. The salt prevents rainbow table and precomputation attacks.
 
 ---
 
-## Технологийн стек
+## Technology choices
 
-| Давхарга | Технологи |
-|---|---|
-| UI | JavaFX 21 (BorderPane, VBox, HBox, StackPane, Canvas, ScrollPane) |
-| Backend | Javalin 6.3 (REST API, JSON) |
-| Өгөгдлийн сан | H2 (файл дээр суурилсан, upsert-д MERGE INTO) |
-| Нэвтрэлт | Гадаад сангүй өөрийн HMAC-SHA256 JWT |
-| Бүтээх | Maven Wrapper (`mvnw.cmd`) |
-| Хэл | Java 21 |
+**Why Javalin over Spring Boot?**
+Javalin adds minimal abstraction over the Jetty HTTP server. For a project where understanding each layer matters, it keeps routing and middleware explicit without hiding behavior behind annotations and auto-configuration.
+
+**Why H2 over PostgreSQL?**
+File-based embedded database removes infrastructure setup from the project. Because the Repository layer is the only place that touches JDBC, switching to PostgreSQL requires changing only the connection string and driver dependency — nothing else.
+
+**Why no ORM?**
+Writing SQL directly gives full control over queries and reinforces understanding of relational mapping. The Repository pattern provides the same separation an ORM would, without the abstraction overhead.
+
+**Why custom JWT?**
+Using `javax.crypto.Mac` directly rather than a library forces a concrete understanding of the token structure (header.payload.signature), the signing algorithm, and the verification process.
 
 ---
 
-## Архитектур
+## Technical highlights
 
+- **Radar Chart** — drawn with pure Canvas math using trigonometry to compute polygon vertices across 6 axes; no charting library used
+- **PDF export** — generates a print-ready HTML document with embedded SVG radar chart, opened in a new window for browser print-to-PDF
+- **Discover Feed** — when a user follows nobody, the feed falls back to a randomized recipe set so the experience is never empty on first run
+- **Image aspect ratio (JavaFX)** — `StackPane` + `Rectangle` clip + `fitWidthProperty().bind()` preserves the original ratio without distortion regardless of container size
+- **Idempotent seeding** — demo data seed checks by email rather than by auto-increment ID, so re-running the application never duplicates records
+
+---
+
+## Running the application
+
+**Web server only (fast start):**
 ```
-mn.edu.num.cafe
-├── app/
-│   └── Main.java                    — Composition root, туршилтын өгөгдөл тарих, JavaFX эхлүүлэх
-├── core/
-│   ├── domain/                      — Entity ангиуд
-│   │   ├── User, Recipe, CafeListing
-│   │   ├── RecipeComment, BrewJournalEntry
-│   │   ├── BrewGuide, LearnArticle
-│   │   └── MenuItem (legacy)
-│   └── application/
-│       ├── BorgolService.java       — Бүх бизнесийн логик
-│       └── MenuService.java         — Legacy цэсний сервис
-├── infrastructure/
-│   ├── persistence/
-│   │   └── BorgolRepository.java   — Бүх SQL / H2 хүсэлт
-│   └── security/
-│       ├── JwtUtil.java             — HMAC-SHA256 JWT
-│       └── PasswordUtil.java        — SHA-256 + давс хэшлэлт
-└── ui/
-    ├── web/
-    │   └── BorgolApiServer.java     — 30+ REST endpoint (Javalin)
-    └── desktop/
-        ├── BorgolApp.java           — JavaFX Application оруулах цэг
-        ├── MainWindow.java          — BorderPane үндэс, sidebar, харанхуй горим
-        ├── UiUtils.java             — Хуваалцсан туслах: avatar, toast, dialog, загварын өнгө
-        ├── AppSession.java          — Нэвтэрсэн хэрэглэгчийн төлөв
-        ├── RecipesPane.java         — CRUD бүхий жорын лент
-        ├── FeedPane.java            — Нийгмийн лент + Нээн судлах
-        ├── CafesPane.java           — Кафений карт + Ойролцоо
-        ├── JournalPane.java         — Буцалтын дэвтэр + радар диаграм
-        ├── LearnPane.java           — Гарын авлага & нийтлэлүүд
-        ├── PeoplePane.java          — Хэрэглэгч нээн судлах
-        └── ProfilePane.java         — Профайл засварлах + табууд
+mvnw.cmd exec:java -Dexec.mainClass=mn.edu.num.cafe.app.MainWeb
+```
+Opens on `http://localhost:7000`
+
+**Desktop client:**
+```
+mvnw.cmd exec:java -Dexec.mainClass=mn.edu.num.cafe.app.Main
+```
+
+**Demo accounts:**
+```
+coffee@borgol.mn / password123
+sara@borgol.mn   / password123
+tea@borgol.mn    / password123
 ```
 
 ---
 
-## Програмыг ажиллуулах
+## Project structure
 
-**Урьдчилсан нөхцөл:** Java 21, Maven (wrapper багтсан)
-
-```cmd
-cd "C:\Users\thatu\OneDrive\Desktop\cafe-project"
-mvnw.cmd javafx:run
 ```
-
-Програм анх ажиллахдаа H2 өгөгдлийн санг тарьж, desktop цонх нээнэ.
-
-> ⚠️ **Windows Command Prompt** дээр `mvnw.cmd javafx:run` (`./` угтваргүй) ашиглана
-> **PowerShell / Git Bash** дээр `./mvnw.cmd javafx:run` ашиглана
+src/main/java/mn/edu/num/cafe/
+  app/                  Main.java, MainWeb.java
+  core/
+    domain/             User, Recipe, CafeListing, BrewJournalEntry, BrewGuide, LearnArticle
+    application/        BorgolService
+  infrastructure/
+    persistence/        BorgolRepository
+    config/             DatabaseConnection
+    security/           JwtUtil, PasswordUtil
+  ui/
+    web/                BorgolApiServer  (30+ REST endpoints)
+    desktop/            BorgolApp        (JavaFX)
+src/main/resources/public/
+  index.html            Vanilla JS SPA (~2400 lines)
+```
 
 ---
 
-## Туршилтын бүртгэлүүд
+## API reference
 
-| Имэйл | Нууц үг | Хэрэглэгчийн нэр |
+| Method | Path | Description |
 |---|---|---|
-| `coffee@borgol.mn` | `password123` | coffee_master |
-| `sara@borgol.mn` | `password123` | barista_sara |
-| `tea@borgol.mn` | `password123` | tea_lover |
-
-Нэмэлт 5 тарьсан хэрэглэгч: `latte_king`, `espresso_pro`, `cold_brew_queen`, `matcha_monk`, `roast_geek`
-
----
-
-## Ашигласан дизайны хэв маягууд
-
-| Хэв маяг | Хаана |
-|---|---|
-| **Singleton** | `DatabaseConnection` (DCL + volatile), `AppSession` |
-| **Factory** | `RepositoryFactory` (DB болон MEM горим) |
-| **DAO / Repository** | `BorgolRepository` — бүх SQL сервисийн давхаргаас тусгаарлагдсан |
-| **Observer** | `MenuChangeObserver` (legacy цэсний сервис) |
-| **Hexagonal Architecture** | Core домэйн UI болон DB давхаргаас тусгаарлагдсан |
-| **Callback / Runnable** | `ProfilePane(onProfileUpdated)` — бүрэн дахин барихгүйгээр sidebar шинэчлэх |
-
----
-
-## API Endpoint-үүд (Вэб давхарга)
-
-| Бүлэг | Endpoint-үүд |
-|---|---|
-| Нэвтрэлт | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` |
-| Хэрэглэгчид | `GET /api/users`, `PUT /api/users/me`, `POST/DELETE /api/users/{id}/follow`, `GET /api/users/search` |
-| Жорууд | `GET/POST /api/recipes`, `GET/PUT/DELETE /api/recipes/{id}`, `POST /api/recipes/{id}/like`, `GET/POST /api/recipes/{id}/comments` |
-| Лент | `GET /api/feed` |
-| Кафенүүд | `GET/POST /api/cafes`, `GET /api/cafes/{id}`, `POST /api/cafes/{id}/rate` |
-| Дэвтэр | `GET/POST /api/journal`, `PUT/DELETE /api/journal/{id}` |
-| Суралцах | `GET /api/brew-guides`, `GET /api/brew-guides/{id}`, `GET /api/learn`, `GET /api/learn/{id}` |
-
----
-
-## Тарьсан статик агуулга
-
-**Буцалтын гарын авлага:** Pour Over (V60), French Press, AeroPress, Espresso, Cold Brew, Moka Pot
-**Сурах нийтлэлүүд:** Шарсан түвшин, Гарцын шинжлэх ухаан, Усны чанар, Амт мэдрэх, Arabica vs Robusta, Нунтаглалтын хэмжээ
-
----
-
-## Салбар
-
-`feature/borgol-platform` → [GitHub](https://github.com/Apoca72/borgol-coffee-platform)
+| POST | /api/auth/register | Register |
+| POST | /api/auth/login | Login, returns JWT |
+| GET | /api/auth/me | Current user |
+| GET/POST | /api/recipes | List / create recipes |
+| GET/PUT/DELETE | /api/recipes/{id} | Single recipe |
+| POST | /api/recipes/{id}/like | Toggle like |
+| GET/POST | /api/recipes/{id}/comments | Comments |
+| GET | /api/feed | Personalized feed |
+| GET/POST | /api/cafes | List / create cafes |
+| POST | /api/cafes/{id}/rate | Rate a cafe |
+| GET/POST | /api/journal | Journal entries |
+| PUT/DELETE | /api/journal/{id} | Edit / delete entry |
+| GET | /api/brew-guides | All brew guides |
+| GET | /api/learn | All learn articles |
+| POST/DELETE | /api/users/{id}/follow | Follow / unfollow |
+| GET | /api/users/search | Search users |
