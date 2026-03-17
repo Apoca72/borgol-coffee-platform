@@ -1,105 +1,109 @@
-# Borgol Coffee Enthusiast Platform
+# Borgol — Кофе Сонирхогчдын Платформ
 
-A full-stack coffee enthusiast platform with a web SPA and native desktop client, developed as an individual project for ICSI486 Software Construction.
+ICSI486 Программ хангамжийн бүтээлт хичээлийн бие даасан төсөл. Web SPA болон JavaFX desktop клиент хоёуланг нэг системд нэгтгэсэн full-stack платформ.
 
-**Stack:** Java 21 · JavaFX · Javalin 6.3 · H2 · Custom JWT · Maven
-
----
-
-## What it does
-
-Borgol lets coffee enthusiasts share recipes, discover cafes, keep a brew journal, and learn about coffee in one platform.
-
-- **Authentication** — JWT-based login, SHA-256 + salt password hashing, 7-day token expiry
-- **Recipes** — create, edit, delete with images, likes, and comments
-- **Feed** — personalized social timeline; falls back to Discover when following list is empty
-- **Cafes** — listings with 1–5 star ratings and GPS proximity sorting
-- **Brew Journal** — personal entries with a 6-axis radar chart (Aroma, Flavor, Acidity, Body, Sweet, Finish) and PDF export
-- **Brew Guides** — step-by-step guides for Pour Over, French Press, AeroPress, Espresso, Cold Brew, Moka Pot
-- **Learn** — 6 educational articles covering roast levels, extraction science, water quality, and more
-- **Community** — follow/unfollow users, profile pages, followers/following lists, search
-- **Desktop client** — native JavaFX app with dark/light theme toggle, sharing the same backend service layer
+**Стек:** Java 21 · JavaFX · Javalin 6.3 · H2 · Custom JWT · Maven
 
 ---
 
-## Architecture
+## Юу хийдэг вэ?
 
-The project follows Clean Architecture with four explicit layers, each depending only inward:
+Кофе сонирхогчид жор хуваалцах, кафе үнэлэх, brew журнал хөтлөх, мэдлэг олж авах боломжтой нийгэмлэгийн платформ.
+
+- **Нэвтрэх** — JWT токен, SHA-256 + salt нууц үг хаш, 7 хоногийн хүчинтэй хугацаа
+- **Жор** — нийтлэх, засах, устгах, зураг, like, сэтгэгдэл
+- **Feed** — дагадаг хүмүүсийн жорын цаг хугацааны дараалал; дагадаг хүн байхгүй үед Discover режимд орно
+- **Кафе** — жагсаалт, 1–5 одоор үнэлгээ, GPS-д суурилсан ойр дотно эрэмбэ
+- **Brew Journal** — хувийн тэмдэглэл, 6 тэнхлэгт радар график (Aroma, Flavor, Acidity, Body, Sweet, Finish), PDF экспорт
+- **Brew Guides** — Pour Over, French Press, AeroPress, Espresso, Cold Brew, Moka Pot алхам алхмаар
+- **Суралцах** — 6 нийтлэл: шарах түвшин, extraction, усны чанар, Arabica vs Robusta гэх мэт
+- **Нийгэмлэг** — follow/unfollow, профайл, дагагч/дагаж буй хэрэглэгчдийн жагсаалт, хайлт
+- **Desktop клиент** — native JavaFX апп, dark/light theme, ижил backend дээр ажилладаг
+
+---
+
+## Архитектур
+
+Төсөл нь **Clean Architecture**-ийн 4 давхаргатай. Дотоод давхарга нь гадаадаас огт хамааралгүй:
 
 ```
 UI (Javalin routes + JavaFX views)
     |
-Application (BorgolService — business logic)
+Application (BorgolService — бизнес логик)
     |
 Domain (User, Recipe, CafeListing, BrewJournalEntry, BrewGuide, LearnArticle)
     |
 Infrastructure (BorgolRepository, DatabaseConnection, JwtUtil, PasswordUtil)
 ```
 
-The Domain layer has zero framework dependencies — it is plain Java. This makes core logic independently testable and allows the same service to power both the web API and the desktop client without duplicating business rules.
+Domain давхарга нь ямар ч framework-оос хамааралгүй цэвэр Java. Үүнийг ашиглан нэг `BorgolService` дээр Web API болон Desktop клиент хоёуланг ажиллуулсан — бизнес логик хоёр удаа бичигдээгүй.
 
 ---
 
-## Design Patterns
+## Design Pattern-ууд
 
-| Pattern | Where | Why |
+| Pattern | Хаана | Зачим |
 |---|---|---|
-| Repository | `BorgolRepository` | Isolates all SQL behind a single interface; the service layer never touches JDBC directly |
-| Service Layer | `BorgolService` | Single orchestration point for business rules, sitting between controllers and repositories |
-| Singleton | `DatabaseConnection.getInstance()` | Ensures one shared H2 connection across the application lifetime |
-| Facade | `BorgolService` | Exposes simple methods that internally coordinate multiple repository calls |
-| DTO / Value Object | `User`, `Recipe`, etc. | Immutable data carriers that cross layer boundaries |
+| Repository | `BorgolRepository` | Бүх SQL нэг дор; service давхарга JDBC-г шууд мэдэхгүй |
+| Service Layer | `BorgolService` | Бизнес дүрмийн цорын ганц удирдлагын цэг |
+| Singleton | `DatabaseConnection.getInstance()` | DB connection апп-ын туршид нэг л удаа үүснэ |
+| Facade | `BorgolService` | Олон repository дуудлагыг нэг энгийн API болгон нуудаг |
+| DTO / Value Object | `User`, `Recipe` гэх мэт | Давхаргуудын хооронд өгөгдөл дамжуулах объект |
 
 ---
 
-## Security
+## Аюулгүй байдал
 
-**JWT** — implemented from scratch using HMAC-SHA256 without any third-party library. The token encodes user ID and expiry; the signature is verified on every protected request via a Javalin `before()` handler.
+**JWT** — гадны сангүй, `javax.crypto.Mac` ашиглан HMAC-SHA256-аар өөрөө хэрэгжүүлсэн. Токен нь хэрэглэгчийн ID болон хугацааны мэдээлэл агуулна; Javalin-ий `before()` handler-аар хамгаалагдсан route бүрт шалгагдана.
 
-**Passwords** — SHA-256 hashed with a per-user random salt, stored as `saltHex:hashHex`. The salt prevents rainbow table and precomputation attacks.
-
----
-
-## Technology choices
-
-**Why Javalin over Spring Boot?**
-Javalin adds minimal abstraction over the Jetty HTTP server. For a project where understanding each layer matters, it keeps routing and middleware explicit without hiding behavior behind annotations and auto-configuration.
-
-**Why H2 over PostgreSQL?**
-File-based embedded database removes infrastructure setup from the project. Because the Repository layer is the only place that touches JDBC, switching to PostgreSQL requires changing only the connection string and driver dependency — nothing else.
-
-**Why no ORM?**
-Writing SQL directly gives full control over queries and reinforces understanding of relational mapping. The Repository pattern provides the same separation an ORM would, without the abstraction overhead.
-
-**Why custom JWT?**
-Using `javax.crypto.Mac` directly rather than a library forces a concrete understanding of the token structure (header.payload.signature), the signing algorithm, and the verification process.
+**Нууц үг** — SHA-256 + тухайн хэрэглэгчид зориулсан random salt. `saltHex:hashHex` форматаар хадгалагдана. Salt нь rainbow table болон precomputation халдлагаас хамгаална.
 
 ---
 
-## Technical highlights
+## Технологи сонгосон шалтгаан
 
-- **Radar Chart** — drawn with pure Canvas math using trigonometry to compute polygon vertices across 6 axes; no charting library used
-- **PDF export** — generates a print-ready HTML document with embedded SVG radar chart, opened in a new window for browser print-to-PDF
-- **Discover Feed** — when a user follows nobody, the feed falls back to a randomized recipe set so the experience is never empty on first run
-- **Image aspect ratio (JavaFX)** — `StackPane` + `Rectangle` clip + `fitWidthProperty().bind()` preserves the original ratio without distortion regardless of container size
-- **Idempotent seeding** — demo data seed checks by email rather than by auto-increment ID, so re-running the application never duplicates records
+**Яагаад Spring Boot биш Javalin?**
+Javalin нь Jetty HTTP сервер дээр хамгийн бага хийсвэрлэлт нэмдэг. Route, middleware бүгд тодорхой харагдана — annotation дотор нуугдахгүй. Clean Architecture-д тохиромжтой, хамааралтай сан цөөн.
+
+**Яагаад PostgreSQL биш H2?**
+File-based тул тохиргоо, суулгалт шаардахгүй. Repository давхарга л JDBC-г мэдэхийн учир PostgreSQL руу шилжихэд зөвхөн connection string өөрчлөхөд хангалттай.
+
+**Яагаад ORM ашиглаагүй?**
+SQL шууд бичих нь query-г бүрэн контрольдох боломж өгнө. Repository pattern нь ORM-тэй ижил тусгаарлалтыг хангадаг — хийсвэрлэл дутахгүй, нэмэлт complexity байхгүй.
+
+**Яагаад JWT-г өөрөө хэрэгжүүлсэн?**
+Гадны сан ашиглахаас илүүтэй токены бүтэц (header.payload.signature), гарын үсгийн алгоритм, баталгаажуулалтын процессыг гүнзгий ойлгох зорилготой байсан.
 
 ---
 
-## Running the application
+## Техникийн онцлог шийдлүүд
 
-**Web server only (fast start):**
+**Radar Chart** — library ашиглаагүй. Trigonometry (sin/cos)-оор 6 тэнхлэгийн координат тооцоолж Canvas/SVG дээр шууд зурсан.
+
+**PDF export** — SVG radar chart-ийг агуулсан print-ready HTML үүсгэж, шинэ цонхонд нээж browser-ийн print-to-PDF ашигладаг.
+
+**Discover Feed** — дагадаг хүн байхгүй үед feed хоосон харагдахаас сэргийлж санамсаргүй жорын fallback нэмсэн.
+
+**JavaFX зургийн харьцаа** — `setFitWidth()` + `setFitHeight()` хоёуланг тавихад харьцаа гажуудна. `StackPane` + `Rectangle` clip + `fitWidthProperty().bind()` хослолоор шийдсэн.
+
+**Idempotent seeding** — demo өгөгдлийн seed нь auto-increment ID биш email-аар шалгадаг тул апп дахин ажиллуулахад давхардал гардаггүй.
+
+---
+
+## Ажиллуулах
+
+**Web сервер (хурдан эхлэл):**
 ```
 mvnw.cmd exec:java -Dexec.mainClass=mn.edu.num.cafe.app.MainWeb
 ```
-Opens on `http://localhost:7000`
+`http://localhost:7000` дээр нээгдэнэ
 
-**Desktop client:**
+**Desktop клиент:**
 ```
 mvnw.cmd exec:java -Dexec.mainClass=mn.edu.num.cafe.app.Main
 ```
 
-**Demo accounts:**
+**Demo хэрэглэгчид:**
 ```
 coffee@borgol.mn / password123
 sara@borgol.mn   / password123
@@ -108,7 +112,7 @@ tea@borgol.mn    / password123
 
 ---
 
-## Project structure
+## Төслийн бүтэц
 
 ```
 src/main/java/mn/edu/num/cafe/
@@ -121,31 +125,31 @@ src/main/java/mn/edu/num/cafe/
     config/             DatabaseConnection
     security/           JwtUtil, PasswordUtil
   ui/
-    web/                BorgolApiServer  (30+ REST endpoints)
+    web/                BorgolApiServer  (30+ REST endpoint)
     desktop/            BorgolApp        (JavaFX)
 src/main/resources/public/
-  index.html            Vanilla JS SPA (~2400 lines)
+  index.html            Vanilla JS SPA (~2400 мөр)
 ```
 
 ---
 
-## API reference
+## API
 
-| Method | Path | Description |
+| Метод | Зам | Тайлбар |
 |---|---|---|
-| POST | /api/auth/register | Register |
-| POST | /api/auth/login | Login, returns JWT |
-| GET | /api/auth/me | Current user |
-| GET/POST | /api/recipes | List / create recipes |
-| GET/PUT/DELETE | /api/recipes/{id} | Single recipe |
-| POST | /api/recipes/{id}/like | Toggle like |
-| GET/POST | /api/recipes/{id}/comments | Comments |
+| POST | /api/auth/register | Бүртгүүлэх |
+| POST | /api/auth/login | Нэвтрэх, JWT буцаана |
+| GET | /api/auth/me | Одоогийн хэрэглэгч |
+| GET/POST | /api/recipes | Жорын жагсаалт / үүсгэх |
+| GET/PUT/DELETE | /api/recipes/{id} | Нэг жор |
+| POST | /api/recipes/{id}/like | Like toggle |
+| GET/POST | /api/recipes/{id}/comments | Сэтгэгдэл |
 | GET | /api/feed | Personalized feed |
-| GET/POST | /api/cafes | List / create cafes |
-| POST | /api/cafes/{id}/rate | Rate a cafe |
-| GET/POST | /api/journal | Journal entries |
-| PUT/DELETE | /api/journal/{id} | Edit / delete entry |
-| GET | /api/brew-guides | All brew guides |
-| GET | /api/learn | All learn articles |
+| GET/POST | /api/cafes | Кафены жагсаалт / үүсгэх |
+| POST | /api/cafes/{id}/rate | Кафе үнэлэх |
+| GET/POST | /api/journal | Журналын бичлэг |
+| PUT/DELETE | /api/journal/{id} | Засах / устгах |
+| GET | /api/brew-guides | Бүх brew guide |
+| GET | /api/learn | Бүх нийтлэл |
 | POST/DELETE | /api/users/{id}/follow | Follow / unfollow |
-| GET | /api/users/search | Search users |
+| GET | /api/users/search | Хэрэглэгч хайх |
