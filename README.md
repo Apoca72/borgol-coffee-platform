@@ -8,8 +8,6 @@ ICSI486 Программ хангамжийн бүтээлт хичээлийн 
 
 ## Юу хийдэг вэ?
 
-Кофе сонирхогчид жор хуваалцах, кафе үнэлэх, brew журнал хөтлөх, мэдлэг олж авах боломжтой нийгэмлэгийн платформ.
-
 - **Нэвтрэх** — JWT токен, SHA-256 + salt нууц үг хаш, 7 хоногийн хүчинтэй хугацаа
 - **Жор** — нийтлэх, засах, устгах, зураг, like, сэтгэгдэл
 - **Feed** — дагадаг хүмүүсийн жорын цаг хугацааны дараалал; дагадаг хүн байхгүй үед Discover режимд орно
@@ -36,79 +34,145 @@ Domain (User, Recipe, CafeListing, BrewJournalEntry, BrewGuide, LearnArticle)
 Infrastructure (BorgolRepository, DatabaseConnection, JwtUtil, PasswordUtil)
 ```
 
-Domain давхарга нь ямар ч framework-оос хамааралгүй цэвэр Java. Үүнийг ашиглан нэг `BorgolService` дээр Web API болон Desktop клиент хоёуланг ажиллуулсан — бизнес логик хоёр удаа бичигдээгүй.
+Domain давхарга нь ямар ч framework-оос хамааралгүй цэвэр Java. Нэг `BorgolService` дээр Web API болон Desktop клиент хоёуланг ажиллуулсан.
 
 ---
 
 ## Design Pattern-ууд
 
-| Pattern | Хаана | Зачим |
-|---|---|---|
-| Repository | `BorgolRepository` | Бүх SQL нэг дор; service давхарга JDBC-г шууд мэдэхгүй |
-| Service Layer | `BorgolService` | Бизнес дүрмийн цорын ганц удирдлагын цэг |
-| Singleton | `DatabaseConnection.getInstance()` | DB connection апп-ын туршид нэг л удаа үүснэ |
-| Facade | `BorgolService` | Олон repository дуудлагыг нэг энгийн API болгон нуудаг |
-| DTO / Value Object | `User`, `Recipe` гэх мэт | Давхаргуудын хооронд өгөгдөл дамжуулах объект |
+### 1. Singleton
+`DatabaseConnection.getInstance()` — DB connection апп-ын туршид нэг л удаа үүснэ.
+
+```java
+public static DatabaseConnection getInstance() {
+    if (instance == null) instance = new DatabaseConnection();
+    return instance;
+}
+```
+
+### 2. Factory
+`RepositoryFactory` — `database.properties`-ийн тохиргооноос хамаарч repository үүсгэнэ.
+
+```java
+public static IMenuRepository createMenuRepository() {
+    String mode = db.getProperty("app.persistence.mode");
+    return switch (mode) {
+        case "DB"  -> new JdbcMenuRepository(db);
+        case "MEM" -> new InMemoryMenuRepository();
+    };
+}
+```
+
+### 3. Repository / DAO
+`BorgolRepository`, `JdbcMenuRepository` — бизнес логикийг SQL-аас тусгаарлана. Service давхарга JDBC-г шууд мэдэхгүй.
+
+### 4. Observer
+`MenuChangeObserver` interface + `ConsoleMenuObserver`. Цэс өөрчлөгдөхөд бүртгэгдсэн observer-уудад автоматаар мэдэгдэнэ.
+
+```java
+public interface MenuChangeObserver {
+    void onItemAdded(MenuItem item);
+    void onItemUpdated(MenuItem item);
+    void onItemDeleted(int id);
+}
+```
+
+### 5. Facade
+`BorgolService` — олон дотоод дуудлагыг нэг энгийн API болгон нуудаг. Controller нь дотоод нарийн төвөгтэй байдлыг мэдэхгүй.
+
+### 6. Port & Adapter (Hexagonal)
+`IMenuRepository` (Port) — `JdbcMenuRepository` / `InMemoryMenuRepository` (Adapter). Domain нь конкрет технологи мэдэхгүй.
+
+```
+Core (Port)           Infrastructure (Adapter)
+IMenuRepository  <--  JdbcMenuRepository
+                 <--  InMemoryMenuRepository
+```
+
+---
+
+## SOLID зарчмууд
+
+### S — Single Responsibility
+Нэг класс нэг л зүйлийн төлөө хариуцлагатай:
+- `JwtUtil` — зөвхөн JWT үүсгэх, шалгах
+- `PasswordUtil` — зөвхөн нууц үг хаш хийх
+- `DatabaseConnection` — зөвхөн DB холболт
+- `BorgolRepository` — зөвхөн өгөгдлийн сантай харилцах
+- `BorgolService` — зөвхөн бизнес дүрэм
+- `BorgolApiServer` — зөвхөн HTTP route тодорхойлох
+
+### O — Open/Closed
+Өргөтгөлд нээлттэй, өөрчлөлтөд хаалттай. Шинэ persistence горим нэмэхэд `IMenuRepository`, `MenuService`-г хөндөхгүй — `RepositoryFactory`-д нэг мөр л нэмнэ. Шинэ `EmailMenuObserver` нэмэхэд `MenuService`-г өөрчлөхгүй.
+
+### L — Liskov Substitution
+`IMenuRepository`-ийн аль ч хэрэгжүүлэлтийг солиход `MenuService` ямар ч ялгаагүйгээр ажилладаг.
+
+```java
+IMenuRepository repo = RepositoryFactory.createMenuRepository();
+menuService = new MenuService(repo, observer); // repo яг юу байхаас үл хамаарна
+```
+
+### I — Interface Segregation
+`MenuChangeObserver` интерфейс нарийн тодорхой — цэс өөрчлөлтөнд хамааралтай 3 метод л байна. Ашиглахгүй методыг implement хийхийг шаардахгүй.
+
+### D — Dependency Inversion
+Дээд давхарга доод давхаргаас хамаарахгүй — хоёулаа абстракцаас хамаарна:
+
+```
+MenuService (дээд)  -->  IMenuRepository (абстракци)
+                                ^
+                    JdbcMenuRepository (доод)
+```
+
+`MenuService` нь `JdbcMenuRepository`-г шууд мэдэхгүй. Dependency чиглэл үргэлж дотогш.
 
 ---
 
 ## Аюулгүй байдал
 
-**JWT** — гадны сангүй, `javax.crypto.Mac` ашиглан HMAC-SHA256-аар өөрөө хэрэгжүүлсэн. Токен нь хэрэглэгчийн ID болон хугацааны мэдээлэл агуулна; Javalin-ий `before()` handler-аар хамгаалагдсан route бүрт шалгагдана.
+**JWT** — гадны сангүй, `javax.crypto.Mac` ашиглан HMAC-SHA256-аар өөрөө хэрэгжүүлсэн. Javalin-ий `before()` handler-аар хамгаалагдсан route бүрт шалгагдана.
 
-**Нууц үг** — SHA-256 + тухайн хэрэглэгчид зориулсан random salt. `saltHex:hashHex` форматаар хадгалагдана. Salt нь rainbow table болон precomputation халдлагаас хамгаална.
+**Нууц үг** — SHA-256 + random salt. `saltHex:hashHex` форматаар хадгалагдана. Salt нь rainbow table болон precomputation халдлагаас хамгаална.
 
 ---
 
 ## Технологи сонгосон шалтгаан
 
-**Яагаад Spring Boot биш Javalin?**
-Javalin нь Jetty HTTP сервер дээр хамгийн бага хийсвэрлэлт нэмдэг. Route, middleware бүгд тодорхой харагдана — annotation дотор нуугдахгүй. Clean Architecture-д тохиромжтой, хамааралтай сан цөөн.
+**Яагаад Spring Boot биш Javalin?** Javalin нь Jetty дээр хамгийн бага хийсвэрлэлт нэмдэг. Route, middleware бүгд тодорхой харагдана. Clean Architecture-д тохиромжтой.
 
-**Яагаад PostgreSQL биш H2?**
-File-based тул тохиргоо, суулгалт шаардахгүй. Repository давхарга л JDBC-г мэдэхийн учир PostgreSQL руу шилжихэд зөвхөн connection string өөрчлөхөд хангалттай.
+**Яагаад PostgreSQL биш H2?** File-based тул тохиргоо шаардахгүй. Repository давхарга л JDBC-г мэдэх учир PostgreSQL руу шилжихэд зөвхөн connection string өөрчилнө.
 
-**Яагаад ORM ашиглаагүй?**
-SQL шууд бичих нь query-г бүрэн контрольдох боломж өгнө. Repository pattern нь ORM-тэй ижил тусгаарлалтыг хангадаг — хийсвэрлэл дутахгүй, нэмэлт complexity байхгүй.
+**Яагаад ORM ашиглаагүй?** SQL шууд бичих нь query-г бүрэн контрольдох боломж өгнө. Repository pattern нь ORM-тэй ижил тусгаарлалтыг хангана.
 
-**Яагаад JWT-г өөрөө хэрэгжүүлсэн?**
-Гадны сан ашиглахаас илүүтэй токены бүтэц (header.payload.signature), гарын үсгийн алгоритм, баталгаажуулалтын процессыг гүнзгий ойлгох зорилготой байсан.
+**Яагаад JWT-г өөрөө хэрэгжүүлсэн?** Токены бүтэц, гарын үсгийн алгоритм, баталгаажуулалтын процессыг гүнзгий ойлгох зорилготой байсан.
 
 ---
 
 ## Техникийн онцлог шийдлүүд
 
-**Radar Chart** — library ашиглаагүй. Trigonometry (sin/cos)-оор 6 тэнхлэгийн координат тооцоолж Canvas/SVG дээр шууд зурсан.
-
-**PDF export** — SVG radar chart-ийг агуулсан print-ready HTML үүсгэж, шинэ цонхонд нээж browser-ийн print-to-PDF ашигладаг.
-
-**Discover Feed** — дагадаг хүн байхгүй үед feed хоосон харагдахаас сэргийлж санамсаргүй жорын fallback нэмсэн.
-
-**JavaFX зургийн харьцаа** — `setFitWidth()` + `setFitHeight()` хоёуланг тавихад харьцаа гажуудна. `StackPane` + `Rectangle` clip + `fitWidthProperty().bind()` хослолоор шийдсэн.
-
-**Idempotent seeding** — demo өгөгдлийн seed нь auto-increment ID биш email-аар шалгадаг тул апп дахин ажиллуулахад давхардал гардаггүй.
+- **Radar Chart** — library ашиглаагүй, trigonometry (sin/cos)-оор 6 тэнхлэгийн координат тооцоолж Canvas/SVG дээр зурсан
+- **PDF export** — SVG chart агуулсан print-ready HTML үүсгэж browser print-to-PDF ашигладаг
+- **Discover Feed** — дагадаг хүн байхгүй үед санамсаргүй жорын fallback
+- **JavaFX зургийн харьцаа** — `StackPane` + `Rectangle` clip + `fitWidthProperty().bind()` хослол
+- **Idempotent seeding** — email-аар шалгадаг тул дахин ажиллуулахад давхардал гардаггүй
 
 ---
 
 ## Ажиллуулах
 
-**Web сервер (хурдан эхлэл):**
+**Web сервер:**
 ```
 mvnw.cmd exec:java -Dexec.mainClass=mn.edu.num.cafe.app.MainWeb
 ```
-`http://localhost:7000` дээр нээгдэнэ
+`http://localhost:7000`
 
 **Desktop клиент:**
 ```
 mvnw.cmd exec:java -Dexec.mainClass=mn.edu.num.cafe.app.Main
 ```
 
-**Demo хэрэглэгчид:**
-```
-coffee@borgol.mn / password123
-sara@borgol.mn   / password123
-tea@borgol.mn    / password123
-```
+**Demo хэрэглэгчид:** `coffee@borgol.mn` / `sara@borgol.mn` / `tea@borgol.mn` — нууц үг: `password123`
 
 ---
 
@@ -120,15 +184,17 @@ src/main/java/mn/edu/num/cafe/
   core/
     domain/             User, Recipe, CafeListing, BrewJournalEntry, BrewGuide, LearnArticle
     application/        BorgolService
+    ports/              IMenuRepository, MenuChangeObserver
   infrastructure/
-    persistence/        BorgolRepository
+    persistence/        BorgolRepository, JdbcMenuRepository, InMemoryMenuRepository, RepositoryFactory
     config/             DatabaseConnection
     security/           JwtUtil, PasswordUtil
   ui/
     web/                BorgolApiServer  (30+ REST endpoint)
     desktop/            BorgolApp        (JavaFX)
-src/main/resources/public/
-  index.html            Vanilla JS SPA (~2400 мөр)
+src/main/resources/
+  database.properties
+  public/index.html     Vanilla JS SPA (~2400 мөр)
 ```
 
 ---
