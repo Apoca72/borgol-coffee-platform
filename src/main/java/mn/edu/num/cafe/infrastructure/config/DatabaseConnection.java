@@ -22,17 +22,34 @@ public class DatabaseConnection {
 
     private DatabaseConnection() {
         props = new Properties();
+
+        // Load properties file if present (local / Eclipse)
         try (InputStream is = getClass().getClassLoader()
                 .getResourceAsStream("database.properties")) {
-            if (is == null) {
-                throw new RuntimeException("database.properties not found in classpath");
-            }
-            props.load(is);
-            Class.forName(props.getProperty("db.driver"));
-            connection = DriverManager.getConnection(
-                    props.getProperty("db.url"),
-                    props.getProperty("db.user"),
-                    props.getProperty("db.password"));
+            if (is != null) props.load(is);
+        } catch (Exception ignored) {}
+
+        // Environment variables override properties file (Railway / Docker / cloud)
+        // DB_URL not set → use in-memory H2 so Railway starts without a volume
+        String dbUrl    = System.getenv().getOrDefault("DB_URL",
+                          props.getProperty("db.url",
+                          "jdbc:h2:mem:cafe_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"));
+        String dbUser   = System.getenv().getOrDefault("DB_USER",
+                          props.getProperty("db.user", "sa"));
+        String dbPass   = System.getenv().getOrDefault("DB_PASSWORD",
+                          props.getProperty("db.password", ""));
+        String dbDriver = props.getProperty("db.driver", "org.h2.Driver");
+
+        // Write resolved values back so getProperty() works elsewhere
+        props.setProperty("db.url",      dbUrl);
+        props.setProperty("db.user",     dbUser);
+        props.setProperty("db.password", dbPass);
+        props.setProperty("db.driver",   dbDriver);
+
+        System.out.println("  [DB] Connecting to: " + dbUrl);
+        try {
+            Class.forName(dbDriver);
+            connection = DriverManager.getConnection(dbUrl, dbUser, dbPass);
         } catch (Exception e) {
             throw new RuntimeException("Database connection failed", e);
         }
