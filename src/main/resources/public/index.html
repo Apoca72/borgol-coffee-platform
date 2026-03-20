@@ -124,6 +124,38 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
 .like-btn.liked{color:var(--danger)}
 .like-btn:active{transform:scale(.9)}
 .comment-count{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px}
+.save-btn{display:flex;align-items:center;gap:4px;border:none;background:none;font-size:13px;color:var(--muted);padding:5px 8px;border-radius:8px;transition:.15s;font-weight:600}
+.save-btn:hover{background:rgba(232,160,48,.12);color:var(--gold)}
+.save-btn.saved{color:var(--gold)}
+.save-btn:active{transform:scale(.9)}
+.report-btn{border:none;background:none;font-size:13px;color:var(--muted);padding:5px 8px;border-radius:8px;transition:.15s;opacity:.5}
+.report-btn:hover{background:#FFF0F0;color:var(--danger);opacity:1}
+.flavor-tag{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;background:var(--cream);color:var(--muted);text-transform:uppercase;letter-spacing:.3px;cursor:pointer;transition:.15s}
+.flavor-tag:hover{background:var(--border);color:var(--roast)}
+
+/* ── Notification bell ────────────────────────────────────────────────────── */
+.notif-wrap{position:relative}
+.notif-bell{border:none;background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);width:36px;height:36px;border-radius:50%;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s;position:relative}
+.notif-bell:hover{background:rgba(255,255,255,.2);color:#fff}
+.notif-badge{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;background:var(--danger);border-radius:10px;font-size:9px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;padding:0 3px;display:none}
+.notif-panel{position:absolute;top:calc(100% + 10px);right:0;width:340px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:400;display:none;overflow:hidden;max-height:460px;overflow-y:auto}
+.notif-panel.open{display:block;animation:scaleIn .18s ease}
+.notif-header{padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.notif-header-title{font-size:14px;font-weight:700;color:var(--roast)}
+.notif-mark-read{border:none;background:none;font-size:12px;color:var(--caramel);font-weight:600;cursor:pointer;padding:4px 8px;border-radius:6px}
+.notif-mark-read:hover{background:rgba(168,98,30,.08)}
+.notif-item{display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s}
+.notif-item:last-child{border-bottom:none}
+.notif-item:hover{background:var(--milk)}
+.notif-item.unread{background:rgba(168,98,30,.04)}
+.notif-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--caramel),var(--caramel-lt));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden}
+.notif-avatar img{width:100%;height:100%;object-fit:cover}
+.notif-msg{flex:1;min-width:0}
+.notif-text{font-size:13px;line-height:1.4;color:var(--text)}
+.notif-text strong{color:var(--roast)}
+.notif-time{font-size:11px;color:var(--muted);margin-top:2px}
+.notif-empty{padding:32px;text-align:center;color:var(--muted);font-size:13px}
+.notif-dot{width:7px;height:7px;border-radius:50%;background:var(--caramel);flex-shrink:0;margin-top:5px}
 
 /* ── Cafe card ───────────────────────────────────────────────────────────── */
 .cafe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
@@ -457,6 +489,18 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
         <div class="avatar" id="nav-avatar">👤</div>
         <span id="nav-username">User</span>
       </button>
+    </div>
+    <div class="notif-wrap" id="notif-wrap" style="display:none">
+      <button class="notif-bell" id="notif-bell" onclick="toggleNotifPanel()" title="Notifications">🔔
+        <span class="notif-badge" id="notif-badge"></span>
+      </button>
+      <div class="notif-panel" id="notif-panel">
+        <div class="notif-header">
+          <div class="notif-header-title">Notifications</div>
+          <button class="notif-mark-read" onclick="markNotifsRead()">Mark all read</button>
+        </div>
+        <div id="notif-list"><div class="notif-empty">No notifications yet</div></div>
+      </div>
     </div>
     <button class="btn-settings" onclick="openSettings()" title="Settings">⚙️</button>
     <button class="hamburger" onclick="toggleMobileNav()" aria-label="Menu">☰</button>
@@ -1001,6 +1045,39 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
   </div>
 </div>
 
+<!-- Report -->
+<div class="modal-overlay" id="report-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title">⚑ Report Content</div>
+      <button class="modal-close" onclick="closeModal('report-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Reason</label>
+        <select id="report-reason" class="field" style="padding:10px 13px;border:1.5px solid var(--border);border-radius:10px;width:100%;font-size:14px;outline:none;background:var(--milk)">
+          <option value="">Select a reason…</option>
+          <option value="spam">Spam or misleading</option>
+          <option value="inappropriate">Inappropriate content</option>
+          <option value="harassment">Harassment or bullying</option>
+          <option value="false_info">False information</option>
+          <option value="copyright">Copyright violation</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Additional details (optional)</label>
+        <textarea id="report-desc" class="field" rows="3" placeholder="Tell us more…"
+          style="width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;resize:vertical;min-height:70px;outline:none;font-family:inherit;background:var(--milk)"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('report-modal')">Cancel</button>
+      <button class="btn btn-danger" onclick="submitReport()">Submit Report</button>
+    </div>
+  </div>
+</div>
+
 <!-- Add Equipment -->
 <div class="modal-overlay" id="add-equipment-modal">
   <div class="modal modal-sm">
@@ -1186,6 +1263,7 @@ function updateNavUser() {
     userMenu.style.display  = 'flex';
     mobileAuth.style.display = 'none';
     mobileUser.style.display = 'block';
+    document.getElementById('notif-wrap').style.display = 'block';
     document.getElementById('nav-username').textContent = ME.username;
     const avatarEl = document.getElementById('nav-avatar');
     if (ME.avatarUrl) {
@@ -1285,13 +1363,15 @@ function renderFeedCard(r) {
       <div class="feed-body">
         <div class="feed-title" onclick="openRecipeDetail(${r.id})">${esc(r.title)}</div>
         ${r.description ? `<div class="feed-desc">${esc(r.description).substring(0,120)}${r.description.length>120?'…':''}</div>` : ''}
-        ${r.flavorTags?.length ? `<div class="flavor-tags">${r.flavorTags.map(t=>`<span class="flavor-tag">${t.toLowerCase()}</span>`).join('')}</div>` : ''}
+        ${r.flavorTags?.length ? `<div class="flavor-tags">${r.flavorTags.map(t=>`<span class="flavor-tag" onclick="openHashtagPage('${t.toLowerCase()}')">#${t.toLowerCase()}</span>`).join('')}</div>` : ''}
       </div>
       <div class="feed-footer">
         <button class="like-btn${r.likedByCurrentUser?' liked':''}" onclick="toggleLike(${r.id},this)">
           ${r.likedByCurrentUser?'❤️':'🤍'} <span class="like-count">${r.likesCount||0}</span>
         </button>
         <span class="comment-count" onclick="openRecipeDetail(${r.id})">💬 ${r.commentCount||0}</span>
+        <button class="save-btn${r.savedByCurrentUser?' saved':''}" onclick="toggleSave(${r.id},this)" title="Save">🔖</button>
+        <button class="report-btn" onclick="openReportModal('recipe',${r.id})" title="Report">⚑</button>
         <button class="btn btn-sm btn-secondary" onclick="openRecipeDetail(${r.id})" style="margin-left:auto">View Recipe</button>
       </div>
     </div>`;
@@ -1456,13 +1536,17 @@ function renderRecipeCard(r) {
           ${r.brewTime ? `<span>⏱️ ${r.brewTime}min</span>` : ''}
           ${r.difficulty ? `<span>${diffIcon(r.difficulty)} ${cap(r.difficulty)}</span>` : ''}
         </div>
-        ${r.flavorTags?.length ? `<div class="flavor-tags">${r.flavorTags.slice(0,3).map(t=>`<span class="flavor-tag">${t.toLowerCase()}</span>`).join('')}</div>` : ''}
+        ${r.flavorTags?.length ? `<div class="flavor-tags">${r.flavorTags.slice(0,3).map(t=>`<span class="flavor-tag" onclick="event.stopPropagation();openHashtagPage('${t.toLowerCase()}')">#${t.toLowerCase()}</span>`).join('')}</div>` : ''}
       </div>
       <div class="recipe-actions" onclick="event.stopPropagation()">
         <button class="like-btn${r.likedByCurrentUser?' liked':''}" onclick="toggleLike(${r.id},this)">
           ${r.likedByCurrentUser?'❤️':'🤍'} <span class="like-count">${r.likesCount||0}</span>
         </button>
         <span class="comment-count">💬 ${r.commentCount||0}</span>
+        <button class="save-btn${r.savedByCurrentUser?' saved':''}" onclick="toggleSave(${r.id},this)" title="${r.savedByCurrentUser?'Unsave':'Save'}">
+          ${r.savedByCurrentUser?'🔖':'🔖'}<span style="font-size:11px">${r.savedByCurrentUser?'Saved':''}</span>
+        </button>
+        <button class="report-btn" onclick="openReportModal('recipe',${r.id})" title="Report">⚑</button>
       </div>
     </div>`;
 }
@@ -1532,6 +1616,10 @@ async function openRecipeDetail(id) {
           <button class="like-btn${r.likedByCurrentUser?' liked':''}" id="detail-like-btn" onclick="toggleLike(${r.id},this)">
             ${r.likedByCurrentUser?'❤️':'🤍'} <span class="like-count">${r.likesCount||0}</span> likes
           </button>
+          <button class="save-btn${r.savedByCurrentUser?' saved':''}" id="detail-save-btn" onclick="toggleSave(${r.id},this)">
+            🔖 ${r.savedByCurrentUser?'Saved':'Save'}
+          </button>
+          <button class="report-btn" style="opacity:1;margin-left:auto" onclick="openReportModal('recipe',${r.id})">⚑ Report</button>
         </div>
 
         <div class="comments-section">
@@ -2719,6 +2807,144 @@ function exportJournalCSV() {
   showToast('CSV downloaded!');
 }
 
+// ── Save (Bookmark) ────────────────────────────────────────────────────────────
+async function toggleSave(recipeId, btn) {
+  if (!ME) { openModal('login-modal'); return; }
+  try {
+    const result = await api(`/api/recipes/${recipeId}/save`, {method:'POST'});
+    document.querySelectorAll('.save-btn').forEach(b => {
+      if (b.getAttribute('onclick')?.includes(`toggleSave(${recipeId}`)) {
+        b.className = `save-btn${result.saved?' saved':''}`;
+        const isDetail = b.id === 'detail-save-btn';
+        b.innerHTML = isDetail
+          ? `🔖 ${result.saved?'Saved':'Save'}`
+          : `🔖<span style="font-size:11px">${result.saved?'Saved':''}</span>`;
+      }
+    });
+    showToast(result.saved ? '🔖 Recipe saved' : 'Removed from saved', result.saved ? 'ok' : 'info');
+  } catch(e) { showToast('✗ ' + e.message, 'err'); }
+}
+
+// ── Report modal ───────────────────────────────────────────────────────────────
+let _reportType = '', _reportId = 0;
+function openReportModal(type, id) {
+  if (!ME) { openModal('login-modal'); return; }
+  _reportType = type; _reportId = id;
+  document.getElementById('report-reason').value = '';
+  document.getElementById('report-desc').value = '';
+  openModal('report-modal');
+}
+async function submitReport() {
+  const reason = document.getElementById('report-reason').value;
+  const desc   = document.getElementById('report-desc').value;
+  if (!reason) { showToast('Please select a reason', 'err'); return; }
+  try {
+    await api('/api/report', {method:'POST', body: JSON.stringify({
+      contentType: _reportType, contentId: _reportId,
+      reason, description: desc
+    })});
+    closeModal('report-modal');
+    showToast('✓ Report submitted. Thank you.', 'ok');
+  } catch(e) { showToast('✗ ' + e.message, 'err'); }
+}
+
+// ── Notifications ──────────────────────────────────────────────────────────────
+let _notifOpen = false;
+async function toggleNotifPanel() {
+  _notifOpen = !_notifOpen;
+  document.getElementById('notif-panel').classList.toggle('open', _notifOpen);
+  if (_notifOpen) await loadNotifications();
+}
+document.addEventListener('click', e => {
+  if (_notifOpen && !document.getElementById('notif-wrap').contains(e.target)) {
+    _notifOpen = false;
+    document.getElementById('notif-panel').classList.remove('open');
+  }
+});
+async function loadNotifications() {
+  const list = document.getElementById('notif-list');
+  try {
+    const notifs = await api('/api/notifications');
+    if (!notifs.length) { list.innerHTML = '<div class="notif-empty">No notifications yet</div>'; return; }
+    list.innerHTML = notifs.map(n => `
+      <div class="notif-item${n.isRead?'':' unread'}" onclick="onNotifClick(${n.contentId},'${n.type}')">
+        <div class="notif-avatar">${n.fromAvatar ? `<img src="${esc(n.fromAvatar)}"/>` : (n.fromUsername||'?')[0].toUpperCase()}</div>
+        <div class="notif-msg">
+          <div class="notif-text"><strong>${esc(n.fromUsername||'Someone')}</strong> ${esc(n.message)}</div>
+          <div class="notif-time">${timeAgo(n.createdAt)}</div>
+        </div>
+        ${n.isRead?'':'<div class="notif-dot"></div>'}
+      </div>`).join('');
+  } catch(e) { list.innerHTML = '<div class="notif-empty">Failed to load</div>'; }
+}
+async function markNotifsRead() {
+  try {
+    await api('/api/notifications/read', {method:'POST'});
+    document.getElementById('notif-badge').style.display = 'none';
+    document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+    document.querySelectorAll('.notif-dot').forEach(el => el.remove());
+  } catch(e) {}
+}
+function onNotifClick(contentId, type) {
+  _notifOpen = false;
+  document.getElementById('notif-panel').classList.remove('open');
+  if (type === 'follow') showPage('explore');
+  else if (contentId) openRecipeDetail(contentId);
+}
+async function pollNotifCount() {
+  if (!ME) return;
+  try {
+    const {unread} = await api('/api/notifications/count');
+    const badge = document.getElementById('notif-badge');
+    if (unread > 0) {
+      badge.textContent = unread > 99 ? '99+' : unread;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch(e) {}
+}
+
+// ── Hashtag pages ──────────────────────────────────────────────────────────────
+async function openHashtagPage(tag) {
+  try {
+    const recipes = await api(`/api/hashtags/${encodeURIComponent(tag)}/recipes`);
+    const followed = ME ? (await api('/api/users/me/hashtags').catch(()=>[])) : [];
+    const isFollowing = followed.includes(tag);
+    const container = document.getElementById('recipe-detail-content');
+    document.getElementById('recipe-detail-modal').style.display = '';
+    document.querySelector('#recipe-detail-modal').classList.add('open');
+    container.innerHTML = `<div class="modal-header">
+      <div class="modal-title">#${esc(tag)}</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        ${ME ? `<button class="btn btn-sm ${isFollowing?'btn-secondary':'btn-primary'}" id="hashtag-follow-btn"
+          onclick="toggleHashtag('${esc(tag)}',this)">${isFollowing?'✓ Following':'+ Follow #'+esc(tag)}</button>` : ''}
+        <button class="modal-close" onclick="closeModal('recipe-detail-modal')">✕</button>
+      </div></div>
+      <div class="modal-body">
+        <div style="color:var(--muted);font-size:13px;margin-bottom:16px">${recipes.length} recipe${recipes.length!==1?'s':''} tagged #${esc(tag)}</div>
+        ${recipes.length ? `<div class="recipe-grid">${recipes.map(r=>buildRecipeCard(r)).join('')}</div>`
+          : `<div class="empty-state"><div class="empty-icon">🏷️</div><div class="empty-msg">No recipes with #${esc(tag)} yet</div></div>`}
+      </div>`;
+  } catch(e) { showToast('✗ ' + e.message, 'err'); }
+}
+async function toggleHashtag(tag, btn) {
+  if (!ME) { openModal('login-modal'); return; }
+  const following = btn.textContent.includes('Following');
+  try {
+    if (following) {
+      await api(`/api/hashtags/${encodeURIComponent(tag)}/follow`, {method:'DELETE'});
+      btn.className = 'btn btn-sm btn-primary';
+      btn.textContent = '+ Follow #' + tag;
+    } else {
+      await api(`/api/hashtags/${encodeURIComponent(tag)}/follow`, {method:'POST'});
+      btn.className = 'btn btn-sm btn-secondary';
+      btn.textContent = '✓ Following';
+    }
+    showToast(following ? `Unfollowed #${tag}` : `Following #${tag}!`, following ? 'info' : 'ok');
+  } catch(e) { showToast('✗ ' + e.message, 'err'); }
+}
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 (async () => {
   applyLang();
@@ -2727,6 +2953,10 @@ function exportJournalCSV() {
   await loadMe();
   updateNavUser();
   showPage(ME ? 'feed' : 'recipes');
+  if (ME) {
+    pollNotifCount();
+    setInterval(pollNotifCount, 60000); // poll every minute
+  }
 })();
 </script>
 </body>

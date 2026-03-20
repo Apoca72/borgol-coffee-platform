@@ -259,6 +259,36 @@ select.edit-input { cursor: pointer; }
 /* ── Save/cancel row ──────────────────────────────────── */
 .save-row { margin-top: 20px; display: none; gap: 10px; }
 .edit-mode .save-row { display: flex; }
+
+/* ── Hashtag chips ────────────────────────────────────── */
+.hashtag-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 20px;
+  background: var(--cream); border: 1px solid var(--border);
+  font-size: .78rem; font-weight: 600; color: var(--caramel);
+  cursor: pointer; transition: .2s;
+}
+.hashtag-chip:hover { background: rgba(168,98,30,.12); border-color: var(--caramel); }
+
+/* ── Profile tabs ─────────────────────────────────────── */
+.profile-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
+.profile-tab { padding: 10px 20px; border: none; background: none; font-size: .875rem; font-weight: 600;
+  color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; transition: .2s; }
+.profile-tab.active { color: var(--roast); border-bottom-color: var(--caramel); }
+.profile-tab:hover:not(.active) { color: var(--roast); }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* ── Saved recipe mini-cards ──────────────────────────── */
+.saved-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.saved-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px; cursor: pointer; transition: .2s; }
+.saved-card:hover { border-color: var(--caramel); box-shadow: var(--shadow); transform: translateY(-2px); }
+.saved-card-title { font-family: var(--font-serif); font-size: .95rem; font-weight: 700; color: var(--roast); margin-bottom: 4px; }
+.saved-card-meta { font-size: .75rem; color: var(--muted); }
+.saved-card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.saved-tag { padding: 2px 7px; border-radius: 8px; font-size: .65rem; font-weight: 700;
+  background: var(--cream); color: var(--muted); text-transform: uppercase; }
 .btn-save {
   flex: 1; padding: 10px;
   background: linear-gradient(135deg, var(--caramel), var(--caramel-lt));
@@ -448,77 +478,105 @@ select.edit-input { cursor: pointer; }
     </div>
   </div>
 
-  <!-- Cards grid -->
-  <div class="grid-2">
+  <!-- Profile Tabs -->
+  <div class="profile-tabs">
+    <button class="profile-tab active" onclick="switchTab('tab-profile',this)">👤 Profile</button>
+    <button class="profile-tab" onclick="switchTab('tab-saved',this)">🔖 Saved</button>
+    <button class="profile-tab" onclick="switchTab('tab-hashtags',this)">🏷️ Hashtags</button>
+    <button class="profile-tab" onclick="switchTab('tab-soa',this)">🔐 Auth</button>
+  </div>
 
-    <!-- Profile Edit card -->
-    <div class="card" id="editCard">
-      <div class="card-title">👤 Profile Details</div>
-
-      <div class="field-row">
-        <div class="field-label">Bio</div>
-        <div class="field-value" id="bioValue"></div>
-        <textarea class="edit-input" id="bioInput" placeholder="Tell your coffee story…"></textarea>
+  <!-- Tab: Profile details + edit -->
+  <div class="tab-pane active" id="tab-profile">
+    <div class="grid-2">
+      <div class="card" id="editCard">
+        <div class="card-title">👤 Profile Details</div>
+        <div class="field-row">
+          <div class="field-label">Bio</div>
+          <div class="field-value" id="bioValue"></div>
+          <textarea class="edit-input" id="bioInput" placeholder="Tell your coffee story…"></textarea>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Phone</div>
+          <div class="field-value" id="phoneValue"></div>
+          <input class="edit-input" id="phoneInput" type="tel" placeholder="+976 9911 0000"/>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Profile Photo</div>
+          <div class="field-value" id="avatarValue">Click the photo above to change</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Expertise Level</div>
+          <div class="field-value" id="expertiseValue"></div>
+          <select class="edit-input" id="expertiseInput">
+            <option value="BEGINNER">Beginner</option>
+            <option value="ENTHUSIAST">Enthusiast</option>
+            <option value="BARISTA">Barista</option>
+            <option value="EXPERT">Expert</option>
+          </select>
+        </div>
+        <div class="save-row">
+          <button class="btn-save" onclick="saveProfile()">Save Changes</button>
+          <button class="btn-cancel" onclick="cancelEdit()">Cancel</button>
+        </div>
       </div>
-      <div class="field-row">
-        <div class="field-label">Phone</div>
-        <div class="field-value" id="phoneValue"></div>
-        <input class="edit-input" id="phoneInput" type="tel" placeholder="+976 9911 0000"/>
-      </div>
-      <div class="field-row">
-        <div class="field-label">Profile Photo</div>
-        <div class="field-value" id="avatarValue">Click the photo above to change</div>
-      </div>
-      <div class="field-row">
-        <div class="field-label">Expertise Level</div>
-        <div class="field-value" id="expertiseValue"></div>
-        <select class="edit-input" id="expertiseInput">
-          <option value="BEGINNER">Beginner</option>
-          <option value="ENTHUSIAST">Enthusiast</option>
-          <option value="BARISTA">Barista</option>
-          <option value="EXPERT">Expert</option>
-        </select>
-      </div>
-
-      <div class="save-row">
-        <button class="btn-save" onclick="saveProfile()">Save Changes</button>
-        <button class="btn-cancel" onclick="cancelEdit()">Cancel</button>
+      <div class="card">
+        <div class="card-title">🏷️ Flavor Preferences</div>
+        <div id="flavorPrefsDisplay" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
+        <div class="field-label" style="margin-bottom:8px">Add a flavor tag</div>
+        <div style="display:flex;gap:8px">
+          <input id="newFlavorInput" type="text" placeholder="e.g. fruity, chocolate…"
+            style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:.875rem;outline:none;font-family:inherit"
+            onkeydown="if(event.key==='Enter')addFlavorTag()"/>
+          <button class="btn-save" style="padding:9px 16px;flex-shrink:0" onclick="addFlavorTag()">Add</button>
+        </div>
       </div>
     </div>
+  </div>
 
-    <!-- SOA Auth Flow card -->
+  <!-- Tab: Saved recipes -->
+  <div class="tab-pane" id="tab-saved">
+    <div class="card" style="padding:20px">
+      <div class="card-title">🔖 Saved Recipes</div>
+      <div id="savedRecipesGrid"><div style="text-align:center;padding:32px;color:var(--muted)">Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- Tab: Followed hashtags -->
+  <div class="tab-pane" id="tab-hashtags">
+    <div class="card" style="padding:20px">
+      <div class="card-title">🏷️ Followed Hashtags</div>
+      <div id="followedHashtags" style="display:flex;flex-wrap:wrap;gap:8px;min-height:40px"></div>
+      <div style="margin-top:16px;display:flex;gap:8px">
+        <input id="newHashtagInput" type="text" placeholder="Follow a hashtag… e.g. fruity"
+          style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:.875rem;outline:none;font-family:inherit"
+          onkeydown="if(event.key==='Enter')followNewHashtag()"/>
+        <button class="btn-save" style="padding:9px 16px;flex-shrink:0" onclick="followNewHashtag()">+ Follow</button>
+      </div>
+    </div>
+    <div class="card" style="padding:20px;margin-top:14px">
+      <div class="card-title">🔥 Trending Hashtags</div>
+      <div id="trendingHashtags" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+  </div>
+
+  <!-- Tab: SOA Auth Flow -->
+  <div class="tab-pane" id="tab-soa">
     <div class="card">
       <div class="card-title">🔐 SOA Auth Flow</div>
-
-      <div class="flow-step">
-        <div class="step-num">1</div>
-        <div class="step-text"><strong>Frontend</strong> sends request with Bearer token</div>
-      </div>
-      <div class="flow-step">
-        <div class="step-num">2</div>
-        <div class="step-text"><strong>JSON Service</strong> receives GET /api/users/:id</div>
-      </div>
-      <div class="flow-step">
-        <div class="step-num">3</div>
-        <div class="step-text"><strong>Middleware</strong> calls SOAP ValidateToken</div>
-      </div>
-      <div class="flow-step">
-        <div class="step-num">4</div>
-        <div class="step-text"><strong>SOAP Service</strong> verifies JWT → returns valid + userId</div>
-      </div>
-      <div class="flow-step">
-        <div class="step-num">5</div>
-        <div class="step-text"><strong>JSON Service</strong> fetches profile from DB → returns JSON</div>
-      </div>
-
+      <div class="flow-step"><div class="step-num">1</div><div class="step-text"><strong>Frontend</strong> sends request with Bearer token</div></div>
+      <div class="flow-step"><div class="step-num">2</div><div class="step-text"><strong>JSON Service</strong> receives GET /api/users/:id</div></div>
+      <div class="flow-step"><div class="step-num">3</div><div class="step-text"><strong>Middleware</strong> calls SOAP ValidateToken</div></div>
+      <div class="flow-step"><div class="step-num">4</div><div class="step-text"><strong>SOAP Service</strong> verifies JWT → returns valid + userId</div></div>
+      <div class="flow-step"><div class="step-num">5</div><div class="step-text"><strong>JSON Service</strong> fetches profile from DB → returns JSON</div></div>
       <div class="token-box">
         <div class="token-box-label">Current Token (SOAP-issued)</div>
         <div class="token-preview" id="tokenPreview">—</div>
         <div class="token-source">Source: <span id="tokenSource">—</span></div>
       </div>
     </div>
-
   </div>
+
 </div>
 
 <!-- Loading -->
@@ -709,6 +767,7 @@ function renderProfile(u) {
   document.getElementById('bioInput').value       = u.bio || '';
   document.getElementById('phoneInput').value     = storedPhone;
   document.getElementById('expertiseInput').value = u.expertiseLevel || 'ENTHUSIAST';
+  renderFlavorPrefs(u.flavorPrefs || []);
 }
 
 function setFieldValue(field, value) {
@@ -756,6 +815,137 @@ async function saveProfile() {
   } catch (err) {
     showToast('✗ ' + err.message, 'error');
   }
+}
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.profile-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+  if (tabId === 'tab-saved') loadSavedRecipes();
+  if (tabId === 'tab-hashtags') loadHashtags();
+}
+
+// ── Saved recipes ─────────────────────────────────────────────────────────────
+async function loadSavedRecipes() {
+  const token = localStorage.getItem('borgol_token');
+  const grid  = document.getElementById('savedRecipesGrid');
+  if (!token) { grid.innerHTML = '<div style="color:var(--muted);text-align:center;padding:24px">Sign in to see saved recipes</div>'; return; }
+  try {
+    const res = await fetch(`${JSON_BASE}/api/saved`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const recipes = await res.json();
+    if (!recipes.length) {
+      grid.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted)">No saved recipes yet. Bookmark recipes to find them here!</div>';
+      return;
+    }
+    grid.innerHTML = `<div class="saved-grid">${recipes.map(r => `
+      <div class="saved-card" onclick="window.location='/index.html'">
+        <div class="saved-card-title">${escHtml(r.title)}</div>
+        <div class="saved-card-meta">by ${escHtml(r.authorUsername||'?')} · ❤️ ${r.likesCount||0}</div>
+        ${r.flavorTags?.length ? `<div class="saved-card-tags">${r.flavorTags.slice(0,4).map(t=>`<span class="saved-tag">${t}</span>`).join('')}</div>` : ''}
+      </div>`).join('')}</div>`;
+  } catch(e) { grid.innerHTML = `<div style="color:var(--error);text-align:center;padding:24px">Failed to load: ${e.message}</div>`; }
+}
+
+// ── Hashtags ──────────────────────────────────────────────────────────────────
+async function loadHashtags() {
+  const token = localStorage.getItem('borgol_token');
+  await Promise.all([loadFollowedHashtags(token), loadTrendingHashtags()]);
+}
+
+async function loadFollowedHashtags(token) {
+  const el = document.getElementById('followedHashtags');
+  if (!token) { el.innerHTML = '<span style="color:var(--muted);font-size:.875rem">Sign in to follow hashtags</span>'; return; }
+  try {
+    const res  = await fetch(`${JSON_BASE}/api/users/me/hashtags`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const tags = await res.json();
+    if (!tags.length) { el.innerHTML = '<span style="color:var(--muted);font-size:.875rem">No hashtags followed yet</span>'; return; }
+    el.innerHTML = tags.map(t => `
+      <span class="hashtag-chip">
+        #${escHtml(t)}
+        <button onclick="unfollowHashtag('${escHtml(t)}')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.7rem;padding:0 0 0 2px" title="Unfollow">✕</button>
+      </span>`).join('');
+  } catch(e) { el.innerHTML = `<span style="color:var(--error);font-size:.875rem">Failed to load</span>`; }
+}
+
+async function loadTrendingHashtags() {
+  const el = document.getElementById('trendingHashtags');
+  try {
+    const res  = await fetch(`${JSON_BASE}/api/hashtags/trending`);
+    const tags = await res.json();
+    el.innerHTML = tags.map(t => `
+      <span class="hashtag-chip" onclick="followFromTrending('${escHtml(t.tag)}')">#${escHtml(t.tag)} <span style="font-size:.65rem;color:var(--muted)">${t.recipeCount}</span></span>`).join('');
+  } catch(e) { el.innerHTML = '<span style="color:var(--muted);font-size:.875rem">—</span>'; }
+}
+
+async function followNewHashtag() {
+  const input = document.getElementById('newHashtagInput');
+  const tag   = input.value.trim().replace(/^#+/, '').toLowerCase();
+  if (!tag) return;
+  const token = localStorage.getItem('borgol_token');
+  if (!token) { showToast('Sign in to follow hashtags', 'error'); return; }
+  try {
+    await fetch(`${JSON_BASE}/api/hashtags/${encodeURIComponent(tag)}/follow`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+    input.value = '';
+    await loadFollowedHashtags(token);
+    showToast(`Following #${tag}`, 'success');
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
+}
+
+async function unfollowHashtag(tag) {
+  const token = localStorage.getItem('borgol_token');
+  if (!token) return;
+  try {
+    await fetch(`${JSON_BASE}/api/hashtags/${encodeURIComponent(tag)}/follow`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    await loadFollowedHashtags(token);
+    showToast(`Unfollowed #${tag}`, 'success');
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
+}
+
+async function followFromTrending(tag) {
+  const token = localStorage.getItem('borgol_token');
+  if (!token) { showToast('Sign in to follow hashtags', 'error'); return; }
+  try {
+    await fetch(`${JSON_BASE}/api/hashtags/${encodeURIComponent(tag)}/follow`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+    await loadFollowedHashtags(token);
+    showToast(`Following #${tag}!`, 'success');
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
+}
+
+// ── Flavor prefs (inline add) ─────────────────────────────────────────────────
+async function addFlavorTag() {
+  const input = document.getElementById('newFlavorInput');
+  const tag   = input.value.trim().toLowerCase();
+  if (!tag) return;
+  const token = localStorage.getItem('borgol_token');
+  if (!token) { showToast('Not authenticated', 'error'); return; }
+  const current = userData?.flavorPrefs || [];
+  if (current.includes(tag)) { showToast('Already added', 'error'); return; }
+  const updated = [...current, tag];
+  try {
+    const res = await fetch(`${JSON_BASE}/api/users/me`, { method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ bio: userData?.bio||'', expertiseLevel: userData?.expertiseLevel||'BEGINNER', flavorPrefs: updated })
+    });
+    userData = await res.json();
+    renderFlavorPrefs(userData.flavorPrefs || []);
+    input.value = '';
+    showToast(`Added #${tag}`, 'success');
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
+}
+
+function renderFlavorPrefs(prefs) {
+  const el = document.getElementById('flavorPrefsDisplay');
+  if (!el) return;
+  el.innerHTML = prefs.length
+    ? prefs.map(f => `<span class="hashtag-chip" style="font-size:.72rem">#${escHtml(f)}</span>`).join('')
+    : '<span style="color:var(--muted);font-size:.875rem">No flavor preferences yet</span>';
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ── Logout ──────────────────────────────────────────────────────────────────

@@ -89,6 +89,8 @@ public class BorgolService {
     public void followUser(int followerId, int followingId) {
         if (followerId == followingId) throw new IllegalArgumentException("Cannot follow yourself");
         repo.followUser(followerId, followingId);
+        repo.createNotification(followingId, "follow", followerId, 0,
+            "started following you");
     }
 
     public void unfollowUser(int followerId, int followingId) {
@@ -177,6 +179,13 @@ public class BorgolService {
         } else {
             repo.likeRecipe(userId, recipeId);
             liked = true;
+            // notify author
+            repo.findRecipeById(recipeId, userId).ifPresent(r -> {
+                if (r.getAuthorId() != userId) {
+                    repo.createNotification(r.getAuthorId(), "like", userId, recipeId,
+                        "liked your recipe \"" + r.getTitle() + "\"");
+                }
+            });
         }
         int count = repo.findRecipeById(recipeId, userId)
             .map(Recipe::getLikesCount).orElse(0);
@@ -192,7 +201,15 @@ public class BorgolService {
     public RecipeComment addComment(int recipeId, int authorId, String content) {
         if (content == null || content.isBlank()) throw new IllegalArgumentException("Comment cannot be empty");
         if (content.length() > 1000) throw new IllegalArgumentException("Comment too long (max 1000 chars)");
-        return repo.addComment(recipeId, authorId, content);
+        RecipeComment comment = repo.addComment(recipeId, authorId, content);
+        // Notify author
+        repo.findRecipeById(recipeId, authorId).ifPresent(r -> {
+            if (r.getAuthorId() != authorId) {
+                repo.createNotification(r.getAuthorId(), "comment", authorId, recipeId,
+                    "commented on your recipe \"" + r.getTitle() + "\"");
+            }
+        });
+        return comment;
     }
 
     // ── Cafes ─────────────────────────────────────────────────────────────────
@@ -588,6 +605,86 @@ public class BorgolService {
 
     public void deleteEquipment(int equipmentId, int userId) {
         repo.deleteEquipment(equipmentId, userId);
+    }
+
+    // ── Saved Recipes ─────────────────────────────────────────────────────────
+
+    public Map<String, Object> toggleSave(int userId, int recipeId) {
+        boolean saved;
+        if (repo.isRecipeSaved(userId, recipeId)) {
+            repo.unsaveRecipe(userId, recipeId);
+            saved = false;
+        } else {
+            repo.saveRecipe(userId, recipeId);
+            saved = true;
+        }
+        return Map.of("saved", saved);
+    }
+
+    public List<Recipe> getSavedRecipes(int userId, int currentUserId) {
+        return repo.getSavedRecipes(userId, currentUserId);
+    }
+
+    // ── Notifications ─────────────────────────────────────────────────────────
+
+    public List<Map<String, Object>> getNotifications(int userId) {
+        return repo.getNotifications(userId, 50);
+    }
+
+    public void markNotificationsRead(int userId) {
+        repo.markNotificationsRead(userId);
+    }
+
+    public Map<String, Object> getNotificationCount(int userId) {
+        return Map.of("unread", repo.getUnreadNotificationCount(userId));
+    }
+
+    // ── Reports ───────────────────────────────────────────────────────────────
+
+    public void submitReport(int reporterId, String contentType, int contentId,
+                              String reason, String description) {
+        if (reason == null || reason.isBlank()) throw new IllegalArgumentException("Reason is required");
+        List<String> validTypes = List.of("recipe", "user", "comment");
+        if (!validTypes.contains(contentType)) throw new IllegalArgumentException("Invalid content type");
+        repo.createReport(reporterId, contentType, contentId, reason, description);
+    }
+
+    // ── Block ─────────────────────────────────────────────────────────────────
+
+    public void blockUser(int blockerId, int blockedId) {
+        if (blockerId == blockedId) throw new IllegalArgumentException("Cannot block yourself");
+        repo.blockUser(blockerId, blockedId);
+    }
+
+    public void unblockUser(int blockerId, int blockedId) {
+        repo.unblockUser(blockerId, blockedId);
+    }
+
+    public boolean isBlocked(int blockerId, int blockedId) {
+        return repo.isBlocked(blockerId, blockedId);
+    }
+
+    // ── Hashtags ──────────────────────────────────────────────────────────────
+
+    public void followHashtag(int userId, String tag) {
+        if (tag == null || tag.isBlank()) throw new IllegalArgumentException("Tag is required");
+        repo.followHashtag(userId, tag.toLowerCase().replaceAll("[^a-z0-9_]", ""));
+    }
+
+    public void unfollowHashtag(int userId, String tag) {
+        repo.unfollowHashtag(userId, tag.toLowerCase());
+    }
+
+    public List<String> getUserHashtags(int userId) {
+        return repo.getUserHashtags(userId);
+    }
+
+    public List<Recipe> getHashtagRecipes(int currentUserId, String tag) {
+        return repo.getRecipesByHashtag(currentUserId, tag);
+    }
+
+    public List<Map<String, Object>> getTrendingHashtags() {
+        return repo.getTrendingHashtags(20);
     }
 
     // ── View mapping ──────────────────────────────────────────────────────────

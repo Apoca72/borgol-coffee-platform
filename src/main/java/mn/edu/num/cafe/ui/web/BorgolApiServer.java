@@ -150,6 +150,29 @@ public class BorgolApiServer {
         app.get("/api/learn",      this::getLearnArticles);
         app.get("/api/learn/{id}", this::getLearnArticle);
 
+        // Saved recipes
+        app.post("/api/recipes/{id}/save",   this::saveRecipe);
+        app.get ("/api/saved",               this::getSaved);
+
+        // Notifications
+        app.get ("/api/notifications",              this::getNotifications);
+        app.get ("/api/notifications/count",        this::getNotificationCount);
+        app.post("/api/notifications/read",         this::markNotificationsRead);
+
+        // Reports
+        app.post("/api/report", this::submitReport);
+
+        // Block
+        app.post  ("/api/users/{id}/block", this::blockUser);
+        app.delete("/api/users/{id}/block", this::unblockUser);
+
+        // Hashtags
+        app.get   ("/api/hashtags/trending",          this::getTrendingHashtags);
+        app.get   ("/api/hashtags/{tag}/recipes",     this::getHashtagRecipes);
+        app.post  ("/api/hashtags/{tag}/follow",      this::followHashtag);
+        app.delete("/api/hashtags/{tag}/follow",      this::unfollowHashtag);
+        app.get   ("/api/users/me/hashtags",          this::getUserHashtags);
+
         // Legacy menu API (kept for backward compatibility)
         app.get   ("/api/menu",      ctx -> ctx.json(menuService.getAllItems()));
         app.get   ("/api/menu/{id}", ctx -> {
@@ -652,6 +675,110 @@ public class BorgolApiServer {
         }
     }
 
+    // ── Save handlers ─────────────────────────────────────────────────────────
+
+    private void saveRecipe(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.toggleSave(userId, intParam(ctx, "id")));
+    }
+
+    private void getSaved(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.getSavedRecipes(userId, userId));
+    }
+
+    // ── Notification handlers ─────────────────────────────────────────────────
+
+    private void getNotifications(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.getNotifications(userId));
+    }
+
+    private void getNotificationCount(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.getNotificationCount(userId));
+    }
+
+    private void markNotificationsRead(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        borgol.markNotificationsRead(userId);
+        ctx.json(Map.of("ok", true));
+    }
+
+    // ── Report handler ────────────────────────────────────────────────────────
+
+    private void submitReport(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        try {
+            var req = ctx.bodyAsClass(ReportReq.class);
+            borgol.submitReport(userId, req.contentType, req.contentId, req.reason, req.description);
+            ctx.status(201).json(Map.of("message", "Report submitted"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(err(e.getMessage()));
+        }
+    }
+
+    // ── Block handlers ────────────────────────────────────────────────────────
+
+    private void blockUser(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        try {
+            borgol.blockUser(userId, intParam(ctx, "id"));
+            ctx.json(Map.of("blocked", true));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(err(e.getMessage()));
+        }
+    }
+
+    private void unblockUser(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        borgol.unblockUser(userId, intParam(ctx, "id"));
+        ctx.json(Map.of("blocked", false));
+    }
+
+    // ── Hashtag handlers ──────────────────────────────────────────────────────
+
+    private void getTrendingHashtags(Context ctx) {
+        ctx.json(borgol.getTrendingHashtags());
+    }
+
+    private void getHashtagRecipes(Context ctx) {
+        int currentId = authOptional(ctx);
+        ctx.json(borgol.getHashtagRecipes(currentId, ctx.pathParam("tag")));
+    }
+
+    private void followHashtag(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        try {
+            borgol.followHashtag(userId, ctx.pathParam("tag"));
+            ctx.json(Map.of("following", true));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(err(e.getMessage()));
+        }
+    }
+
+    private void unfollowHashtag(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        borgol.unfollowHashtag(userId, ctx.pathParam("tag"));
+        ctx.json(Map.of("following", false));
+    }
+
+    private void getUserHashtags(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.getUserHashtags(userId));
+    }
+
     // ── Auth helpers ──────────────────────────────────────────────────────────
 
     /**
@@ -778,6 +905,13 @@ public class BorgolApiServer {
         public String name     = "";
         public String brand    = "";
         public String notes    = "";
+    }
+
+    public static class ReportReq {
+        public String contentType;
+        public int    contentId;
+        public String reason;
+        public String description;
     }
 
     public static class JournalReq {
