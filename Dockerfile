@@ -7,26 +7,23 @@ FROM maven:3.9.6-eclipse-temurin-21-alpine
 
 WORKDIR /app
 
-# ── 1. Copy pom.xml and pre-download all dependencies ──────────
-# (This layer is cached as long as pom.xml doesn't change)
+# ── 1. Cache Maven dependencies (only re-runs when pom.xml changes) ──
 COPY pom.xml ./
-RUN mvn dependency:resolve \
-        dependency:resolve-plugins \
+RUN mvn dependency:resolve dependency:resolve-plugins \
         -B -q 2>/dev/null || true
 
-# ── 2. Copy source and compile ─────────────────────────────────
+# ── 2. Copy source and build fat JAR ───────────────────────────
 COPY src ./src
-RUN mvn compile -B -q
+RUN mvn package -B -q -DskipTests
 
 # ── 3. Runtime configuration ───────────────────────────────────
 # MODE=web  → starts Javalin REST server, skips JavaFX
 # PORT      → set automatically by Railway
-# SOAP_SERVICE_URL → set manually in Railway env vars after
-#             deploying soap-auth-service
+# SOAP_SERVICE_URL → set in Railway env vars after deploying soap-auth-service
 ENV MODE=web
 ENV PORT=7000
 
 EXPOSE ${PORT}
 
-# ── 4. Start the application ───────────────────────────────────
-CMD ["mvn", "exec:java", "-B", "-q"]
+# ── 4. Run the executable fat JAR ──────────────────────────────
+CMD ["java", "-jar", "target/cafe-project-1.0-SNAPSHOT.jar"]
