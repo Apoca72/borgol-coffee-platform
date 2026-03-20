@@ -5,317 +5,215 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Register – Borgol Coffee</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
 <style>
-/* ═══════════════════════════════════════════════════
-   BORGOL — Dark Espresso Luxury Theme
-   ═══════════════════════════════════════════════════ */
 :root {
-  --bg:        #0D0A07;
-  --surface:   #1A1410;
-  --surface2:  #241C14;
-  --gold:      #D4A843;
-  --gold-dim:  #A07828;
-  --cream:     #F5ECD7;
-  --muted:     #9A8870;
-  --error:     #E07070;
-  --success:   #7CC47C;
-  --border:    rgba(212,168,67,.18);
-  --glow:      rgba(212,168,67,.12);
+  --espresso  : #0C0400;
+  --roast     : #2B1005;
+  --caramel   : #A8621E;
+  --caramel-lt: #CB8840;
+  --gold      : #E8A030;
+  --cream     : #F6E8CC;
+  --milk      : #FDFAF3;
+  --surface   : #FFFEF8;
+  --border    : #EDDBBA;
+  --muted     : #8A7054;
+  --text      : #180F08;
+  --success   : #2D6A4F;
+  --error     : #B5321E;
+  --shadow-lg : 0 20px 60px rgba(12,4,0,.18);
+  --radius    : 14px;
+  --radius-lg : 20px;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans : 'DM Sans', -apple-system, sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--milk); color: var(--text); font-family: var(--font-sans); overflow-x: hidden; }
 
-html, body {
-  height: 100%;
-  background: var(--bg);
-  color: var(--cream);
-  font-family: 'DM Sans', sans-serif;
-  overflow-x: hidden;
+@keyframes slideDown { from { opacity:0; transform:translateY(-14px) } to { opacity:1; transform:none } }
+@keyframes cardIn    { from { opacity:0; transform:translateY(28px) } to { opacity:1; transform:translateY(0) } }
+@keyframes slideIn   { from { opacity:0; transform:translateY(-8px) } to { opacity:1; transform:translateY(0) } }
+@keyframes spin      { to { transform:rotate(360deg) } }
+@keyframes pulse     { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Navbar ───────────────────────────────────────────── */
+.navbar {
+  background: linear-gradient(135deg, var(--espresso) 0%, #1A0800 100%);
+  height: 62px; display: flex; align-items: center;
+  padding: 0 28px; gap: 16px;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  box-shadow: 0 2px 24px rgba(0,0,0,.45);
+  animation: slideDown .4s ease;
 }
-
-/* ── Animated background ──────────────────────────── */
-body::before {
-  content: '';
-  position: fixed; inset: 0; z-index: 0;
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 80%, rgba(90,50,15,.35) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(60,30,10,.3)  0%, transparent 55%),
-    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(212,168,67,.04) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-/* ── Floating orbs ────────────────────────────────── */
-.orb {
-  position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
-  filter: blur(60px); opacity: .06;
-  animation: drift 18s ease-in-out infinite alternate;
-}
-.orb-1 { width: 400px; height: 400px; background: var(--gold); top: -10%; left: -10%; }
-.orb-2 { width: 300px; height: 300px; background: #8B4513;    bottom: 5%;  right: -8%; animation-delay: -8s; }
-
-@keyframes drift {
-  from { transform: translate(0,0) scale(1); }
-  to   { transform: translate(30px, 20px) scale(1.08); }
-}
-
-/* ── SOA architecture banner ─────────────────────── */
-.arch-banner {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  background: rgba(13,10,7,.92); backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
-  padding: 10px 24px;
+.nav-brand {
   display: flex; align-items: center; gap: 8px;
-  font-size: .72rem; letter-spacing: .08em; color: var(--muted);
+  font-family: var(--font-serif); font-size: 19px; font-weight: 700; color: #fff;
 }
-.arch-banner .node {
-  padding: 3px 10px; border-radius: 20px;
-  background: var(--surface2); border: 1px solid var(--border);
-  color: var(--gold); font-weight: 500; white-space: nowrap;
+.nav-brand span { font-size: 24px; }
+.nav-right { margin-left: auto; }
+.nav-out-link {
+  padding: 7px 18px; border: 1.5px solid rgba(255,255,255,.25);
+  border-radius: 20px; font-size: 13px; font-weight: 600;
+  color: rgba(255,255,255,.8); text-decoration: none; transition: .2s;
 }
-.arch-banner .arrow { color: var(--gold-dim); }
-.arch-banner .brand {
-  margin-left: auto; font-family: 'Cormorant Garamond', serif;
-  font-size: .9rem; color: var(--gold); letter-spacing: .12em;
-}
+.nav-out-link:hover { background: rgba(255,255,255,.1); color: #fff; border-color: rgba(255,255,255,.5); }
 
-/* ── Main layout ──────────────────────────────────── */
+/* ── Page ─────────────────────────────────────────────── */
 .page {
-  position: relative; z-index: 1;
   min-height: 100vh;
   display: flex; align-items: center; justify-content: center;
-  padding: 80px 24px 40px;
+  padding: 80px 20px 48px;
+  background:
+    radial-gradient(ellipse 55% 45% at 10% 90%, rgba(168,98,30,.08) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 35% at 90% 10%, rgba(12,4,0,.04) 0%, transparent 55%);
 }
 
-/* ── Card ─────────────────────────────────────────── */
+/* ── Card ─────────────────────────────────────────────── */
 .card {
   width: 100%; max-width: 460px;
-  background: rgba(26,20,16,.85);
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   padding: 48px 44px;
-  backdrop-filter: blur(20px);
-  box-shadow:
-    0 0 0 1px rgba(212,168,67,.06),
-    0 40px 80px rgba(0,0,0,.6),
-    inset 0 1px 0 rgba(212,168,67,.08);
-  animation: cardIn .8s cubic-bezier(.16,1,.3,1) both;
+  box-shadow: var(--shadow-lg);
+  animation: cardIn .7s cubic-bezier(.16,1,.3,1) both;
 }
 
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(32px) scale(.97); }
-  to   { opacity: 1; transform: translateY(0)    scale(1);   }
-}
-
-/* ── Logo / heading ───────────────────────────────── */
-.logo-wrap {
-  text-align: center; margin-bottom: 36px;
-}
-.logo-icon {
+/* ── Card header ──────────────────────────────────────── */
+.card-header { text-align: center; margin-bottom: 32px; }
+.icon-circle {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 60px; height: 60px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
-  margin-bottom: 20px;
-  box-shadow: 0 0 28px rgba(212,168,67,.3), 0 0 0 8px rgba(212,168,67,.08);
-  font-size: 1.6rem;
-  animation: pulse 3s ease-in-out infinite;
+  width: 68px; height: 68px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--caramel), var(--caramel-lt));
+  font-size: 30px; margin-bottom: 18px;
+  box-shadow: 0 8px 28px rgba(168,98,30,.3);
 }
-@keyframes pulse {
-  0%,100% { box-shadow: 0 0 28px rgba(212,168,67,.3), 0 0 0 8px rgba(212,168,67,.08); }
-  50%     { box-shadow: 0 0 40px rgba(212,168,67,.5), 0 0 0 12px rgba(212,168,67,.12); }
+.card-title {
+  font-family: var(--font-serif);
+  font-size: 2rem; font-weight: 700; color: var(--roast);
 }
-.logo-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 2rem; font-weight: 600;
-  color: var(--cream); letter-spacing: .04em;
-  line-height: 1.1;
+.card-sub {
+  font-size: .78rem; color: var(--muted);
+  letter-spacing: .09em; text-transform: uppercase; margin-top: 5px;
 }
-.logo-sub {
-  margin-top: 6px; font-size: .8rem; color: var(--muted);
-  letter-spacing: .1em; text-transform: uppercase;
+.service-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px;
+  background: var(--cream); border: 1px solid var(--border);
+  font-size: .7rem; color: var(--muted); margin-top: 12px;
 }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); animation: pulse 2s ease-in-out infinite; }
 
-/* ── Form ─────────────────────────────────────────── */
-.form-group { margin-bottom: 20px; position: relative; }
+/* ── Alert ────────────────────────────────────────────── */
+.alert {
+  padding: 12px 16px; border-radius: 10px;
+  font-size: .875rem; margin-bottom: 20px;
+  display: none; animation: slideIn .3s ease both;
+}
+.alert-error   { background: rgba(181,50,30,.08); border: 1px solid rgba(181,50,30,.25); color: var(--error);   display: block; }
+.alert-success { background: rgba(45,106,79,.08);  border: 1px solid rgba(45,106,79,.25);  color: var(--success); display: block; }
+
+/* ── Form ─────────────────────────────────────────────── */
+.form-group { margin-bottom: 18px; position: relative; }
 
 label {
-  display: block; margin-bottom: 8px;
-  font-size: .78rem; font-weight: 500;
-  letter-spacing: .08em; text-transform: uppercase;
-  color: var(--muted);
+  display: block; margin-bottom: 6px;
+  font-size: .74rem; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
 }
 
 input {
-  width: 100%; padding: 14px 16px;
-  background: rgba(36,28,20,.7);
-  border: 1px solid rgba(154,136,112,.2);
-  border-radius: 10px;
-  color: var(--cream); font-family: 'DM Sans', sans-serif; font-size: .95rem;
-  outline: none; transition: border-color .2s, box-shadow .2s, background .2s;
-  -webkit-autofill-style: none;
+  width: 100%; padding: 12px 14px;
+  background: var(--milk); border: 1.5px solid var(--border);
+  border-radius: var(--radius); color: var(--text);
+  font-family: var(--font-sans); font-size: .95rem;
+  outline: none; transition: all .2s;
 }
-input::placeholder { color: rgba(154,136,112,.5); }
+input::placeholder { color: rgba(138,112,84,.45); }
 input:focus {
-  border-color: var(--gold);
-  background: rgba(36,28,20,.95);
-  box-shadow: 0 0 0 3px rgba(212,168,67,.1);
+  border-color: var(--caramel); background: #fff;
+  box-shadow: 0 0 0 3px rgba(168,98,30,.12);
 }
 
-/* ── Submit button ────────────────────────────────── */
+/* ── Password strength ────────────────────────────────── */
+.strength-bar {
+  height: 3px; border-radius: 2px;
+  background: var(--border); margin-top: 8px; overflow: hidden;
+}
+.strength-fill { height: 100%; border-radius: 2px; transition: width .3s, background .3s; width: 0%; }
+
+/* ── Button ───────────────────────────────────────────── */
 .btn {
-  width: 100%; padding: 15px;
-  background: linear-gradient(135deg, var(--gold-dim) 0%, var(--gold) 50%, #E8C060 100%);
-  border: none; border-radius: 10px;
-  color: #1A1000; font-family: 'DM Sans', sans-serif;
-  font-size: .95rem; font-weight: 600; letter-spacing: .06em;
+  width: 100%; padding: 13px; margin-top: 8px;
+  background: linear-gradient(135deg, var(--caramel) 0%, var(--caramel-lt) 100%);
+  border: none; border-radius: var(--radius);
+  color: #fff; font-family: var(--font-sans);
+  font-size: .95rem; font-weight: 700;
   cursor: pointer; position: relative; overflow: hidden;
   transition: transform .18s, box-shadow .18s;
-  margin-top: 8px;
+  box-shadow: 0 4px 16px rgba(168,98,30,.3);
 }
-.btn::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.15) 50%, transparent 100%);
-  transform: translateX(-100%);
-  transition: transform .5s;
-}
-.btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(212,168,67,.35); }
-.btn:hover::after { transform: translateX(100%); }
+.btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(168,98,30,.4); }
 .btn:active { transform: translateY(0); }
 .btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
-/* ── Loading spinner inside button ───────────────── */
 .btn-spinner {
-  display: inline-block; width: 16px; height: 16px;
-  border: 2px solid rgba(26,16,0,.3);
-  border-top-color: #1A1000;
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
+  display: inline-block; width: 15px; height: 15px;
+  border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+  border-radius: 50%; animation: spin .7s linear infinite;
   margin-right: 8px; vertical-align: middle;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Alert messages ───────────────────────────────── */
-.alert {
-  padding: 12px 16px; border-radius: 8px;
-  font-size: .875rem; margin-bottom: 20px;
-  display: none;
-  animation: slideIn .3s ease both;
-}
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0);    }
-}
-.alert-error   { background: rgba(224,112,112,.12); border: 1px solid rgba(224,112,112,.3); color: var(--error);   display: block; }
-.alert-success { background: rgba(124,196,124,.12); border: 1px solid rgba(124,196,124,.3); color: var(--success); display: block; }
-
-/* ── Divider ──────────────────────────────────────── */
+/* ── Divider ──────────────────────────────────────────── */
 .divider {
   text-align: center; margin: 24px 0;
-  position: relative; color: var(--muted); font-size: .8rem;
+  position: relative; color: var(--muted); font-size: .78rem;
 }
 .divider::before {
-  content: ''; position: absolute;
-  left: 0; right: 0; top: 50%;
+  content: ''; position: absolute; left: 0; right: 0; top: 50%;
   height: 1px; background: var(--border);
 }
-.divider span { position: relative; background: rgba(26,20,16,.85); padding: 0 12px; }
+.divider span { position: relative; background: var(--surface); padding: 0 12px; }
 
-/* ── Footer link ──────────────────────────────────── */
-.footer-link {
-  text-align: center; font-size: .85rem; color: var(--muted); margin-top: 24px;
-}
-.footer-link a {
-  color: var(--gold); text-decoration: none; font-weight: 500;
-  transition: color .2s;
-}
-.footer-link a:hover { color: var(--cream); }
+/* ── Footer link ──────────────────────────────────────── */
+.footer-link { text-align: center; font-size: .875rem; color: var(--muted); margin-top: 20px; }
+.footer-link a { color: var(--caramel); text-decoration: none; font-weight: 600; }
+.footer-link a:hover { color: var(--roast); }
 
-/* ── Service badge ────────────────────────────────── */
-.service-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 4px 10px; border-radius: 20px;
-  background: rgba(212,168,67,.08); border: 1px solid var(--border);
-  font-size: .7rem; color: var(--muted); margin-top: 4px;
-}
-.service-badge .dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--gold); animation: blink 2s ease-in-out infinite;
-}
-@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
-
-/* ── Password strength ────────────────────────────── */
-.strength-bar {
-  height: 3px; border-radius: 2px;
-  background: rgba(154,136,112,.15);
-  margin-top: 8px; overflow: hidden;
-}
-.strength-fill {
-  height: 100%; border-radius: 2px;
-  transition: width .3s, background .3s;
-  width: 0%;
-}
-
-/* ── Mobile responsive ─────────────────────────────── */
+/* ── Mobile ───────────────────────────────────────────── */
 @media (max-width: 600px) {
-  .arch-banner { padding: 8px 14px; gap: 5px; }
-  .arch-banner .node:nth-child(2),
-  .arch-banner .node:nth-child(3),
-  .arch-banner .arrow,
-  .arch-banner span[style] { display: none; }
-  .arch-banner .node:first-child { display: flex; }
-  .arch-banner .brand { margin-left: auto; font-size: .85rem; }
-
-  .page { padding: 64px 12px 28px; }
-
-  .card {
-    padding: 32px 20px;
-    border-radius: 16px;
-  }
-
-  .logo-icon { width: 52px; height: 52px; font-size: 1.4rem; }
-  .logo-title { font-size: 1.7rem; }
-  .orb-1, .orb-2 { display: none; }
-
+  .navbar { padding: 0 16px; height: 56px; }
+  .page { padding: 72px 14px 36px; }
+  .card { padding: 36px 20px; border-radius: var(--radius); }
+  .card-title { font-size: 1.7rem; }
+  .icon-circle { width: 58px; height: 58px; font-size: 26px; }
   input { font-size: 1rem; padding: 13px 14px; }
   .btn  { font-size: 1rem; padding: 14px; }
-
-  .footer-link { font-size: .9rem; }
-  .form-group  { margin-bottom: 16px; }
+  .form-group { margin-bottom: 14px; }
 }
-
 @media (max-width: 360px) {
-  .card { padding: 24px 14px; }
-  .logo-title { font-size: 1.45rem; }
+  .card { padding: 28px 14px; }
+  .card-title { font-size: 1.5rem; }
 }
 </style>
 </head>
 <body>
 
-<!-- SOA Architecture Banner -->
-<div class="arch-banner">
-  <span class="node">Frontend</span>
-  <span class="arrow">→</span>
-  <span class="node">JSON Service :7000</span>
-  <span class="arrow">→</span>
-  <span class="node">SOAP Service :8081</span>
-  <span class="arrow">→</span>
-  <span style="color:var(--success)">RegisterUser</span>
-  <span class="brand">☕ Borgol</span>
-</div>
-
-<!-- Floating orbs -->
-<div class="orb orb-1"></div>
-<div class="orb orb-2"></div>
+<nav class="navbar">
+  <div class="nav-brand"><span>☕</span> Borgol</div>
+  <div class="nav-right">
+    <a href="/login.html" class="nav-out-link">Sign In</a>
+  </div>
+</nav>
 
 <div class="page">
   <div class="card">
 
-    <!-- Logo -->
-    <div class="logo-wrap">
-      <div class="logo-icon">☕</div>
-      <div class="logo-title">Create Account</div>
-      <div class="logo-sub">Borgol Coffee Platform</div>
+    <div class="card-header">
+      <div class="icon-circle">☕</div>
+      <div class="card-title">Create Account</div>
+      <div class="card-sub">Borgol Coffee Platform</div>
       <div style="margin-top:10px;">
         <span class="service-badge">
           <span class="dot"></span>
@@ -324,33 +222,26 @@ input:focus {
       </div>
     </div>
 
-    <!-- Alert -->
     <div id="alert" class="alert"></div>
 
-    <!-- Form -->
     <form id="registerForm" autocomplete="off">
-
       <div class="form-group">
         <label for="username">Username</label>
         <input id="username" type="text" placeholder="coffee_master" required/>
       </div>
-
       <div class="form-group">
         <label for="email">Email Address</label>
         <input id="email" type="email" placeholder="you@borgol.mn" required/>
       </div>
-
       <div class="form-group">
         <label for="password">Password</label>
         <input id="password" type="password" placeholder="At least 6 characters" required/>
         <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
       </div>
-
       <div class="form-group" style="margin-bottom:28px;">
-        <label for="bio">Short Bio <span style="color:var(--gold-dim)">(optional)</span></label>
+        <label for="bio">Short Bio <span style="color:var(--caramel-lt);font-weight:400;">(optional)</span></label>
         <input id="bio" type="text" placeholder="Espresso enthusiast from Ulaanbaatar"/>
       </div>
-
       <button type="submit" class="btn" id="submitBtn">Create Account</button>
     </form>
 
@@ -364,11 +255,8 @@ input:focus {
 </div>
 
 <script>
-// Automatically uses whatever host/port serves this page
-// Works on localhost, ngrok, Railway, or any deployment
 const JSON_BASE = window.location.origin;
 
-// ── Password strength meter ────────────────────────────────────────────────
 document.getElementById('password').addEventListener('input', function () {
   const v = this.value;
   let score = 0;
@@ -379,12 +267,11 @@ document.getElementById('password').addEventListener('input', function () {
   if (/[^A-Za-z0-9]/.test(v)) score++;
   const fill  = document.getElementById('strengthFill');
   const pct   = (score / 5) * 100;
-  const color = score <= 1 ? '#E07070' : score <= 3 ? '#D4A843' : '#7CC47C';
+  const color = score <= 1 ? '#B5321E' : score <= 3 ? '#E8A030' : '#2D6A4F';
   fill.style.width      = pct + '%';
   fill.style.background = color;
 });
 
-// ── Form submit ────────────────────────────────────────────────────────────
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn   = document.getElementById('submitBtn');
@@ -395,19 +282,11 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
   const password = document.getElementById('password').value;
   const bio      = document.getElementById('bio').value.trim();
 
-  // Reset
   alert.className = 'alert';
   btn.disabled = true;
   btn.innerHTML = '<span class="btn-spinner"></span> Registering via SOAP…';
 
   try {
-    /**
-     * SOA Flow:
-     *  1. Frontend → POST /api/soap/register (JSON Service)
-     *  2. JSON Service → SOAP RegisterUser (SOAP Service :8081)
-     *  3. SOAP creates auth record, JSON creates profile
-     *  4. Returns JWT token
-     */
     const res = await fetch(`${JSON_BASE}/api/soap/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -420,14 +299,12 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
       throw new Error(data.error || 'Registration failed');
     }
 
-    // Save token for auto-login
     if (data.token) {
       localStorage.setItem('borgol_token',    data.token);
       localStorage.setItem('borgol_userId',   data.userId  || '');
       localStorage.setItem('borgol_username', data.username || username);
     }
 
-    // Update profile with bio if provided
     if (bio && data.token) {
       await fetch(`${JSON_BASE}/api/users/me`, {
         method: 'PUT',
@@ -439,9 +316,9 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
       });
     }
 
-    alert.textContent  = '✓ Account created! Redirecting to your profile…';
-    alert.className    = 'alert alert-success';
-    btn.innerHTML      = '✓ Success';
+    alert.textContent = '✓ Account created! Redirecting to your profile…';
+    alert.className   = 'alert alert-success';
+    btn.innerHTML     = '✓ Success';
 
     setTimeout(() => { window.location.href = '/profile.html'; }, 1400);
 
