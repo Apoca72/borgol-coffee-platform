@@ -302,6 +302,71 @@ textarea.edit-input { resize: vertical; min-height: 80px; }
   margin: 0 auto 16px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Mobile responsive ─────────────────────────────── */
+@media (max-width: 640px) {
+  /* Nav */
+  .topnav { padding: 0 16px; height: 52px; }
+  .nav-brand { font-size: 1rem; }
+  .nav-links .nav-link { display: none; }
+  .btn-logout { padding: 6px 12px; font-size: .78rem; }
+
+  /* SOA strip */
+  .soa-strip { padding: 6px 14px; font-size: .62rem; top: 52px; }
+
+  /* Page */
+  .page { padding: 108px 12px 48px; }
+
+  /* Profile header */
+  .profile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 24px 18px;
+    gap: 16px;
+  }
+  .profile-info { min-width: unset; }
+  .profile-name { font-size: 1.5rem; }
+  .profile-meta { justify-content: center; }
+  .edit-btn { width: 100%; text-align: center; align-self: stretch; }
+
+  .avatar-ring { width: 76px; height: 76px; }
+  .avatar-inner { font-size: 1.9rem; }
+
+  /* Stats */
+  .stat-cell { padding: 14px 6px; }
+  .stat-num  { font-size: 1.5rem; }
+  .stat-lbl  { font-size: .66rem; }
+
+  /* Cards */
+  .card { padding: 20px 16px; }
+  .card-title { font-size: 1rem; }
+
+  /* grid-2 already collapses — ensure gap is tight */
+  .grid-2 { gap: 14px; }
+
+  /* Edit inputs */
+  .edit-input { font-size: .9rem; }
+
+  /* Save row stacks */
+  .save-row { flex-direction: column; }
+  .btn-cancel { text-align: center; }
+
+  /* Toast — full width on mobile */
+  .toast {
+    bottom: 16px; right: 12px; left: 12px;
+    text-align: center;
+  }
+
+  /* State panel */
+  .state-panel { padding: 60px 20px; font-size: 1.2rem; }
+}
+
+@media (max-width: 360px) {
+  .page { padding: 108px 8px 40px; }
+  .profile-name { font-size: 1.3rem; }
+  .stat-num { font-size: 1.3rem; }
+}
 </style>
 </head>
 <body>

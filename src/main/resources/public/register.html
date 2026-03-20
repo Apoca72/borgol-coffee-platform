@@ -255,6 +255,39 @@ input:focus {
   transition: width .3s, background .3s;
   width: 0%;
 }
+
+/* ── Mobile responsive ─────────────────────────────── */
+@media (max-width: 600px) {
+  .arch-banner { padding: 8px 14px; gap: 5px; }
+  .arch-banner .node:nth-child(2),
+  .arch-banner .node:nth-child(3),
+  .arch-banner .arrow,
+  .arch-banner span[style] { display: none; }
+  .arch-banner .node:first-child { display: flex; }
+  .arch-banner .brand { margin-left: auto; font-size: .85rem; }
+
+  .page { padding: 64px 12px 28px; }
+
+  .card {
+    padding: 32px 20px;
+    border-radius: 16px;
+  }
+
+  .logo-icon { width: 52px; height: 52px; font-size: 1.4rem; }
+  .logo-title { font-size: 1.7rem; }
+  .orb-1, .orb-2 { display: none; }
+
+  input { font-size: 1rem; padding: 13px 14px; }
+  .btn  { font-size: 1rem; padding: 14px; }
+
+  .footer-link { font-size: .9rem; }
+  .form-group  { margin-bottom: 16px; }
+}
+
+@media (max-width: 360px) {
+  .card { padding: 24px 14px; }
+  .logo-title { font-size: 1.45rem; }
+}
 </style>
 </head>
 <body>

@@ -249,6 +249,38 @@ input:focus {
   animation: slideIn .3s ease both;
 }
 .token-display strong { color: var(--gold); display: block; margin-bottom: 4px; }
+
+/* ── Mobile responsive ─────────────────────────────── */
+@media (max-width: 600px) {
+  .arch-banner { padding: 8px 14px; gap: 5px; flex-wrap: nowrap; }
+  .arch-banner .node:nth-child(2),
+  .arch-banner .node:nth-child(3),
+  .arch-banner .arrow:nth-child(2),
+  .arch-banner .arrow:nth-child(3),
+  .arch-banner .arrow:nth-child(4),
+  .arch-banner span[style] { display: none; }
+  .arch-banner .brand { margin-left: 0; font-size: .85rem; }
+
+  .page { padding: 64px 12px 28px; }
+
+  .card {
+    padding: 32px 20px;
+    border-radius: 16px;
+  }
+
+  .logo-title { font-size: 1.7rem; }
+  .ring-2, .ring-3 { display: none; }
+
+  input { font-size: 1rem; padding: 13px 14px; }
+  .btn  { font-size: 1rem; padding: 14px; }
+
+  .footer-link { font-size: .9rem; }
+}
+
+@media (max-width: 360px) {
+  .card { padding: 28px 16px; }
+  .logo-title { font-size: 1.5rem; }
+}
 </style>
 </head>
 <body>
