@@ -461,7 +461,9 @@ textarea.edit-input { resize: vertical; min-height: 80px; }
 </div>
 
 <script>
-const JSON_BASE = 'http://localhost:7000';
+// Automatically uses whatever host/port serves this page
+// Works on localhost, ngrok, Railway, or any deployment
+const JSON_BASE = window.location.origin;
 let userData    = null;
 let isEditing   = false;
 
