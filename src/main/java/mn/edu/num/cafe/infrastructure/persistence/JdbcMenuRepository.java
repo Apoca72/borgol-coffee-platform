@@ -35,7 +35,7 @@ public class JdbcMenuRepository implements IMenuRepository {
                     id        INT          PRIMARY KEY,
                     name      VARCHAR(255) NOT NULL,
                     category  VARCHAR(50)  NOT NULL,
-                    price     DOUBLE       NOT NULL DEFAULT 0.0,
+                    price     DOUBLE PRECISION NOT NULL DEFAULT 0.0,
                     available BOOLEAN      NOT NULL DEFAULT TRUE
                 )
                 """;
