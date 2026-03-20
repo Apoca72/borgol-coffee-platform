@@ -138,19 +138,37 @@ html, body { min-height: 100%; background: var(--milk); color: var(--text); font
   display: flex; gap: 28px; align-items: flex-start;
 }
 .avatar-ring {
-  flex-shrink: 0;
+  flex-shrink: 0; position: relative;
   width: 88px; height: 88px; border-radius: 50%;
   background: linear-gradient(135deg, var(--caramel), var(--caramel-lt));
-  padding: 3px;
+  padding: 3px; cursor: pointer;
   box-shadow: 0 0 0 4px rgba(168,98,30,.12), 0 8px 24px rgba(168,98,30,.2);
+  transition: box-shadow .2s;
 }
+.avatar-ring:hover { box-shadow: 0 0 0 4px rgba(168,98,30,.25), 0 8px 28px rgba(168,98,30,.35); }
 .avatar-inner {
   width: 100%; height: 100%; border-radius: 50%;
-  background: var(--cream);
+  background: var(--cream); overflow: hidden;
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-serif); font-size: 2.2rem; font-weight: 700;
   color: var(--caramel);
 }
+.avatar-inner img {
+  width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+}
+.avatar-overlay {
+  position: absolute; inset: 3px; border-radius: 50%;
+  background: rgba(12,4,0,.45); display: flex;
+  align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .2s; pointer-events: none;
+  font-size: 20px;
+}
+.avatar-ring:hover .avatar-overlay { opacity: 1; }
+.avatar-upload-hint {
+  font-size: .68rem; color: var(--muted); margin-top: 5px;
+  text-align: center; width: 88px; flex-shrink: 0;
+}
+.avatar-wrap { display: flex; flex-direction: column; align-items: center; gap: 0; flex-shrink: 0; }
 .profile-info { flex: 1; min-width: 0; }
 .profile-name {
   font-family: var(--font-serif);
@@ -329,6 +347,8 @@ select.edit-input { cursor: pointer; }
   .edit-btn { width: 100%; text-align: center; align-self: stretch; }
   .avatar-ring { width: 76px; height: 76px; }
   .avatar-inner { font-size: 1.9rem; }
+  .avatar-wrap { width: 76px; }
+  .avatar-upload-hint { width: 100%; }
   .profile-name { font-size: 1.6rem; }
 
   .stats-row { margin-bottom: 16px; }
@@ -392,10 +412,17 @@ select.edit-input { cursor: pointer; }
 <!-- Page content -->
 <div class="page" id="page" style="display:none;">
 
+  <!-- Hidden file input -->
+  <input type="file" id="avatarFileInput" accept="image/*" style="display:none"/>
+
   <!-- Profile header -->
   <div class="profile-header">
-    <div class="avatar-ring">
-      <div class="avatar-inner" id="avatarIcon">C</div>
+    <div class="avatar-wrap">
+      <div class="avatar-ring" id="avatarRing" onclick="document.getElementById('avatarFileInput').click()">
+        <div class="avatar-inner" id="avatarIcon">C</div>
+        <div class="avatar-overlay">📷</div>
+      </div>
+      <div class="avatar-upload-hint">Tap to change</div>
     </div>
     <div class="profile-info">
       <div class="profile-name"  id="profileName">—</div>
@@ -439,9 +466,8 @@ select.edit-input { cursor: pointer; }
         <input class="edit-input" id="phoneInput" type="tel" placeholder="+976 9911 0000"/>
       </div>
       <div class="field-row">
-        <div class="field-label">Avatar URL</div>
-        <div class="field-value" id="avatarValue"></div>
-        <input class="edit-input" id="avatarInput" type="url" placeholder="https://…"/>
+        <div class="field-label">Profile Photo</div>
+        <div class="field-value" id="avatarValue">Click the photo above to change</div>
       </div>
       <div class="field-row">
         <div class="field-label">Expertise Level</div>
@@ -516,6 +542,70 @@ const JSON_BASE = window.location.origin;
 let userData  = null;
 let isEditing = false;
 
+// ── Image compression ────────────────────────────────────────────────────────
+function compressImage(file, maxPx = 240, quality = 0.75) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+        const w = Math.round(img.width  * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width  = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function setAvatar(dataUrl) {
+  const inner = document.getElementById('avatarIcon');
+  inner.innerHTML = dataUrl
+    ? `<img src="${dataUrl}" alt="avatar"/>`
+    : (userData ? (userData.username || 'U').charAt(0).toUpperCase() : 'U');
+}
+
+// ── File picker handler ───────────────────────────────────────────────────────
+document.getElementById('avatarFileInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('Please select an image file', 'error'); return; }
+
+  const hint = document.querySelector('.avatar-upload-hint');
+  hint.textContent = 'Compressing…';
+
+  try {
+    const compressed = await compressImage(file);
+    const kb = Math.round((compressed.length * 3) / 4 / 1024);
+    localStorage.setItem('borgol_avatar', compressed);
+    setAvatar(compressed);
+    hint.textContent = `${kb} KB · saved`;
+    setTimeout(() => { hint.textContent = 'Tap to change'; }, 2500);
+
+    // Persist to server
+    const token = localStorage.getItem('borgol_token');
+    if (token) {
+      fetch(`${JSON_BASE}/api/users/me`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ avatarUrl: compressed })
+      }).catch(() => {}); // best-effort; avatar already saved locally
+    }
+    showToast('✓ Photo updated', 'success');
+  } catch (err) {
+    hint.textContent = 'Tap to change';
+    showToast('✗ Failed to process image', 'error');
+  }
+  e.target.value = ''; // reset so same file can be re-selected
+});
+
 // ── Mobile nav ──────────────────────────────────────────────────────────────
 document.getElementById('hamburgerBtn').addEventListener('click', () => {
   document.getElementById('mobileOverlay').classList.add('open');
@@ -586,7 +676,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ── Render ──────────────────────────────────────────────────────────────────
 function renderProfile(u) {
   const initial = (u.username || 'U').charAt(0).toUpperCase();
-  document.getElementById('avatarIcon').textContent  = initial;
+  // Avatar: prefer locally stored compressed image, then server avatarUrl
+  const localAvatar = localStorage.getItem('borgol_avatar');
+  const displayAvatar = localAvatar || u.avatarUrl || null;
+  setAvatar(displayAvatar || '');
+  if (!displayAvatar) document.getElementById('avatarIcon').textContent = initial;
+
   document.getElementById('profileName').textContent  = u.username || '—';
   document.getElementById('profileEmail').textContent = u.email    || '—';
 
@@ -609,12 +704,10 @@ function renderProfile(u) {
   const storedPhone = localStorage.getItem('borgol_phone') || '';
   setFieldValue('bio',       u.bio        || '');
   setFieldValue('phone',     storedPhone);
-  setFieldValue('avatar',    u.avatarUrl  || '');
   setFieldValue('expertise', u.expertiseLevel || 'ENTHUSIAST');
 
   document.getElementById('bioInput').value       = u.bio || '';
   document.getElementById('phoneInput').value     = storedPhone;
-  document.getElementById('avatarInput').value    = u.avatarUrl || '';
   document.getElementById('expertiseInput').value = u.expertiseLevel || 'ENTHUSIAST';
 }
 
@@ -642,10 +735,10 @@ async function saveProfile() {
   const token = localStorage.getItem('borgol_token');
   if (!token) { showToast('Not authenticated', 'error'); return; }
 
-  const bio          = document.getElementById('bioInput').value.trim();
-  const phone        = document.getElementById('phoneInput').value.trim();
-  const avatarUrl    = document.getElementById('avatarInput').value.trim();
+  const bio            = document.getElementById('bioInput').value.trim();
+  const phone          = document.getElementById('phoneInput').value.trim();
   const expertiseLevel = document.getElementById('expertiseInput').value;
+  const avatarUrl      = localStorage.getItem('borgol_avatar') || userData?.avatarUrl || '';
 
   localStorage.setItem('borgol_phone', phone);
 
