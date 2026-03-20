@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Login – Borgol Coffee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:       #0D0A07;
+  --surface:  #1A1410;
+  --surface2: #241C14;
+  --gold:     #D4A843;
+  --gold-dim: #A07828;
+  --cream:    #F5ECD7;
+  --muted:    #9A8870;
+  --error:    #E07070;
+  --success:  #7CC47C;
+  --border:   rgba(212,168,67,.18);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--cream);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 55% at 85% 75%, rgba(90,50,15,.4)  0%, transparent 55%),
+    radial-gradient(ellipse 50% 45% at 15% 25%, rgba(60,30,10,.3)  0%, transparent 50%),
+    radial-gradient(ellipse 35% 35% at 50% 50%, rgba(212,168,67,.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ── Decorative coffee rings ──────────────────────── */
+.ring {
+  position: fixed; border-radius: 50%; pointer-events: none;
+  border: 1px solid rgba(212,168,67,.05);
+  animation: expand 12s ease-in-out infinite;
+}
+.ring-1 { width: 300px; height: 300px; bottom: -50px; right: -50px; animation-delay: 0s; }
+.ring-2 { width: 500px; height: 500px; bottom: -100px; right: -100px; animation-delay: -4s; }
+.ring-3 { width: 700px; height: 700px; bottom: -150px; right: -150px; animation-delay: -8s; }
+@keyframes expand {
+  0%,100% { opacity: .6; transform: scale(1);    }
+  50%     { opacity: 1;  transform: scale(1.04); }
+}
+
+.arch-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(13,10,7,.92); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 24px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: .72rem; letter-spacing: .08em; color: var(--muted);
+}
+.arch-banner .node {
+  padding: 3px 10px; border-radius: 20px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--gold); font-weight: 500; white-space: nowrap;
+}
+.arch-banner .arrow { color: rgba(212,168,67,.4); }
+.arch-banner .brand {
+  margin-left: auto;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: .9rem; color: var(--gold); letter-spacing: .12em;
+}
+
+.page {
+  position: relative; z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px 40px;
+}
+
+.card {
+  width: 100%; max-width: 420px;
+  background: rgba(26,20,16,.88);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 52px 44px;
+  backdrop-filter: blur(24px);
+  box-shadow:
+    0 0 0 1px rgba(212,168,67,.05),
+    0 50px 100px rgba(0,0,0,.65),
+    inset 0 1px 0 rgba(212,168,67,.07);
+  animation: cardIn .85s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── Steam animation above icon ───────────────────── */
+.steam-wrap {
+  text-align: center; margin-bottom: 32px;
+}
+.cup-icon {
+  font-size: 2.8rem; line-height: 1;
+  filter: drop-shadow(0 0 16px rgba(212,168,67,.4));
+  animation: sway 4s ease-in-out infinite;
+}
+@keyframes sway {
+  0%,100% { transform: rotate(-2deg); }
+  50%     { transform: rotate(2deg);  }
+}
+.steam {
+  display: flex; justify-content: center; gap: 8px; margin-bottom: 10px;
+  height: 24px;
+}
+.steam span {
+  display: inline-block;
+  width: 3px; background: linear-gradient(to top, rgba(212,168,67,.5), transparent);
+  border-radius: 2px;
+  animation: rise 2.4s ease-in-out infinite;
+}
+.steam span:nth-child(2) { animation-delay: .8s;  height: 18px; margin-top: 6px; }
+.steam span:nth-child(3) { animation-delay: 1.6s; height: 14px; margin-top: 10px; }
+.steam span:nth-child(1) { height: 22px; }
+@keyframes rise {
+  0%   { opacity: 0; transform: translateY(6px) scaleX(1);    }
+  40%  { opacity: 1; transform: translateY(0)   scaleX(1.2);  }
+  100% { opacity: 0; transform: translateY(-14px) scaleX(.8); }
+}
+
+.logo-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.1rem; font-weight: 600;
+  color: var(--cream); letter-spacing: .03em;
+}
+.logo-sub {
+  margin-top: 5px; font-size: .78rem;
+  color: var(--muted); letter-spacing: .1em; text-transform: uppercase;
+}
+
+.service-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px;
+  background: rgba(212,168,67,.07); border: 1px solid var(--border);
+  font-size: .68rem; color: var(--muted); margin-top: 10px;
+}
+.service-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--gold); animation: blink 2s ease-in-out infinite;
+}
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+
+.alert {
+  padding: 12px 16px; border-radius: 8px;
+  font-size: .875rem; margin-bottom: 20px; display: none;
+  animation: slideIn .3s ease both;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.alert-error   { background: rgba(224,112,112,.12); border: 1px solid rgba(224,112,112,.3); color: var(--error);   display: block; }
+.alert-success { background: rgba(124,196,124,.12); border: 1px solid rgba(124,196,124,.3); color: var(--success); display: block; }
+
+.form-group { margin-bottom: 22px; }
+
+label {
+  display: block; margin-bottom: 8px;
+  font-size: .77rem; font-weight: 500;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted);
+}
+
+input {
+  width: 100%; padding: 14px 16px;
+  background: rgba(36,28,20,.7);
+  border: 1px solid rgba(154,136,112,.2);
+  border-radius: 10px;
+  color: var(--cream); font-family: 'DM Sans', sans-serif; font-size: .95rem;
+  outline: none; transition: all .2s;
+}
+input::placeholder { color: rgba(154,136,112,.45); }
+input:focus {
+  border-color: var(--gold);
+  background: rgba(36,28,20,.95);
+  box-shadow: 0 0 0 3px rgba(212,168,67,.1);
+}
+
+.btn {
+  width: 100%; padding: 15px;
+  background: linear-gradient(135deg, var(--gold-dim) 0%, var(--gold) 50%, #E8C060 100%);
+  border: none; border-radius: 10px;
+  color: #1A1000; font-family: 'DM Sans', sans-serif;
+  font-size: .95rem; font-weight: 600; letter-spacing: .05em;
+  cursor: pointer; overflow: hidden; position: relative;
+  transition: transform .18s, box-shadow .18s;
+}
+.btn::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
+  transform: translateX(-100%); transition: transform .5s;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(212,168,67,.4); }
+.btn:hover::after { transform: translateX(100%); }
+.btn:active { transform: translateY(0); }
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+.btn-spinner {
+  display: inline-block; width: 15px; height: 15px;
+  border: 2px solid rgba(26,16,0,.25); border-top-color: #1A1000;
+  border-radius: 50%; animation: spin .7s linear infinite;
+  margin-right: 8px; vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.divider {
+  text-align: center; margin: 24px 0;
+  position: relative; color: var(--muted); font-size: .78rem;
+}
+.divider::before {
+  content: ''; position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 1px; background: var(--border);
+}
+.divider span { position: relative; background: rgba(26,20,16,.88); padding: 0 12px; }
+
+.footer-link {
+  text-align: center; font-size: .85rem; color: var(--muted); margin-top: 22px;
+}
+.footer-link a { color: var(--gold); text-decoration: none; font-weight: 500; }
+.footer-link a:hover { color: var(--cream); }
+
+/* ── Token display (after login) ──────────────────── */
+.token-display {
+  display: none;
+  margin-top: 20px;
+  padding: 12px 14px;
+  background: rgba(36,28,20,.8);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: .72rem; color: var(--muted);
+  word-break: break-all;
+  animation: slideIn .3s ease both;
+}
+.token-display strong { color: var(--gold); display: block; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<!-- SOA Architecture Banner -->
+<div class="arch-banner">
+  <span class="node">Frontend</span>
+  <span class="arrow">→</span>
+  <span class="node">JSON Service :7000</span>
+  <span class="arrow">→</span>
+  <span class="node">SOAP Service :8081</span>
+  <span class="arrow">→</span>
+  <span style="color:var(--success)">LoginUser → Token</span>
+  <span class="brand">☕ Borgol</span>
+</div>
+
+<!-- Decorative rings -->
+<div class="ring ring-1"></div>
+<div class="ring ring-2"></div>
+<div class="ring ring-3"></div>
+
+<div class="page">
+  <div class="card">
+
+    <!-- Steam + Cup -->
+    <div class="steam-wrap">
+      <div class="steam">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="cup-icon">☕</div>
+      <div class="logo-title">Welcome Back</div>
+      <div class="logo-sub">Borgol Coffee Platform</div>
+      <div style="margin-top:10px;">
+        <span class="service-badge">
+          <span class="dot"></span>
+          Auth delegated to SOAP Service
+        </span>
+      </div>
+    </div>
+
+    <!-- Alert -->
+    <div id="alert" class="alert"></div>
+
+    <!-- Form -->
+    <form id="loginForm" autocomplete="off">
+
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input id="email" type="email" placeholder="you@borgol.mn" required/>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 28px;">
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="Your password" required/>
+      </div>
+
+      <button type="submit" class="btn" id="submitBtn">Sign In</button>
+    </form>
+
+    <!-- JWT token preview (educational) -->
+    <div id="tokenDisplay" class="token-display">
+      <strong>🔑 SOAP-issued JWT Token (stored in localStorage):</strong>
+      <span id="tokenText"></span>
+    </div>
+
+    <div class="divider"><span>or</span></div>
+
+    <div class="footer-link">
+      No account yet? <a href="/register.html">Create one</a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const JSON_BASE = 'http://localhost:7000';
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn   = document.getElementById('submitBtn');
+  const alert = document.getElementById('alert');
+
+  const email    = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  alert.className = 'alert';
+  btn.disabled    = true;
+  btn.innerHTML   = '<span class="btn-spinner"></span> Authenticating via SOAP…';
+
+  try {
+    /**
+     * SOA Login Flow:
+     *  1. Frontend → POST /api/soap/login (JSON Service :7000)
+     *  2. JSON Service → SOAP LoginUser   (SOAP Service :8081)
+     *  3. SOAP validates credentials → generates JWT token
+     *  4. Token returned → stored in localStorage
+     *  5. Subsequent API calls use this token
+     *     → JSON Service middleware calls SOAP ValidateToken
+     */
+    const res = await fetch(`${JSON_BASE}/api/soap/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Invalid email or password');
+    }
+
+    // Store auth data
+    localStorage.setItem('borgol_token',    data.token    || '');
+    localStorage.setItem('borgol_userId',   data.userId   || '');
+    localStorage.setItem('borgol_username', data.username || '');
+
+    // Show token (educational display)
+    const tokenDisplay = document.getElementById('tokenDisplay');
+    const tokenText    = document.getElementById('tokenText');
+    tokenText.textContent = data.token
+      ? data.token.substring(0, 60) + '…'
+      : '(no token)';
+    tokenDisplay.style.display = 'block';
+
+    const source = data.source === 'soap-auth-service' ? 'SOAP' : 'local-fallback';
+    alert.textContent = `✓ Signed in via ${source}! Redirecting…`;
+    alert.className   = 'alert alert-success';
+    btn.innerHTML     = '✓ Authenticated';
+
+    setTimeout(() => { window.location.href = '/profile.html'; }, 1600);
+
+  } catch (err) {
+    alert.textContent = '✗ ' + err.message;
+    alert.className   = 'alert alert-error';
+    btn.disabled      = false;
+    btn.innerHTML     = 'Sign In';
+  }
+});
+
+// Auto-redirect if already logged in
+if (localStorage.getItem('borgol_token')) {
+  // Uncomment to enable auto-redirect:
+  // window.location.href = '/profile.html';
+}
+</script>
+</body>
+</html>

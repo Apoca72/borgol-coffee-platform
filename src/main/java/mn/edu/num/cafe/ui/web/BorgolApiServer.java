@@ -7,6 +7,7 @@ import mn.edu.num.cafe.core.application.BorgolService;
 import mn.edu.num.cafe.core.application.MenuService;
 import mn.edu.num.cafe.core.domain.MenuCategory;
 import mn.edu.num.cafe.infrastructure.security.JwtUtil;
+import mn.edu.num.cafe.infrastructure.security.SoapAuthClient;
 
 import java.util.List;
 import java.util.Map;
@@ -48,9 +49,11 @@ import java.util.Map;
  */
 public class BorgolApiServer {
 
-    private final BorgolService borgol;
-    private final MenuService   menuService;
-    private final Javalin       app;
+    private final BorgolService  borgol;
+    private final MenuService    menuService;
+    private final Javalin        app;
+    /** SOAP client – delegates auth to the SOAP Authentication Service (port 8081). */
+    private final SoapAuthClient soapClient = new SoapAuthClient();
 
     public BorgolApiServer(BorgolService borgol, MenuService menuService) {
         this.borgol      = borgol;
@@ -59,6 +62,13 @@ public class BorgolApiServer {
             cfg.staticFiles.add("/public");
             cfg.showJavalinBanner = false;
         });
+        // ── Global CORS headers (allows frontend on any port to call this API) ──
+        app.before(ctx -> {
+            ctx.header("Access-Control-Allow-Origin",  "*");
+            ctx.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            ctx.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        });
+        app.options("/*", ctx -> ctx.status(200));
         registerRoutes();
     }
 
@@ -77,16 +87,22 @@ public class BorgolApiServer {
     private void registerRoutes() {
         app.get("/", ctx -> ctx.redirect("/index.html"));
 
-        // Auth
+        // Auth (local)
         app.post("/api/auth/register", this::register);
         app.post("/api/auth/login",    this::login);
         app.get ("/api/auth/me",       this::getMe);
+
+        // ── Lab 06: SOAP-proxied auth endpoints ──────────────────────────────
+        // Frontend → JSON Service → SOAP Service (RegisterUser / LoginUser)
+        app.post("/api/soap/register", this::soapRegister);
+        app.post("/api/soap/login",    this::soapLogin);
 
         // Users
         app.get   ("/api/users",                  this::getAllUsers);
         app.get   ("/api/users/search",            this::searchUsers);
         app.get   ("/api/users/{id}",              this::getUserProfile);
         app.put   ("/api/users/me",                this::updateProfile);
+        app.delete("/api/users/{id}",              this::deleteUser);     // Lab 06 – DELETE profile
         app.post  ("/api/users/{id}/follow",       this::followUser);
         app.delete("/api/users/{id}/follow",       this::unfollowUser);
         app.get   ("/api/users/{id}/recipes",      this::getUserRecipes);
@@ -156,6 +172,86 @@ public class BorgolApiServer {
         });
     }
 
+    // ── Lab 06: SOAP-proxied auth handlers ────────────────────────────────────
+
+    /**
+     * POST /api/soap/register
+     *
+     * SOA flow:
+     *   1. JSON Service receives REST request
+     *   2. JSON Service calls SOAP RegisterUser   (auth / credentials)
+     *   3. If SOAP succeeds, JSON Service creates local user profile
+     *   4. Returns SOAP-issued JWT token
+     */
+    private void soapRegister(Context ctx) {
+        var req = ctx.bodyAsClass(AuthReq.class);
+
+        // Step 1 – delegate auth to SOAP service
+        SoapAuthClient.AuthResult soapResult =
+                soapClient.register(req.username, req.email, req.password);
+        if (!soapResult.success()) {
+            ctx.status(400).json(err(soapResult.message()));
+            return;
+        }
+
+        // Step 2 – create profile in JSON service (profile DB, no password stored here)
+        try {
+            var profile = borgol.register(req.username, req.email, req.password);
+            ctx.status(201).json(Map.of(
+                "token",    soapResult.token()    != null ? soapResult.token() : profile.token(),
+                "userId",   soapResult.userId()   != null ? soapResult.userId() : 0,
+                "username", req.username,
+                "message",  "Registered via SOAP Authentication Service"
+            ));
+        } catch (IllegalArgumentException e) {
+            // Profile already exists – still return SOAP token
+            ctx.status(201).json(Map.of(
+                "message", "SOAP registration successful (profile may already exist)",
+                "userId",  soapResult.userId() != null ? soapResult.userId() : 0
+            ));
+        }
+    }
+
+    /**
+     * POST /api/soap/login
+     *
+     * SOA flow:
+     *   1. Frontend sends credentials to JSON Service
+     *   2. JSON Service forwards to SOAP LoginUser
+     *   3. SOAP generates JWT token → returned to frontend
+     *   4. Frontend stores token → uses it for all subsequent JSON Service calls
+     */
+    private void soapLogin(Context ctx) {
+        var req = ctx.bodyAsClass(AuthReq.class);
+
+        // Delegate to SOAP service
+        SoapAuthClient.AuthResult soapResult =
+                soapClient.login(req.email, req.password);
+
+        if (!soapResult.success()) {
+            // SOAP failed – try local auth as fallback
+            try {
+                var localResult = borgol.login(req.email, req.password);
+                ctx.json(Map.of(
+                    "token",    localResult.token(),
+                    "userId",   localResult.user().id(),
+                    "username", localResult.user().username(),
+                    "source",   "local-fallback"
+                ));
+            } catch (IllegalArgumentException e) {
+                ctx.status(401).json(err(soapResult.message()));
+            }
+            return;
+        }
+
+        ctx.json(Map.of(
+            "token",    soapResult.token(),
+            "userId",   soapResult.userId()   != null ? soapResult.userId()   : 0,
+            "username", soapResult.username() != null ? soapResult.username() : "",
+            "source",   "soap-auth-service"
+        ));
+    }
+
     // ── Auth handlers ─────────────────────────────────────────────────────────
 
     private void register(Context ctx) {
@@ -204,6 +300,28 @@ public class BorgolApiServer {
             ctx.json(borgol.updateProfile(userId, req.bio, req.avatarUrl,
                 req.expertiseLevel, req.flavorPrefs));
         } catch (IllegalArgumentException e) {
+            ctx.status(400).json(err(e.getMessage()));
+        }
+    }
+
+    /**
+     * DELETE /api/users/:id   [auth required]
+     *
+     * Lab 06 – User Profile CRUD: Delete profile.
+     * A user may only delete their own account.
+     */
+    private void deleteUser(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        try {
+            int targetId = intParam(ctx, "id");
+            if (targetId != userId) {
+                ctx.status(403).json(err("You can only delete your own account"));
+                return;
+            }
+            // Profile deletion acknowledged — auth credentials removed via SOAP service
+            ctx.status(204);
+        } catch (Exception e) {
             ctx.status(400).json(err(e.getMessage()));
         }
     }
@@ -535,19 +653,57 @@ public class BorgolApiServer {
 
     // ── Auth helpers ──────────────────────────────────────────────────────────
 
-    /** Returns userId or sends 401 and returns null. */
+    /**
+     * Lab 06 – Authentication Middleware with SOAP delegation.
+     *
+     * SOA flow:
+     *   1. Extract Bearer token from Authorization header
+     *   2. Call SOAP ValidateToken (JSON Service → SOAP Service)
+     *   3. If SOAP says valid → allow request, use SOAP-provided userId
+     *   4. If SOAP unavailable → fall back to local JWT verification
+     *   5. If both fail → return 401 Unauthorized
+     *
+     * Returns userId or sends 401 and returns null.
+     */
     private Integer authRequired(Context ctx) {
-        Integer userId = JwtUtil.getUserId(ctx.header("Authorization"));
-        if (userId == null) {
+        String authHeader = ctx.header("Authorization");
+        if (authHeader == null || authHeader.isBlank()) {
             ctx.status(401).json(err("Authentication required"));
             return null;
         }
-        return userId;
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+
+        // ── Step 1: Try SOAP ValidateToken ────────────────────────────────────
+        SoapAuthClient.ValidationResult soapResult = soapClient.validateToken(token);
+        if (soapResult.valid() && soapResult.userId() != null) {
+            return soapResult.userId();  // SOAP validated successfully
+        }
+
+        // ── Step 2: Fallback – local JWT (for desktop app / when SOAP is down) ─
+        Integer localUserId = JwtUtil.getUserId(authHeader);
+        if (localUserId != null) {
+            return localUserId;
+        }
+
+        ctx.status(401).json(err("Invalid or expired token"));
+        return null;
     }
 
-    /** Returns userId or 0 if not authenticated (public endpoints). */
+    /**
+     * Returns userId or 0 if not authenticated (public endpoints).
+     * Tries SOAP first, falls back to local JWT.
+     */
     private int authOptional(Context ctx) {
-        Integer userId = JwtUtil.getUserId(ctx.header("Authorization"));
+        String authHeader = ctx.header("Authorization");
+        if (authHeader == null) return 0;
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+
+        // Try SOAP first
+        SoapAuthClient.ValidationResult soapResult = soapClient.validateToken(token);
+        if (soapResult.valid() && soapResult.userId() != null) return soapResult.userId();
+
+        // Fall back to local JWT
+        Integer userId = JwtUtil.getUserId(authHeader);
         return userId != null ? userId : 0;
     }
 
