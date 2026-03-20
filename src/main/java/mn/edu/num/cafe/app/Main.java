@@ -8,6 +8,7 @@ import mn.edu.num.cafe.infrastructure.config.DatabaseConnection;
 import mn.edu.num.cafe.infrastructure.persistence.BorgolRepository;
 import mn.edu.num.cafe.infrastructure.persistence.RepositoryFactory;
 import mn.edu.num.cafe.ui.desktop.BorgolApp;
+import mn.edu.num.cafe.ui.web.BorgolApiServer;
 
 /**
  * Application entry point — Composition Root.
@@ -56,9 +57,27 @@ public class Main {
         // ── 6b. Seed GPS coordinates for demo cafes (idempotent) ─────────────
         seedCafeCoordinates(borgolService);
 
-        // ── 7. Launch JavaFX desktop app ─────────────────────────────────────
-        BorgolApp.setService(borgolService);
-        javafx.application.Application.launch(BorgolApp.class, args);
+        // ── 7. Launch — web server OR JavaFX desktop ─────────────────────────
+        // Set MODE=web  (or -Dmode=web) to run as a headless REST API server.
+        // Railway, Docker, and any cloud deployment use MODE=web automatically.
+        // Local development launches the JavaFX desktop app as before.
+        String mode = System.getenv().getOrDefault("MODE",
+                      System.getProperty("mode", "desktop"));
+
+        if ("web".equals(mode)) {
+            int port = Integer.parseInt(
+                System.getenv().getOrDefault("PORT", "7000"));
+            System.out.println("  [MODE] Web server mode — port " + port);
+            BorgolApiServer server = new BorgolApiServer(borgolService, menuService);
+            server.start(port);
+            // Keep main thread alive (Javalin/Jetty runs on background threads)
+            try { Thread.currentThread().join(); }
+            catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        } else {
+            System.out.println("  [MODE] Desktop JavaFX mode");
+            BorgolApp.setService(borgolService);
+            javafx.application.Application.launch(BorgolApp.class, args);
+        }
     }
 
     private static void seedDemoData(BorgolService svc) {

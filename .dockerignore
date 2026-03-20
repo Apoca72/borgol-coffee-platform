@@ -1,0 +1,6 @@
+.git
+.claude
+target/
+data/
+*.md
+soap-auth-service/

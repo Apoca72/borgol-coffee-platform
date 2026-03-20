@@ -23,11 +23,25 @@ import java.time.Duration;
  */
 public class SoapAuthClient {
 
-    private static final String SOAP_URL  = "http://localhost:8081/ws";
+    /**
+     * SOAP service base URL — configurable via environment variable.
+     *
+     * Local development : SOAP_SERVICE_URL not set → http://localhost:8081/ws
+     * Railway deployment: set SOAP_SERVICE_URL=https://your-soap-service.up.railway.app
+     *                     in the cafe-project service's Railway environment variables.
+     */
+    private final String soapUrl;
     private static final String NAMESPACE = "http://num.edu.mn/soapauth";
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
 
     private final HttpClient http = HttpClient.newHttpClient();
+
+    public SoapAuthClient() {
+        String base = System.getenv().getOrDefault("SOAP_SERVICE_URL", "http://localhost:8081");
+        // Accept both "https://host" and "https://host/ws"
+        this.soapUrl = base.endsWith("/ws") ? base : base + "/ws";
+        System.out.println("  [SOAP] Client → " + soapUrl);
+    }
 
     // ── Public API ─────────────────────────────────────────────────────────────
 
@@ -130,7 +144,7 @@ public class SoapAuthClient {
 
     private String post(String soapBody) throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(SOAP_URL))
+                .uri(URI.create(soapUrl))
                 .header("Content-Type", "text/xml;charset=UTF-8")
                 .header("SOAPAction", "")
                 .POST(HttpRequest.BodyPublishers.ofString(soapBody))
