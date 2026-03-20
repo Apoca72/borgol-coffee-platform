@@ -86,6 +86,7 @@ public class BorgolApiServer {
 
     private void registerRoutes() {
         app.get("/", ctx -> ctx.redirect("/index.html"));
+        app.get("/health", ctx -> ctx.json(Map.of("status", "ok")));
 
         // Auth (local)
         app.post("/api/auth/register", this::register);
