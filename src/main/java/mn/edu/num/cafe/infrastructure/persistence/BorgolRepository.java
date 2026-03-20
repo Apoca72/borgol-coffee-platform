@@ -316,7 +316,7 @@ public class BorgolRepository {
     }
 
     public void followUser(int followerId, int followingId) {
-        String sql = "MERGE INTO user_follows (follower_id, following_id) KEY(follower_id, following_id) VALUES (?,?)";
+        String sql = "INSERT INTO user_follows (follower_id, following_id) VALUES (?,?) ON CONFLICT (follower_id, following_id) DO NOTHING";
         try (PreparedStatement ps = conn().prepareStatement(sql)) {
             ps.setInt(1, followerId);
             ps.setInt(2, followingId);
@@ -719,8 +719,11 @@ public class BorgolRepository {
         if (rating < 1 || rating > 5) throw new IllegalArgumentException("Rating must be 1-5");
 
         String merge = """
-            MERGE INTO cafe_ratings (user_id, cafe_id, rating, review)
-            KEY(user_id, cafe_id) VALUES (?,?,?,?)
+            INSERT INTO cafe_ratings (user_id, cafe_id, rating, review)
+            VALUES (?,?,?,?)
+            ON CONFLICT (user_id, cafe_id) DO UPDATE SET
+                rating = EXCLUDED.rating,
+                review = EXCLUDED.review
             """;
         try (PreparedStatement ps = conn().prepareStatement(merge)) {
             ps.setInt(1, userId);
@@ -733,7 +736,7 @@ public class BorgolRepository {
         // Recalculate avg rating
         String recalc = """
             UPDATE cafes SET
-                avg_rating   = (SELECT AVG(CAST(rating AS DOUBLE)) FROM cafe_ratings WHERE cafe_id = ?),
+                avg_rating   = (SELECT AVG(CAST(rating AS DOUBLE PRECISION)) FROM cafe_ratings WHERE cafe_id = ?),
                 rating_count = (SELECT COUNT(*) FROM cafe_ratings WHERE cafe_id = ?)
             WHERE id = ?
             """;

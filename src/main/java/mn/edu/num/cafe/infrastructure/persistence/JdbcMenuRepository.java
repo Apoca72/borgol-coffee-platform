@@ -53,9 +53,13 @@ public class JdbcMenuRepository implements IMenuRepository {
     @Override
     public void save(MenuItem item) {
         String sql = """
-                MERGE INTO menu_item (id, name, category, price, available)
-                KEY(id)
+                INSERT INTO menu_item (id, name, category, price, available)
                 VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT (id) DO UPDATE SET
+                    name      = EXCLUDED.name,
+                    category  = EXCLUDED.category,
+                    price     = EXCLUDED.price,
+                    available = EXCLUDED.available
                 """;
         try (PreparedStatement ps = db.getConnection().prepareStatement(sql)) {
             ps.setInt(1,     item.getId());
