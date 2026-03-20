@@ -20,11 +20,18 @@
   </properties>
 
   <dependencies>
-    <!-- H2 embedded database (file & in-memory modes) -->
+    <!-- H2 embedded database (file & in-memory modes — local / fallback) -->
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
       <version>2.2.224</version>
+    </dependency>
+
+    <!-- PostgreSQL driver — used on Railway when DATABASE_URL is set -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>42.7.3</version>
     </dependency>
 
     <!-- JavaFX — desktop UI -->
