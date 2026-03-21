@@ -649,6 +649,24 @@ public class BorgolService {
         repo.createReport(reporterId, contentType, contentId, reason, description);
     }
 
+    public List<Map<String, Object>> getReports(String status) {
+        return repo.getAllReports(status);
+    }
+
+    public void resolveReport(int reportId, int adminId, String action) {
+        List<String> valid = List.of("resolved", "dismissed");
+        if (!valid.contains(action)) throw new IllegalArgumentException("Action must be 'resolved' or 'dismissed'");
+        repo.resolveReport(reportId, adminId, action);
+    }
+
+    public Map<String, Object> getAdminStats() {
+        return Map.of("pendingReports", repo.getPendingReportCount());
+    }
+
+    public boolean isAdmin(int userId) {
+        return userId == 1; // first registered user is admin
+    }
+
     // ── Block ─────────────────────────────────────────────────────────────────
 
     public void blockUser(int blockerId, int blockedId) {

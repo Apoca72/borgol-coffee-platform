@@ -162,6 +162,11 @@ public class BorgolApiServer {
         // Reports
         app.post("/api/report", this::submitReport);
 
+        // Admin
+        app.get  ("/api/admin/reports",           this::adminGetReports);
+        app.post ("/api/admin/reports/{id}/resolve", this::adminResolveReport);
+        app.get  ("/api/admin/stats",             this::adminGetStats);
+
         // Block
         app.post  ("/api/users/{id}/block", this::blockUser);
         app.delete("/api/users/{id}/block", this::unblockUser);
@@ -724,6 +729,36 @@ public class BorgolApiServer {
         }
     }
 
+    // ── Admin handlers ────────────────────────────────────────────────────────
+
+    private void adminGetReports(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        if (!borgol.isAdmin(userId)) { ctx.status(403).json(err("Admin access required")); return; }
+        String status = ctx.queryParam("status") != null ? ctx.queryParam("status") : "pending";
+        ctx.json(borgol.getReports(status));
+    }
+
+    private void adminResolveReport(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        if (!borgol.isAdmin(userId)) { ctx.status(403).json(err("Admin access required")); return; }
+        try {
+            var req = ctx.bodyAsClass(ResolveReq.class);
+            borgol.resolveReport(intParam(ctx, "id"), userId, req.action);
+            ctx.json(Map.of("ok", true));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(err(e.getMessage()));
+        }
+    }
+
+    private void adminGetStats(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        if (!borgol.isAdmin(userId)) { ctx.status(403).json(err("Admin access required")); return; }
+        ctx.json(borgol.getAdminStats());
+    }
+
     // ── Block handlers ────────────────────────────────────────────────────────
 
     private void blockUser(Context ctx) {
@@ -912,6 +947,10 @@ public class BorgolApiServer {
         public int    contentId;
         public String reason;
         public String description;
+    }
+
+    public static class ResolveReq {
+        public String action; // "resolved" or "dismissed"
     }
 
     public static class JournalReq {

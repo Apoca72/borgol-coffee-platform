@@ -474,6 +474,7 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
     <button class="nav-link" onclick="showPage('journal')" data-i18n="journal">📓 Journal</button>
     <button class="nav-link" onclick="showPage('learn')" data-i18n="learn">🎓 Learn</button>
     <button class="nav-link" onclick="showPage('map')" data-i18n="map">🗺️ Map</button>
+    <a class="nav-link" href="brew-timer.html" style="text-decoration:none">⏱️ Timer</a>
   </div>
   <div class="nav-right">
     <div class="search-wrap">
@@ -503,6 +504,7 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
       </div>
     </div>
     <button class="btn-settings" onclick="openSettings()" title="Settings">⚙️</button>
+    <a id="nav-admin-link" href="admin.html" title="Admin Panel" style="display:none;align-items:center;gap:5px;padding:6px 13px;border-radius:20px;background:rgba(232,160,48,.18);border:1px solid rgba(232,160,48,.4);color:var(--amber);font-size:12px;font-weight:700;letter-spacing:.03em;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(232,160,48,.28)'" onmouseout="this.style.background='rgba(232,160,48,.18)'">⚙ Admin</a>
     <button class="hamburger" onclick="toggleMobileNav()" aria-label="Menu">☰</button>
   </div>
 </nav>
@@ -520,6 +522,7 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('journal')" data-i18n="journal">📓 Journal</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('learn')" data-i18n="learn">🎓 Learn</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('map')" data-i18n="map">🗺️ Map</button>
+  <a class="mobile-nav-link" href="brew-timer.html" style="text-decoration:none;display:block">⏱️ Brew Timer</a>
   <hr class="mobile-divider"/>
   <div id="mobile-auth-section">
     <button class="mobile-nav-link" onclick="toggleMobileNav();openModal('login-modal')" data-i18n="logIn">🔑 Log In</button>
@@ -529,6 +532,7 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
     <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('profile')" data-i18n="myProfile">👤 My Profile</button>
     <button class="mobile-nav-link" onclick="toggleMobileNav();openNewRecipeModal()" data-i18n="newRecipe">✍️ New Recipe</button>
     <button class="mobile-nav-link" onclick="toggleMobileNav();openSettings()" data-i18n="settings">⚙️ Settings</button>
+    <a id="mobile-admin-link" href="admin.html" class="mobile-nav-link" style="display:none;color:var(--amber)">⚙ Admin Panel</a>
     <button class="mobile-nav-link" style="color:#EF9A9A" onclick="toggleMobileNav();logout()" data-i18n="logOut">🚪 Log Out</button>
   </div>
 </div>
@@ -1265,6 +1269,11 @@ function updateNavUser() {
     mobileUser.style.display = 'block';
     document.getElementById('notif-wrap').style.display = 'block';
     document.getElementById('nav-username').textContent = ME.username;
+    // Show admin link only for the first registered user (id=1)
+    const adminLink = document.getElementById('nav-admin-link');
+    if (adminLink) adminLink.style.display = ME.id === 1 ? 'inline-flex' : 'none';
+    const mobileAdminLink = document.getElementById('mobile-admin-link');
+    if (mobileAdminLink) mobileAdminLink.style.display = ME.id === 1 ? 'block' : 'none';
     const avatarEl = document.getElementById('nav-avatar');
     if (ME.avatarUrl) {
       avatarEl.innerHTML = `<img src="${esc(ME.avatarUrl)}" alt="${ME.username[0].toUpperCase()}" onerror="this.parentElement.textContent='${ME.username[0].toUpperCase()}'"/>`;

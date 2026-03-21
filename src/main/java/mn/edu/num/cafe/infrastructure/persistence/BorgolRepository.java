@@ -211,6 +211,9 @@ public class BorgolRepository {
                     content_id   INT          NOT NULL,
                     reason       VARCHAR(100) NOT NULL,
                     description  VARCHAR(500) DEFAULT '',
+                    status       VARCHAR(20)  DEFAULT 'pending',
+                    resolved_by  INT          DEFAULT NULL,
+                    resolved_at  TIMESTAMP    DEFAULT NULL,
                     created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (reporter_id) REFERENCES borgol_users(id) ON DELETE CASCADE
                 )""");
@@ -229,6 +232,20 @@ public class BorgolRepository {
                     PRIMARY KEY (user_id, tag),
                     FOREIGN KEY (user_id) REFERENCES borgol_users(id) ON DELETE CASCADE
                 )""");
+            // ── Column migrations (safe to run every startup) ─────────────────
+            // Upgrade avatar_url from VARCHAR(255) to TEXT so compressed base64
+            // images (~20-50 KB) are stored without truncation.
+            s.execute("""
+                DO $$ BEGIN
+                  ALTER TABLE borgol_users ALTER COLUMN avatar_url TYPE TEXT;
+                EXCEPTION WHEN undefined_table THEN NULL;
+                END $$""");
+            // Expand bio to TEXT for longer coffee stories.
+            s.execute("""
+                DO $$ BEGIN
+                  ALTER TABLE borgol_users ALTER COLUMN bio TYPE TEXT;
+                EXCEPTION WHEN undefined_table THEN NULL;
+                END $$""");
         } catch (SQLException e) {
             throw new RuntimeException("Schema initialization failed", e);
         }
@@ -1465,6 +1482,51 @@ public class BorgolRepository {
             ps.setString(5, description != null ? description : "");
             ps.executeUpdate();
         } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    public List<Map<String, Object>> getAllReports(String status) {
+        String where = (status != null && !status.equals("all")) ? "WHERE r.status = ?" : "";
+        String sql = """
+            SELECT r.*, u.username AS reporter_username
+            FROM reports r
+            LEFT JOIN borgol_users u ON u.id = r.reporter_id
+            """ + where + " ORDER BY r.created_at DESC";
+        List<Map<String, Object>> result = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            if (!where.isEmpty()) ps.setString(1, status);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("id",               rs.getInt("id"));
+                    row.put("reporterUsername",  rs.getString("reporter_username"));
+                    row.put("contentType",       rs.getString("content_type"));
+                    row.put("contentId",         rs.getInt("content_id"));
+                    row.put("reason",            rs.getString("reason"));
+                    row.put("description",       rs.getString("description"));
+                    row.put("status",            rs.getString("status"));
+                    row.put("createdAt",         rs.getString("created_at"));
+                    result.add(row);
+                }
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return result;
+    }
+
+    public void resolveReport(int reportId, int resolvedBy, String status) {
+        String sql = """
+            UPDATE reports SET status = ?, resolved_by = ?, resolved_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """;
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setInt(2, resolvedBy);
+            ps.setInt(3, reportId);
+            ps.executeUpdate();
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    public int getPendingReportCount() {
+        return countNoParam("SELECT COUNT(*) FROM reports WHERE status = 'pending'");
     }
 
     // ── Block users ───────────────────────────────────────────────────────────
