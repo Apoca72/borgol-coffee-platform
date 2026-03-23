@@ -79,6 +79,13 @@
       <version>12.3.1</version>
     </dependency>
 
+    <!-- Anthropic Java SDK — Bean AI chatbot -->
+    <dependency>
+      <groupId>com.anthropic</groupId>
+      <artifactId>anthropic-java</artifactId>
+      <version>2.16.1</version>
+    </dependency>
+
     <!-- JUnit 5 -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>

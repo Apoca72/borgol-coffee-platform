@@ -1,5 +1,12 @@
 package mn.edu.num.cafe.ui.web;
 
+import com.anthropic.client.AnthropicClient;
+import com.anthropic.client.okhttp.AnthropicOkHttpClient;
+import com.anthropic.core.http.StreamResponse;
+import com.anthropic.models.messages.MessageCreateParams;
+import com.anthropic.models.messages.MessageParam;
+import com.anthropic.models.messages.Model;
+import com.anthropic.models.messages.RawMessageStreamEvent;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
@@ -9,6 +16,7 @@ import mn.edu.num.cafe.core.domain.MenuCategory;
 import mn.edu.num.cafe.infrastructure.security.JwtUtil;
 import mn.edu.num.cafe.infrastructure.security.SoapAuthClient;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -168,6 +176,9 @@ public class BorgolApiServer {
         app.get  ("/api/admin/reports",           this::adminGetReports);
         app.post ("/api/admin/reports/{id}/resolve", this::adminResolveReport);
         app.get  ("/api/admin/stats",             this::adminGetStats);
+
+        // Bean — AI coffee assistant
+        app.post("/api/bean/chat", this::beanChat);
 
         // Block
         app.post  ("/api/users/{id}/block", this::blockUser);
@@ -760,6 +771,115 @@ public class BorgolApiServer {
         if (userId == null) return;
         if (!borgol.isAdmin(userId)) { ctx.status(403).json(err("Admin access required")); return; }
         ctx.json(borgol.getAdminStats());
+    }
+
+    // ── Bean — AI coffee assistant ────────────────────────────────────────────
+
+    private static final String BEAN_SYSTEM = """
+        You are Bean, a warm and knowledgeable AI coffee assistant for Borgol — \
+        a community platform for coffee enthusiasts in Ulaanbaatar, Mongolia.
+        You help users with:
+        - Coffee recipes, brew ratios, grind sizes, water temperatures
+        - Brew methods: pour-over, espresso, AeroPress, French press, cold brew, Moka pot
+        - Flavor profiles, bean origins, roast levels
+        - Recommending recipes and cafes from the Borgol community
+        - Troubleshooting their brews ("why is my espresso sour?")
+        Keep answers concise, friendly, and practical. Use ☕ sparingly for warmth. \
+        Respond in whatever language the user writes in.""";
+
+    public static class BeanMessage {
+        public String role;    // "user" or "assistant"
+        public String content;
+    }
+    public static class BeanReq {
+        public List<BeanMessage> messages;
+    }
+
+    private void beanChat(Context ctx) {
+        String apiKey = System.getenv("ANTHROPIC_API_KEY");
+        if (apiKey == null || apiKey.isBlank()) {
+            ctx.status(503).json(err("Bean is not configured (missing ANTHROPIC_API_KEY)"));
+            return;
+        }
+
+        BeanReq req;
+        try {
+            req = ctx.bodyAsClass(BeanReq.class);
+        } catch (Exception e) {
+            ctx.status(400).json(err("Invalid request body"));
+            return;
+        }
+        if (req.messages == null || req.messages.isEmpty()) {
+            ctx.status(400).json(err("messages required"));
+            return;
+        }
+
+        // Build message list for Claude
+        List<MessageParam> params = new ArrayList<>();
+        for (BeanMessage m : req.messages) {
+            if ("user".equals(m.role)) {
+                params.add(MessageParam.builder()
+                    .role(MessageParam.Role.USER)
+                    .content(m.content)
+                    .build());
+            } else if ("assistant".equals(m.role)) {
+                params.add(MessageParam.builder()
+                    .role(MessageParam.Role.ASSISTANT)
+                    .content(m.content)
+                    .build());
+            }
+        }
+
+        AnthropicClient client = AnthropicOkHttpClient.builder().apiKey(apiKey).build();
+
+        // Stream SSE back to the browser
+        ctx.contentType("text/event-stream");
+        ctx.header("Cache-Control", "no-cache");
+        ctx.header("X-Accel-Buffering", "no");
+
+        StringBuilder full = new StringBuilder();
+        try (StreamResponse<RawMessageStreamEvent> stream =
+                client.messages().createStreaming(
+                    MessageCreateParams.builder()
+                        .model(Model.CLAUDE_HAIKU_4_5)
+                        .maxTokens(1024L)
+                        .system(BEAN_SYSTEM)
+                        .messages(params)
+                        .build())) {
+
+            stream.stream()
+                .flatMap(event -> event.contentBlockDelta().stream())
+                .flatMap(delta -> delta.delta().text().stream())
+                .forEach(textDelta -> {
+                    String chunk = textDelta.text();
+                    full.append(chunk);
+                    // SSE: data: <json>\n\n
+                    ctx.result(); // keep alive
+                    try {
+                        ctx.outputStream().write(
+                            ("data: " + escJson(chunk) + "\n\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                        ctx.outputStream().flush();
+                    } catch (Exception ignored) {}
+                });
+
+            ctx.outputStream().write("data: [DONE]\n\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            ctx.outputStream().flush();
+        } catch (Exception e) {
+            try {
+                ctx.outputStream().write(
+                    ("data: " + escJson("[ERROR] " + e.getMessage()) + "\n\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                ctx.outputStream().flush();
+            } catch (Exception ignored) {}
+        }
+    }
+
+    /** Escape a string for embedding as a JSON string value (no outer quotes). */
+    private static String escJson(String s) {
+        return "\"" + s.replace("\\", "\\\\")
+                       .replace("\"", "\\\"")
+                       .replace("\n", "\\n")
+                       .replace("\r", "\\r")
+                       .replace("\t", "\\t") + "\"";
     }
 
     // ── Block handlers ────────────────────────────────────────────────────────
