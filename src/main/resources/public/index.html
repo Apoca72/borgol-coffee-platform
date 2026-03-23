@@ -230,6 +230,18 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--caramel);box-shadow:0 0 0 3px rgba(168,98,30,.12);background:#fff}
 .field textarea{resize:vertical;min-height:80px}
 .field-help{font-size:11px;color:var(--muted);margin-top:4px}
+/* ── Recipe photo picker ─────────────────────────────────────────────────── */
+.photo-drop{border:2px dashed var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:.2s;background:var(--milk);position:relative}
+.photo-drop:hover,.photo-drop.drag-over{border-color:var(--caramel);background:rgba(168,98,30,.04)}
+.photo-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.photo-drop-icon{font-size:28px;margin-bottom:6px}
+.photo-drop-text{font-size:13px;color:var(--muted);font-weight:500}
+.photo-drop-sub{font-size:11px;color:var(--border);margin-top:2px}
+.photo-preview-wrap{position:relative;border-radius:12px;overflow:hidden;margin-top:10px;display:none}
+.photo-preview-wrap img{width:100%;max-height:200px;object-fit:cover;display:block;border-radius:12px}
+.photo-preview-remove{position:absolute;top:8px;right:8px;background:rgba(12,4,0,.6);color:#fff;border:none;border-radius:20px;width:28px;height:28px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.photo-or{text-align:center;font-size:11px;color:var(--muted);margin:8px 0;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.photo-compressing{font-size:11px;color:var(--caramel);margin-top:4px;display:none}
 .flavor-picker{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .flavor-opt{padding:5px 12px;border:1.5px solid var(--border);border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;background:var(--surface);color:var(--muted)}
 .flavor-opt:hover{border-color:var(--caramel-lt);color:var(--roast)}
@@ -794,7 +806,23 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
         <label>Flavor Tags</label>
         <div class="flavor-picker" id="r-flavor-picker"></div>
       </div>
-      <div class="field"><label>Image URL (optional)</label><input id="r-imageurl" type="url" placeholder="https://…"/></div>
+      <div class="field">
+        <label>Photo (optional)</label>
+        <div class="photo-drop" id="r-photo-drop"
+             ondragover="recipeDragOver(event)" ondragleave="recipeDragLeave(event)" ondrop="recipeDrop(event)">
+          <input type="file" accept="image/*" id="r-photo-file" onchange="recipePhotoChosen(this)"/>
+          <div class="photo-drop-icon">📷</div>
+          <div class="photo-drop-text">Click to choose a photo or drag &amp; drop</div>
+          <div class="photo-drop-sub">JPG, PNG, WEBP — compressed automatically</div>
+        </div>
+        <div class="photo-compressing" id="r-photo-compressing">⏳ Compressing…</div>
+        <div class="photo-preview-wrap" id="r-photo-preview-wrap">
+          <img id="r-photo-preview" src="" alt="Preview"/>
+          <button class="photo-preview-remove" onclick="recipePhotoClear()" title="Remove photo">✕</button>
+        </div>
+        <div class="photo-or">or paste a URL</div>
+        <input id="r-imageurl" type="url" placeholder="https://example.com/photo.jpg" oninput="recipeUrlTyped(this)"/>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('new-recipe-modal')">Cancel</button>
@@ -1691,6 +1719,60 @@ async function toggleLike(recipeId, btn) {
   } catch (e) { toast(e.message, 'err'); }
 }
 
+// ── Recipe photo picker ───────────────────────────────────────────────────────
+function recipePhotoChosen(input) {
+  if (input.files && input.files[0]) compressRecipePhoto(input.files[0]);
+}
+function recipeDragOver(e) {
+  e.preventDefault();
+  document.getElementById('r-photo-drop').classList.add('drag-over');
+}
+function recipeDragLeave(e) {
+  document.getElementById('r-photo-drop').classList.remove('drag-over');
+}
+function recipeDrop(e) {
+  e.preventDefault();
+  document.getElementById('r-photo-drop').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) compressRecipePhoto(file);
+}
+function recipeUrlTyped(input) {
+  if (input.value.trim()) recipePhotoClear(true); // clear file pick if URL typed
+}
+function recipePhotoClear(urlOnly) {
+  if (!urlOnly) {
+    document.getElementById('r-imageurl').value = '';
+    document.getElementById('r-photo-file').value = '';
+  }
+  document.getElementById('r-photo-preview-wrap').style.display = 'none';
+  document.getElementById('r-photo-preview').src = '';
+  document.getElementById('r-photo-drop')._base64 = null;
+}
+function compressRecipePhoto(file) {
+  const compressEl = document.getElementById('r-photo-compressing');
+  compressEl.style.display = 'block';
+  document.getElementById('r-imageurl').value = ''; // clear URL field
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 900;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const base64 = canvas.toDataURL('image/jpeg', 0.78);
+      document.getElementById('r-photo-drop')._base64 = base64;
+      document.getElementById('r-photo-preview').src = base64;
+      document.getElementById('r-photo-preview-wrap').style.display = 'block';
+      compressEl.style.display = 'none';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 // ── New/Edit recipe ───────────────────────────────────────────────────────────
 function openNewRecipeModal() {
   if (!ME) { openModal('login-modal'); return; }
@@ -1704,7 +1786,7 @@ function openNewRecipeModal() {
   document.getElementById('r-difficulty').value     = 'MEDIUM';
   document.getElementById('r-ingredients').value    = '';
   document.getElementById('r-instructions').value   = '';
-  document.getElementById('r-imageurl').value       = '';
+  recipePhotoClear();
   openModal('new-recipe-modal');
 }
 
@@ -1721,7 +1803,15 @@ async function openEditRecipe(recipeId) {
     document.getElementById('r-difficulty').value     = r.difficulty || 'MEDIUM';
     document.getElementById('r-ingredients').value    = r.ingredients || '';
     document.getElementById('r-instructions').value   = r.instructions || '';
-    document.getElementById('r-imageurl').value       = r.imageUrl || '';
+    recipePhotoClear();
+    // Show existing image in preview if it's a URL (not base64)
+    if (r.imageUrl && !r.imageUrl.startsWith('data:')) {
+      document.getElementById('r-imageurl').value = r.imageUrl;
+    } else if (r.imageUrl) {
+      document.getElementById('r-photo-preview').src = r.imageUrl;
+      document.getElementById('r-photo-preview-wrap').style.display = 'block';
+      document.getElementById('r-photo-drop')._base64 = r.imageUrl;
+    }
     closeModal('recipe-detail-modal');
     openModal('new-recipe-modal');
   } catch (e) { toast(e.message, 'err'); }
@@ -1739,7 +1829,8 @@ async function saveRecipe() {
     ingredients:  document.getElementById('r-ingredients').value.trim(),
     instructions: document.getElementById('r-instructions').value.trim(),
     flavorTags:   getSelectedFlavors('r-flavor-picker'),
-    imageUrl:     document.getElementById('r-imageurl').value.trim()
+    imageUrl:     document.getElementById('r-photo-drop')._base64 ||
+                  document.getElementById('r-imageurl').value.trim()
   };
   try {
     if (id) {
