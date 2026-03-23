@@ -664,7 +664,14 @@ public class BorgolService {
     }
 
     public boolean isAdmin(int userId) {
-        return userId == 1; // first registered user is admin
+        if (userId == 1) return true;
+        String adminEmail = System.getenv("ADMIN_EMAIL");
+        if (adminEmail != null && !adminEmail.isBlank()) {
+            return repo.findUserById(userId)
+                .map(u -> adminEmail.equalsIgnoreCase(u.getEmail()))
+                .orElse(false);
+        }
+        return false;
     }
 
     // ── Block ─────────────────────────────────────────────────────────────────

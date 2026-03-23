@@ -218,26 +218,27 @@ public class BorgolApiServer {
         // Step 1 – delegate auth to SOAP service
         SoapAuthClient.AuthResult soapResult =
                 soapClient.register(req.username, req.email, req.password);
-        if (!soapResult.success()) {
+
+        boolean soapDown = soapResult.message() != null &&
+                           soapResult.message().startsWith("SOAP service unavailable");
+
+        if (!soapResult.success() && !soapDown) {
+            // SOAP is up but explicitly rejected the registration (e.g. duplicate user)
             ctx.status(400).json(err(soapResult.message()));
             return;
         }
 
-        // Step 2 – create profile in JSON service (profile DB, no password stored here)
+        // Step 2 – create profile in local DB (fallback path when SOAP is down)
         try {
             var profile = borgol.register(req.username, req.email, req.password);
             ctx.status(201).json(Map.of(
-                "token",    soapResult.token()    != null ? soapResult.token() : profile.token(),
-                "userId",   soapResult.userId()   != null ? soapResult.userId() : 0,
+                "token",    soapResult.token() != null ? soapResult.token() : profile.token(),
+                "userId",   profile.user().id(),
                 "username", req.username,
-                "message",  "Registered via SOAP Authentication Service"
+                "message",  soapDown ? "Registered (local auth)" : "Registered via SOAP Authentication Service"
             ));
         } catch (IllegalArgumentException e) {
-            // Profile already exists – still return SOAP token
-            ctx.status(201).json(Map.of(
-                "message", "SOAP registration successful (profile may already exist)",
-                "userId",  soapResult.userId() != null ? soapResult.userId() : 0
-            ));
+            ctx.status(400).json(err(e.getMessage()));
         }
     }
 
