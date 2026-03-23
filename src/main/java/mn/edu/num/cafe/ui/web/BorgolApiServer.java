@@ -1,12 +1,9 @@
 package mn.edu.num.cafe.ui.web;
 
-import com.anthropic.client.AnthropicClient;
-import com.anthropic.client.okhttp.AnthropicOkHttpClient;
-import com.anthropic.core.http.StreamResponse;
-import com.anthropic.models.messages.MessageCreateParams;
-import com.anthropic.models.messages.MessageParam;
-import com.anthropic.models.messages.Model;
-import com.anthropic.models.messages.RawMessageStreamEvent;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
@@ -16,6 +13,13 @@ import mn.edu.num.cafe.core.domain.MenuCategory;
 import mn.edu.num.cafe.infrastructure.security.JwtUtil;
 import mn.edu.num.cafe.infrastructure.security.SoapAuthClient;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -773,19 +777,18 @@ public class BorgolApiServer {
         ctx.json(borgol.getAdminStats());
     }
 
-    // ── Bean — AI coffee assistant ────────────────────────────────────────────
+    // ── Bean — AI coffee assistant (Google Gemini) ───────────────────────────
 
-    private static final String BEAN_SYSTEM = """
-        You are Bean, a warm and knowledgeable AI coffee assistant for Borgol — \
-        a community platform for coffee enthusiasts in Ulaanbaatar, Mongolia.
-        You help users with:
-        - Coffee recipes, brew ratios, grind sizes, water temperatures
-        - Brew methods: pour-over, espresso, AeroPress, French press, cold brew, Moka pot
-        - Flavor profiles, bean origins, roast levels
-        - Recommending recipes and cafes from the Borgol community
-        - Troubleshooting their brews ("why is my espresso sour?")
-        Keep answers concise, friendly, and practical. Use ☕ sparingly for warmth. \
-        Respond in whatever language the user writes in.""";
+    private static final String BEAN_SYSTEM =
+        "You are Bean, a warm and knowledgeable AI coffee assistant for Borgol — " +
+        "a community platform for coffee enthusiasts in Ulaanbaatar, Mongolia. " +
+        "You help users with: coffee recipes, brew ratios, grind sizes, water temperatures, " +
+        "brew methods (pour-over, espresso, AeroPress, French press, cold brew, Moka pot), " +
+        "flavor profiles, bean origins, roast levels, and troubleshooting brews. " +
+        "Keep answers concise, friendly, and practical. Use ☕ sparingly for warmth. " +
+        "Respond in whatever language the user writes in.";
+
+    private static final ObjectMapper BEAN_MAPPER = new ObjectMapper();
 
     public static class BeanMessage {
         public String role;    // "user" or "assistant"
@@ -796,9 +799,9 @@ public class BorgolApiServer {
     }
 
     private void beanChat(Context ctx) {
-        String apiKey = System.getenv("ANTHROPIC_API_KEY");
+        String apiKey = System.getenv("GEMINI_API_KEY");
         if (apiKey == null || apiKey.isBlank()) {
-            ctx.status(503).json(err("Bean is not configured (missing ANTHROPIC_API_KEY)"));
+            ctx.status(503).json(err("Bean is not configured (missing GEMINI_API_KEY)"));
             return;
         }
 
@@ -814,60 +817,80 @@ public class BorgolApiServer {
             return;
         }
 
-        // Build message list for Claude
-        List<MessageParam> params = new ArrayList<>();
-        for (BeanMessage m : req.messages) {
-            if ("user".equals(m.role)) {
-                params.add(MessageParam.builder()
-                    .role(MessageParam.Role.USER)
-                    .content(m.content)
-                    .build());
-            } else if ("assistant".equals(m.role)) {
-                params.add(MessageParam.builder()
-                    .role(MessageParam.Role.ASSISTANT)
-                    .content(m.content)
-                    .build());
+        // Build Gemini request JSON
+        // Gemini uses "model" for assistant role
+        try {
+            ObjectNode body = BEAN_MAPPER.createObjectNode();
+
+            // system_instruction
+            ObjectNode sysInstr = body.putObject("system_instruction");
+            ArrayNode sysParts = sysInstr.putArray("parts");
+            sysParts.addObject().put("text", BEAN_SYSTEM);
+
+            // contents (conversation history)
+            ArrayNode contents = body.putArray("contents");
+            for (BeanMessage m : req.messages) {
+                String geminiRole = "assistant".equals(m.role) ? "model" : "user";
+                ObjectNode turn = contents.addObject();
+                turn.put("role", geminiRole);
+                ArrayNode parts = turn.putArray("parts");
+                parts.addObject().put("text", m.content);
             }
-        }
 
-        AnthropicClient client = AnthropicOkHttpClient.builder().apiKey(apiKey).build();
+            // generationConfig
+            body.putObject("generationConfig").put("maxOutputTokens", 1024);
 
-        // Stream SSE back to the browser
-        ctx.contentType("text/event-stream");
-        ctx.header("Cache-Control", "no-cache");
-        ctx.header("X-Accel-Buffering", "no");
+            String bodyJson = BEAN_MAPPER.writeValueAsString(body);
+            String url = "https://generativelanguage.googleapis.com/v1beta/models/" +
+                         "gemini-1.5-flash:streamGenerateContent?key=" + apiKey + "&alt=sse";
 
-        StringBuilder full = new StringBuilder();
-        try (StreamResponse<RawMessageStreamEvent> stream =
-                client.messages().createStreaming(
-                    MessageCreateParams.builder()
-                        .model(Model.CLAUDE_HAIKU_4_5)
-                        .maxTokens(1024L)
-                        .system(BEAN_SYSTEM)
-                        .messages(params)
-                        .build())) {
+            HttpClient http = HttpClient.newHttpClient();
+            HttpRequest httpReq = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(bodyJson))
+                .build();
 
-            stream.stream()
-                .flatMap(event -> event.contentBlockDelta().stream())
-                .flatMap(delta -> delta.delta().text().stream())
-                .forEach(textDelta -> {
-                    String chunk = textDelta.text();
-                    full.append(chunk);
-                    // SSE: data: <json>\n\n
-                    ctx.result(); // keep alive
+            // Stream SSE back to browser
+            ctx.contentType("text/event-stream");
+            ctx.header("Cache-Control", "no-cache");
+            ctx.header("X-Accel-Buffering", "no");
+
+            HttpResponse<java.io.InputStream> response = http.send(httpReq,
+                HttpResponse.BodyHandlers.ofInputStream());
+
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(response.body(), StandardCharsets.UTF_8))) {
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (!line.startsWith("data: ")) continue;
+                    String data = line.substring(6).trim();
+                    if (data.isEmpty() || "[DONE]".equals(data)) continue;
+
                     try {
-                        ctx.outputStream().write(
-                            ("data: " + escJson(chunk) + "\n\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
-                        ctx.outputStream().flush();
+                        JsonNode node = BEAN_MAPPER.readTree(data);
+                        JsonNode text = node.path("candidates").path(0)
+                            .path("content").path("parts").path(0).path("text");
+                        if (!text.isMissingNode() && !text.isNull()) {
+                            String chunk = text.asText();
+                            ctx.outputStream().write(
+                                ("data: " + escJson(chunk) + "\n\n")
+                                    .getBytes(StandardCharsets.UTF_8));
+                            ctx.outputStream().flush();
+                        }
                     } catch (Exception ignored) {}
-                });
+                }
+            }
 
-            ctx.outputStream().write("data: [DONE]\n\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            ctx.outputStream().write("data: [DONE]\n\n".getBytes(StandardCharsets.UTF_8));
             ctx.outputStream().flush();
+
         } catch (Exception e) {
             try {
                 ctx.outputStream().write(
-                    ("data: " + escJson("[ERROR] " + e.getMessage()) + "\n\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    ("data: " + escJson("[ERROR] " + e.getMessage()) + "\n\n")
+                        .getBytes(StandardCharsets.UTF_8));
                 ctx.outputStream().flush();
             } catch (Exception ignored) {}
         }
