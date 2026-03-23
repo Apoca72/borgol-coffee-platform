@@ -61,6 +61,8 @@ public class BorgolApiServer {
         this.app = Javalin.create(cfg -> {
             cfg.staticFiles.add("/public");
             cfg.showJavalinBanner = false;
+            cfg.jetty.modifyServletContextHandler(h ->
+                h.setMaxFormContentSize(8 * 1024 * 1024)); // 8 MB for base64 images
         });
         // ── Global CORS headers (allows frontend on any port to call this API) ──
         app.before(ctx -> {

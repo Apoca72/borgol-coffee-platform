@@ -246,6 +246,17 @@ public class BorgolRepository {
                   ALTER TABLE borgol_users ALTER COLUMN bio TYPE TEXT;
                 EXCEPTION WHEN undefined_table THEN NULL;
                 END $$""");
+            // Expand recipe/cafe image_url to TEXT to support base64-encoded photos.
+            s.execute("""
+                DO $$ BEGIN
+                  ALTER TABLE recipes ALTER COLUMN image_url TYPE TEXT;
+                EXCEPTION WHEN undefined_table THEN NULL;
+                END $$""");
+            s.execute("""
+                DO $$ BEGIN
+                  ALTER TABLE cafes ALTER COLUMN image_url TYPE TEXT;
+                EXCEPTION WHEN undefined_table THEN NULL;
+                END $$""");
         } catch (SQLException e) {
             throw new RuntimeException("Schema initialization failed", e);
         }
