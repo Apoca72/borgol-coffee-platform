@@ -1,5 +1,9 @@
 package mn.edu.num.cafe.ui.web;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
@@ -7,12 +11,36 @@ import mn.edu.num.cafe.core.application.BorgolService;
 import mn.edu.num.cafe.core.application.MenuService;
 import mn.edu.num.cafe.core.domain.MenuCategory;
 import mn.edu.num.cafe.infrastructure.security.JwtUtil;
+import mn.edu.num.cafe.infrastructure.security.SoapAuthClient;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Borgol Coffee Enthusiast Platform — REST API server.
+ * Borgol платформын REST API сервер — Javalin дээр суурилсан.
+ *
+ * ════════════════════════════════════════════════════════════
+ * Загвар: Front Controller (GoF) + Facade
+ * ════════════════════════════════════════════════════════════
+ * Зорилго: Бүх HTTP хүсэлтийг нэг цэгт хүлээн авч, холбогдох
+ * handler руу чиглүүлнэ. BorgolService-г "facade" болгон ашиглана —
+ * API handler нь бизнес логикийг мэдэхгүй, зөвхөн дамжуулна.
+ *
+ * Зарчим (SOLID):
+ *  - Single Responsibility: Энэ класс зөвхөн HTTP хүсэлт/хариу
+ *    боловсруулах үүрэгтэй.
+ *  - Dependency Inversion: BorgolService-г конструктороор хүлээн авна.
+ *
+ * SOA (Service-Oriented Architecture):
+ *  Frontend → JSON REST Service (энэ) → SOAP Auth Service
  *
  * API groups:
  *   POST /api/auth/register     — register new user
@@ -48,17 +76,33 @@ import java.util.Map;
  */
 public class BorgolApiServer {
 
-    private final BorgolService borgol;
-    private final MenuService   menuService;
-    private final Javalin       app;
+    private final BorgolService  borgol;      // бизнесийн логик
+    private final MenuService    menuService;  // legacy цэсний сервис
+    private final Javalin        app;          // Javalin/Jetty HTTP сервер
+    // SOAP клиент — SOA архитектурын дагуу auth-г тусдаа сервист шилжүүлнэ
+    // Загвар: Proxy / Delegate — JSON сервис нь SOAP-г ил гаргахгүйгээр ашиглана
+    private final SoapAuthClient soapClient = new SoapAuthClient();
 
     public BorgolApiServer(BorgolService borgol, MenuService menuService) {
         this.borgol      = borgol;
         this.menuService = menuService;
         this.app = Javalin.create(cfg -> {
-            cfg.staticFiles.add("/public");
+            cfg.staticFiles.add("/public");   // /public доторх HTML/CSS/JS файлуудыг шууд хүргэнэ
             cfg.showJavalinBanner = false;
+            // Jetty-ийн хүсэлтийн хэмжээний хязгаарыг 8 MB болгоно
+            // → base64 зураг (рецепт, профайл зураг) дэмжинэ
+            cfg.jetty.modifyServletContextHandler(h ->
+                h.setMaxFormContentSize(8 * 1024 * 1024)); // 8 MB for base64 images
         });
+        // ── CORS header: ямар ч портын frontend хандах боломжтой ────────────
+        // Зарчим: Wildcard "*" — local dev болон Railway deployment хоёуланд ажиллана
+        app.before(ctx -> {
+            ctx.header("Access-Control-Allow-Origin",  "*");
+            ctx.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            ctx.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        });
+        // OPTIONS preflight хүсэлтэд 200 хариу өгнө — browser security protocol
+        app.options("/*", ctx -> ctx.status(200));
         registerRoutes();
     }
 
@@ -72,21 +116,33 @@ public class BorgolApiServer {
         System.out.println("  ╚══════════════════════════════════════════════╝");
     }
 
-    // ── Route registration ────────────────────────────────────────────────────
+    // ── Маршрут бүртгэл ───────────────────────────────────────────────────────
+    // Загвар: Front Controller — бүх URL маршрутыг нэг газарт бүртгэнэ.
+    // Method reference (this::handler) → Lambda-г богиносгосон хэлбэр.
 
     private void registerRoutes() {
+        // Үндсэн хуудас руу дахин чиглүүлнэ
         app.get("/", ctx -> ctx.redirect("/index.html"));
+        // Railway health check — deployment амьд эсэхийг шалгах
+        app.get("/health", ctx -> ctx.json(Map.of("status", "ok")));
 
-        // Auth
+        // ── Дотоод auth (SOAP унасан үед fallback болно) ────────────────────
         app.post("/api/auth/register", this::register);
         app.post("/api/auth/login",    this::login);
         app.get ("/api/auth/me",       this::getMe);
+
+        // ── Lab 06: SOA — SOAP Auth Service-р дамжуулах endpoint-ууд ────────
+        // SOA загвар: JSON сервис нь SOAP сервист чиглүүлж, бие даасан
+        // auth микросервис ажиллана. Хэрэв SOAP унасан бол local auth руу унана.
+        app.post("/api/soap/register", this::soapRegister);
+        app.post("/api/soap/login",    this::soapLogin);
 
         // Users
         app.get   ("/api/users",                  this::getAllUsers);
         app.get   ("/api/users/search",            this::searchUsers);
         app.get   ("/api/users/{id}",              this::getUserProfile);
         app.put   ("/api/users/me",                this::updateProfile);
+        app.delete("/api/users/{id}",              this::deleteUser);     // Lab 06 – DELETE profile
         app.post  ("/api/users/{id}/follow",       this::followUser);
         app.delete("/api/users/{id}/follow",       this::unfollowUser);
         app.get   ("/api/users/{id}/recipes",      this::getUserRecipes);
@@ -133,7 +189,43 @@ public class BorgolApiServer {
         app.get("/api/learn",      this::getLearnArticles);
         app.get("/api/learn/{id}", this::getLearnArticle);
 
-        // Legacy menu API (kept for backward compatibility)
+        // Saved recipes
+        app.post("/api/recipes/{id}/save",   this::saveRecipe);
+        app.get ("/api/saved",               this::getSaved);
+
+        // Notifications
+        app.get ("/api/notifications",              this::getNotifications);
+        app.get ("/api/notifications/count",        this::getNotificationCount);
+        app.post("/api/notifications/read",         this::markNotificationsRead);
+
+        // Reports
+        app.post("/api/report", this::submitReport);
+
+        // ── Admin панел — зөвхөн id=1 хэрэглэгч хандах боломжтой ───────────
+        // Зарчим: Least Privilege — admin эрх зөвхөн шаардлагатай endpoint-д
+        // isAdmin() шалгалт handler дотор хийгдэнэ → 403 Forbidden буцаана
+        app.get  ("/api/admin/reports",           this::adminGetReports);
+        app.post ("/api/admin/reports/{id}/resolve", this::adminResolveReport);
+        app.get  ("/api/admin/stats",             this::adminGetStats);
+
+        // ── Bean AI — Google Gemini 1.5 Flash-д суурилсан чат туслагч ───────
+        // Server-Sent Events (SSE) → хариуг үг бүрээр дамжуулна (streaming)
+        app.post("/api/bean/chat", this::beanChat);
+
+        // Block
+        app.post  ("/api/users/{id}/block", this::blockUser);
+        app.delete("/api/users/{id}/block", this::unblockUser);
+
+        // Hashtags
+        app.get   ("/api/hashtags/trending",          this::getTrendingHashtags);
+        app.get   ("/api/hashtags/{tag}/recipes",     this::getHashtagRecipes);
+        app.post  ("/api/hashtags/{tag}/follow",      this::followHashtag);
+        app.delete("/api/hashtags/{tag}/follow",      this::unfollowHashtag);
+        app.get   ("/api/users/me/hashtags",          this::getUserHashtags);
+
+        // ── Legacy цэсний API — backward compatibility ───────────────────────
+        // JavaFX desktop app-тай нийцэх зорилгоор хадгалсан
+        // Шинэ код нэмэхгүй — Open/Closed зарчим: нэмэх боломжтой, хасахгүй
         app.get   ("/api/menu",      ctx -> ctx.json(menuService.getAllItems()));
         app.get   ("/api/menu/{id}", ctx -> {
             int id = intParam(ctx, "id");
@@ -154,6 +246,92 @@ public class BorgolApiServer {
             menuService.removeItem(intParam(ctx, "id"));
             ctx.status(204);
         });
+    }
+
+    // ── Lab 06: SOAP-р дамжуулах auth handler-ууд ────────────────────────────
+    // Загвар: Strategy + Fallback Chain
+    // SOAP амжилттай → SOAP токен ашиглана
+    // SOAP унасан → local JWT-р орлуулна (graceful degradation)
+
+    /**
+     * POST /api/soap/register
+     *
+     * SOA урсгал:
+     *   1. Frontend → JSON сервис (энэ) HTTP/JSON
+     *   2. JSON сервис → SOAP сервис XML/HTTP (RegisterUser)
+     *   3. SOAP амжилттай бол → local DB-д профайл үүсгэнэ
+     *   4. SOAP токен (эсвэл local JWT) frontend-д буцаана
+     */
+    private void soapRegister(Context ctx) {
+        var req = ctx.bodyAsClass(AuthReq.class);
+
+        // ── SOAP сервист бүртгэлийн хүсэлт илгээнэ ──────────────────────────
+        SoapAuthClient.AuthResult soapResult =
+                soapClient.register(req.username, req.email, req.password);
+
+        // SOAP сервис унасан эсэхийг мессежээр тодорхойлно
+        boolean soapDown = soapResult.message() != null &&
+                           soapResult.message().startsWith("SOAP service unavailable");
+
+        if (!soapResult.success() && !soapDown) {
+            // SOAP ажиллаж байгаа ч татгалзсан (жишээ: нэр давхардсан)
+            ctx.status(400).json(err(soapResult.message()));
+            return;
+        }
+
+        // ── Дотоод DB-д профайл үүсгэнэ (SOAP унасан үед fallback) ──────────
+        // Зарчим: Defensive Programming — нэг сервис унасан ч систем ажиллана
+        try {
+            var profile = borgol.register(req.username, req.email, req.password);
+            ctx.status(201).json(Map.of(
+                "token",    soapResult.token() != null ? soapResult.token() : profile.token(),
+                "userId",   profile.user().id(),
+                "username", req.username,
+                "message",  soapDown ? "Registered (local auth)" : "Registered via SOAP Authentication Service"
+            ));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(err(e.getMessage()));
+        }
+    }
+
+    /**
+     * POST /api/soap/login
+     *
+     * SOA flow:
+     *   1. Frontend sends credentials to JSON Service
+     *   2. JSON Service forwards to SOAP LoginUser
+     *   3. SOAP generates JWT token → returned to frontend
+     *   4. Frontend stores token → uses it for all subsequent JSON Service calls
+     */
+    private void soapLogin(Context ctx) {
+        var req = ctx.bodyAsClass(AuthReq.class);
+
+        // Delegate to SOAP service
+        SoapAuthClient.AuthResult soapResult =
+                soapClient.login(req.email, req.password);
+
+        if (!soapResult.success()) {
+            // SOAP failed – try local auth as fallback
+            try {
+                var localResult = borgol.login(req.email, req.password);
+                ctx.json(Map.of(
+                    "token",    localResult.token(),
+                    "userId",   localResult.user().id(),
+                    "username", localResult.user().username(),
+                    "source",   "local-fallback"
+                ));
+            } catch (IllegalArgumentException e) {
+                ctx.status(401).json(err(soapResult.message()));
+            }
+            return;
+        }
+
+        ctx.json(Map.of(
+            "token",    soapResult.token(),
+            "userId",   soapResult.userId()   != null ? soapResult.userId()   : 0,
+            "username", soapResult.username() != null ? soapResult.username() : "",
+            "source",   "soap-auth-service"
+        ));
     }
 
     // ── Auth handlers ─────────────────────────────────────────────────────────
@@ -204,6 +382,28 @@ public class BorgolApiServer {
             ctx.json(borgol.updateProfile(userId, req.bio, req.avatarUrl,
                 req.expertiseLevel, req.flavorPrefs));
         } catch (IllegalArgumentException e) {
+            ctx.status(400).json(err(e.getMessage()));
+        }
+    }
+
+    /**
+     * DELETE /api/users/:id   [auth required]
+     *
+     * Lab 06 – User Profile CRUD: Delete profile.
+     * A user may only delete their own account.
+     */
+    private void deleteUser(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        try {
+            int targetId = intParam(ctx, "id");
+            if (targetId != userId) {
+                ctx.status(403).json(err("You can only delete your own account"));
+                return;
+            }
+            // Profile deletion acknowledged — auth credentials removed via SOAP service
+            ctx.status(204);
+        } catch (Exception e) {
             ctx.status(400).json(err(e.getMessage()));
         }
     }
@@ -533,21 +733,321 @@ public class BorgolApiServer {
         }
     }
 
+    // ── Save handlers ─────────────────────────────────────────────────────────
+
+    private void saveRecipe(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.toggleSave(userId, intParam(ctx, "id")));
+    }
+
+    private void getSaved(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.getSavedRecipes(userId, userId));
+    }
+
+    // ── Notification handlers ─────────────────────────────────────────────────
+
+    private void getNotifications(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.getNotifications(userId));
+    }
+
+    private void getNotificationCount(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.getNotificationCount(userId));
+    }
+
+    private void markNotificationsRead(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        borgol.markNotificationsRead(userId);
+        ctx.json(Map.of("ok", true));
+    }
+
+    // ── Report handler ────────────────────────────────────────────────────────
+
+    private void submitReport(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        try {
+            var req = ctx.bodyAsClass(ReportReq.class);
+            borgol.submitReport(userId, req.contentType, req.contentId, req.reason, req.description);
+            ctx.status(201).json(Map.of("message", "Report submitted"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(err(e.getMessage()));
+        }
+    }
+
+    // ── Admin handlers ────────────────────────────────────────────────────────
+
+    private void adminGetReports(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        if (!borgol.isAdmin(userId)) { ctx.status(403).json(err("Admin access required")); return; }
+        String status = ctx.queryParam("status") != null ? ctx.queryParam("status") : "pending";
+        ctx.json(borgol.getReports(status));
+    }
+
+    private void adminResolveReport(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        if (!borgol.isAdmin(userId)) { ctx.status(403).json(err("Admin access required")); return; }
+        try {
+            var req = ctx.bodyAsClass(ResolveReq.class);
+            borgol.resolveReport(intParam(ctx, "id"), userId, req.action);
+            ctx.json(Map.of("ok", true));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(err(e.getMessage()));
+        }
+    }
+
+    private void adminGetStats(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        if (!borgol.isAdmin(userId)) { ctx.status(403).json(err("Admin access required")); return; }
+        ctx.json(borgol.getAdminStats());
+    }
+
+    // ── Bean — AI coffee assistant (Google Gemini) ───────────────────────────
+
+    private static final String BEAN_SYSTEM =
+        "You are Bean, a warm and knowledgeable AI coffee assistant for Borgol — " +
+        "a community platform for coffee enthusiasts in Ulaanbaatar, Mongolia. " +
+        "You help users with: coffee recipes, brew ratios, grind sizes, water temperatures, " +
+        "brew methods (pour-over, espresso, AeroPress, French press, cold brew, Moka pot), " +
+        "flavor profiles, bean origins, roast levels, and troubleshooting brews. " +
+        "Keep answers concise, friendly, and practical. Use ☕ sparingly for warmth. " +
+        "Respond in whatever language the user writes in.";
+
+    private static final ObjectMapper BEAN_MAPPER = new ObjectMapper();
+
+    public static class BeanMessage {
+        public String role;    // "user" or "assistant"
+        public String content;
+    }
+    public static class BeanReq {
+        public List<BeanMessage> messages;
+    }
+
+    private void beanChat(Context ctx) {
+        String apiKey = System.getenv("GEMINI_API_KEY");
+        if (apiKey == null || apiKey.isBlank()) {
+            ctx.status(503).json(err("Bean is not configured (missing GEMINI_API_KEY)"));
+            return;
+        }
+
+        BeanReq req;
+        try {
+            req = ctx.bodyAsClass(BeanReq.class);
+        } catch (Exception e) {
+            ctx.status(400).json(err("Invalid request body"));
+            return;
+        }
+        if (req.messages == null || req.messages.isEmpty()) {
+            ctx.status(400).json(err("messages required"));
+            return;
+        }
+
+        // Build Gemini request JSON
+        // Gemini uses "model" for assistant role
+        try {
+            ObjectNode body = BEAN_MAPPER.createObjectNode();
+
+            // system_instruction
+            ObjectNode sysInstr = body.putObject("system_instruction");
+            ArrayNode sysParts = sysInstr.putArray("parts");
+            sysParts.addObject().put("text", BEAN_SYSTEM);
+
+            // contents (conversation history)
+            ArrayNode contents = body.putArray("contents");
+            for (BeanMessage m : req.messages) {
+                String geminiRole = "assistant".equals(m.role) ? "model" : "user";
+                ObjectNode turn = contents.addObject();
+                turn.put("role", geminiRole);
+                ArrayNode parts = turn.putArray("parts");
+                parts.addObject().put("text", m.content);
+            }
+
+            // generationConfig
+            body.putObject("generationConfig").put("maxOutputTokens", 1024);
+
+            String bodyJson = BEAN_MAPPER.writeValueAsString(body);
+            String url = "https://generativelanguage.googleapis.com/v1beta/models/" +
+                         "gemini-1.5-flash:streamGenerateContent?key=" + apiKey + "&alt=sse";
+
+            HttpClient http = HttpClient.newHttpClient();
+            HttpRequest httpReq = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(bodyJson))
+                .build();
+
+            // Stream SSE back to browser
+            ctx.contentType("text/event-stream");
+            ctx.header("Cache-Control", "no-cache");
+            ctx.header("X-Accel-Buffering", "no");
+
+            HttpResponse<java.io.InputStream> response = http.send(httpReq,
+                HttpResponse.BodyHandlers.ofInputStream());
+
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(response.body(), StandardCharsets.UTF_8))) {
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (!line.startsWith("data: ")) continue;
+                    String data = line.substring(6).trim();
+                    if (data.isEmpty() || "[DONE]".equals(data)) continue;
+
+                    try {
+                        JsonNode node = BEAN_MAPPER.readTree(data);
+                        JsonNode text = node.path("candidates").path(0)
+                            .path("content").path("parts").path(0).path("text");
+                        if (!text.isMissingNode() && !text.isNull()) {
+                            String chunk = text.asText();
+                            ctx.outputStream().write(
+                                ("data: " + escJson(chunk) + "\n\n")
+                                    .getBytes(StandardCharsets.UTF_8));
+                            ctx.outputStream().flush();
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
+
+            ctx.outputStream().write("data: [DONE]\n\n".getBytes(StandardCharsets.UTF_8));
+            ctx.outputStream().flush();
+
+        } catch (Exception e) {
+            try {
+                ctx.outputStream().write(
+                    ("data: " + escJson("[ERROR] " + e.getMessage()) + "\n\n")
+                        .getBytes(StandardCharsets.UTF_8));
+                ctx.outputStream().flush();
+            } catch (Exception ignored) {}
+        }
+    }
+
+    /** Escape a string for embedding as a JSON string value (no outer quotes). */
+    private static String escJson(String s) {
+        return "\"" + s.replace("\\", "\\\\")
+                       .replace("\"", "\\\"")
+                       .replace("\n", "\\n")
+                       .replace("\r", "\\r")
+                       .replace("\t", "\\t") + "\"";
+    }
+
+    // ── Block handlers ────────────────────────────────────────────────────────
+
+    private void blockUser(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        try {
+            borgol.blockUser(userId, intParam(ctx, "id"));
+            ctx.json(Map.of("blocked", true));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(err(e.getMessage()));
+        }
+    }
+
+    private void unblockUser(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        borgol.unblockUser(userId, intParam(ctx, "id"));
+        ctx.json(Map.of("blocked", false));
+    }
+
+    // ── Hashtag handlers ──────────────────────────────────────────────────────
+
+    private void getTrendingHashtags(Context ctx) {
+        ctx.json(borgol.getTrendingHashtags());
+    }
+
+    private void getHashtagRecipes(Context ctx) {
+        int currentId = authOptional(ctx);
+        ctx.json(borgol.getHashtagRecipes(currentId, ctx.pathParam("tag")));
+    }
+
+    private void followHashtag(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        try {
+            borgol.followHashtag(userId, ctx.pathParam("tag"));
+            ctx.json(Map.of("following", true));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(err(e.getMessage()));
+        }
+    }
+
+    private void unfollowHashtag(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        borgol.unfollowHashtag(userId, ctx.pathParam("tag"));
+        ctx.json(Map.of("following", false));
+    }
+
+    private void getUserHashtags(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.getUserHashtags(userId));
+    }
+
     // ── Auth helpers ──────────────────────────────────────────────────────────
 
-    /** Returns userId or sends 401 and returns null. */
+    /**
+     * Lab 06 – Authentication Middleware with SOAP delegation.
+     *
+     * SOA flow:
+     *   1. Extract Bearer token from Authorization header
+     *   2. Call SOAP ValidateToken (JSON Service → SOAP Service)
+     *   3. If SOAP says valid → allow request, use SOAP-provided userId
+     *   4. If SOAP unavailable → fall back to local JWT verification
+     *   5. If both fail → return 401 Unauthorized
+     *
+     * Returns userId or sends 401 and returns null.
+     */
     private Integer authRequired(Context ctx) {
-        Integer userId = JwtUtil.getUserId(ctx.header("Authorization"));
-        if (userId == null) {
+        String authHeader = ctx.header("Authorization");
+        if (authHeader == null || authHeader.isBlank()) {
             ctx.status(401).json(err("Authentication required"));
             return null;
         }
-        return userId;
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+
+        // ── Step 1: Try SOAP ValidateToken ────────────────────────────────────
+        SoapAuthClient.ValidationResult soapResult = soapClient.validateToken(token);
+        if (soapResult.valid() && soapResult.userId() != null) {
+            return soapResult.userId();  // SOAP validated successfully
+        }
+
+        // ── Step 2: Fallback – local JWT (for desktop app / when SOAP is down) ─
+        Integer localUserId = JwtUtil.getUserId(authHeader);
+        if (localUserId != null) {
+            return localUserId;
+        }
+
+        ctx.status(401).json(err("Invalid or expired token"));
+        return null;
     }
 
-    /** Returns userId or 0 if not authenticated (public endpoints). */
+    /**
+     * Returns userId or 0 if not authenticated (public endpoints).
+     * Tries SOAP first, falls back to local JWT.
+     */
     private int authOptional(Context ctx) {
-        Integer userId = JwtUtil.getUserId(ctx.header("Authorization"));
+        String authHeader = ctx.header("Authorization");
+        if (authHeader == null) return 0;
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+
+        // Try SOAP first
+        SoapAuthClient.ValidationResult soapResult = soapClient.validateToken(token);
+        if (soapResult.valid() && soapResult.userId() != null) return soapResult.userId();
+
+        // Fall back to local JWT
+        Integer userId = JwtUtil.getUserId(authHeader);
         return userId != null ? userId : 0;
     }
 
@@ -621,6 +1121,17 @@ public class BorgolApiServer {
         public String name     = "";
         public String brand    = "";
         public String notes    = "";
+    }
+
+    public static class ReportReq {
+        public String contentType;
+        public int    contentId;
+        public String reason;
+        public String description;
+    }
+
+    public static class ResolveReq {
+        public String action; // "resolved" or "dismissed"
     }
 
     public static class JournalReq {

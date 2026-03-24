@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Register – Borgol Coffee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --espresso  : #0C0400;
+  --roast     : #2B1005;
+  --caramel   : #A8621E;
+  --caramel-lt: #CB8840;
+  --gold      : #E8A030;
+  --cream     : #F6E8CC;
+  --milk      : #FDFAF3;
+  --surface   : #FFFEF8;
+  --border    : #EDDBBA;
+  --muted     : #8A7054;
+  --text      : #180F08;
+  --success   : #2D6A4F;
+  --error     : #B5321E;
+  --shadow-lg : 0 20px 60px rgba(12,4,0,.18);
+  --radius    : 14px;
+  --radius-lg : 20px;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans : 'DM Sans', -apple-system, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--milk); color: var(--text); font-family: var(--font-sans); overflow-x: hidden; }
+
+@keyframes slideDown { from { opacity:0; transform:translateY(-14px) } to { opacity:1; transform:none } }
+@keyframes cardIn    { from { opacity:0; transform:translateY(28px) } to { opacity:1; transform:translateY(0) } }
+@keyframes slideIn   { from { opacity:0; transform:translateY(-8px) } to { opacity:1; transform:translateY(0) } }
+@keyframes spin      { to { transform:rotate(360deg) } }
+@keyframes pulse     { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Navbar ───────────────────────────────────────────── */
+.navbar {
+  background: linear-gradient(135deg, var(--espresso) 0%, #1A0800 100%);
+  height: 62px; display: flex; align-items: center;
+  padding: 0 28px; gap: 16px;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  box-shadow: 0 2px 24px rgba(0,0,0,.45);
+  animation: slideDown .4s ease;
+}
+.nav-brand {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-serif); font-size: 19px; font-weight: 700; color: #fff;
+}
+.nav-brand span { font-size: 24px; }
+.nav-right { margin-left: auto; }
+.nav-out-link {
+  padding: 7px 18px; border: 1.5px solid rgba(255,255,255,.25);
+  border-radius: 20px; font-size: 13px; font-weight: 600;
+  color: rgba(255,255,255,.8); text-decoration: none; transition: .2s;
+}
+.nav-out-link:hover { background: rgba(255,255,255,.1); color: #fff; border-color: rgba(255,255,255,.5); }
+
+/* ── Page ─────────────────────────────────────────────── */
+.page {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 80px 20px 48px;
+  background:
+    radial-gradient(ellipse 55% 45% at 10% 90%, rgba(168,98,30,.08) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 35% at 90% 10%, rgba(12,4,0,.04) 0%, transparent 55%);
+}
+
+/* ── Card ─────────────────────────────────────────────── */
+.card {
+  width: 100%; max-width: 460px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 48px 44px;
+  box-shadow: var(--shadow-lg);
+  animation: cardIn .7s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* ── Card header ──────────────────────────────────────── */
+.card-header { text-align: center; margin-bottom: 32px; }
+.icon-circle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 68px; height: 68px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--caramel), var(--caramel-lt));
+  font-size: 30px; margin-bottom: 18px;
+  box-shadow: 0 8px 28px rgba(168,98,30,.3);
+}
+.card-title {
+  font-family: var(--font-serif);
+  font-size: 2rem; font-weight: 700; color: var(--roast);
+}
+.card-sub {
+  font-size: .78rem; color: var(--muted);
+  letter-spacing: .09em; text-transform: uppercase; margin-top: 5px;
+}
+.service-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px;
+  background: var(--cream); border: 1px solid var(--border);
+  font-size: .7rem; color: var(--muted); margin-top: 12px;
+}
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); animation: pulse 2s ease-in-out infinite; }
+
+/* ── Alert ────────────────────────────────────────────── */
+.alert {
+  padding: 12px 16px; border-radius: 10px;
+  font-size: .875rem; margin-bottom: 20px;
+  display: none; animation: slideIn .3s ease both;
+}
+.alert-error   { background: rgba(181,50,30,.08); border: 1px solid rgba(181,50,30,.25); color: var(--error);   display: block; }
+.alert-success { background: rgba(45,106,79,.08);  border: 1px solid rgba(45,106,79,.25);  color: var(--success); display: block; }
+
+/* ── Form ─────────────────────────────────────────────── */
+.form-group { margin-bottom: 18px; position: relative; }
+
+label {
+  display: block; margin-bottom: 6px;
+  font-size: .74rem; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
+}
+
+input {
+  width: 100%; padding: 12px 14px;
+  background: var(--milk); border: 1.5px solid var(--border);
+  border-radius: var(--radius); color: var(--text);
+  font-family: var(--font-sans); font-size: .95rem;
+  outline: none; transition: all .2s;
+}
+input::placeholder { color: rgba(138,112,84,.45); }
+input:focus {
+  border-color: var(--caramel); background: #fff;
+  box-shadow: 0 0 0 3px rgba(168,98,30,.12);
+}
+
+/* ── Password strength ────────────────────────────────── */
+.strength-bar {
+  height: 3px; border-radius: 2px;
+  background: var(--border); margin-top: 8px; overflow: hidden;
+}
+.strength-fill { height: 100%; border-radius: 2px; transition: width .3s, background .3s; width: 0%; }
+
+/* ── Button ───────────────────────────────────────────── */
+.btn {
+  width: 100%; padding: 13px; margin-top: 8px;
+  background: linear-gradient(135deg, var(--caramel) 0%, var(--caramel-lt) 100%);
+  border: none; border-radius: var(--radius);
+  color: #fff; font-family: var(--font-sans);
+  font-size: .95rem; font-weight: 700;
+  cursor: pointer; position: relative; overflow: hidden;
+  transition: transform .18s, box-shadow .18s;
+  box-shadow: 0 4px 16px rgba(168,98,30,.3);
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(168,98,30,.4); }
+.btn:active { transform: translateY(0); }
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+.btn-spinner {
+  display: inline-block; width: 15px; height: 15px;
+  border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+  border-radius: 50%; animation: spin .7s linear infinite;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* ── Divider ──────────────────────────────────────────── */
+.divider {
+  text-align: center; margin: 24px 0;
+  position: relative; color: var(--muted); font-size: .78rem;
+}
+.divider::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 50%;
+  height: 1px; background: var(--border);
+}
+.divider span { position: relative; background: var(--surface); padding: 0 12px; }
+
+/* ── Footer link ──────────────────────────────────────── */
+.footer-link { text-align: center; font-size: .875rem; color: var(--muted); margin-top: 20px; }
+.footer-link a { color: var(--caramel); text-decoration: none; font-weight: 600; }
+.footer-link a:hover { color: var(--roast); }
+
+/* ── Mobile ───────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .navbar { padding: 0 16px; height: 56px; }
+  .page { padding: 72px 14px 36px; }
+  .card { padding: 36px 20px; border-radius: var(--radius); }
+  .card-title { font-size: 1.7rem; }
+  .icon-circle { width: 58px; height: 58px; font-size: 26px; }
+  input { font-size: 1rem; padding: 13px 14px; }
+  .btn  { font-size: 1rem; padding: 14px; }
+  .form-group { margin-bottom: 14px; }
+}
+@media (max-width: 360px) {
+  .card { padding: 28px 14px; }
+  .card-title { font-size: 1.5rem; }
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-brand"><span>☕</span> Borgol</div>
+  <div class="nav-right">
+    <a href="/login.html" class="nav-out-link">Sign In</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="card">
+
+    <div class="card-header">
+      <div class="icon-circle">☕</div>
+      <div class="card-title">Create Account</div>
+      <div class="card-sub">Borgol Coffee Platform</div>
+      <div style="margin-top:10px;">
+        <span class="service-badge">
+          <span class="dot"></span>
+          Auth via SOAP Service
+        </span>
+      </div>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <form id="registerForm" autocomplete="off">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input id="username" type="text" placeholder="coffee_master" required/>
+      </div>
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input id="email" type="email" placeholder="you@borgol.mn" required/>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="At least 6 characters" required/>
+        <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+      </div>
+      <div class="form-group" style="margin-bottom:28px;">
+        <label for="bio">Short Bio <span style="color:var(--caramel-lt);font-weight:400;">(optional)</span></label>
+        <input id="bio" type="text" placeholder="Espresso enthusiast from Ulaanbaatar"/>
+      </div>
+      <button type="submit" class="btn" id="submitBtn">Create Account</button>
+    </form>
+
+    <div class="divider"><span>or</span></div>
+
+    <div class="footer-link">
+      Already have an account? <a href="/login.html">Sign in</a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const JSON_BASE = window.location.origin;
+
+document.getElementById('password').addEventListener('input', function () {
+  const v = this.value;
+  let score = 0;
+  if (v.length >= 6)  score++;
+  if (v.length >= 10) score++;
+  if (/[A-Z]/.test(v)) score++;
+  if (/[0-9]/.test(v)) score++;
+  if (/[^A-Za-z0-9]/.test(v)) score++;
+  const fill  = document.getElementById('strengthFill');
+  const pct   = (score / 5) * 100;
+  const color = score <= 1 ? '#B5321E' : score <= 3 ? '#E8A030' : '#2D6A4F';
+  fill.style.width      = pct + '%';
+  fill.style.background = color;
+});
+
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn   = document.getElementById('submitBtn');
+  const alert = document.getElementById('alert');
+
+  const username = document.getElementById('username').value.trim();
+  const email    = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const bio      = document.getElementById('bio').value.trim();
+
+  alert.className = 'alert';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-spinner"></span> Registering via SOAP…';
+
+  try {
+    const res = await fetch(`${JSON_BASE}/api/soap/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Registration failed');
+    }
+
+    if (data.token) {
+      localStorage.setItem('borgol_token',    data.token);
+      localStorage.setItem('borgol_userId',   data.userId  || '');
+      localStorage.setItem('borgol_username', data.username || username);
+    }
+
+    if (bio && data.token) {
+      await fetch(`${JSON_BASE}/api/users/me`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${data.token}`
+        },
+        body: JSON.stringify({ bio })
+      });
+    }
+
+    alert.textContent = '✓ Account created! Redirecting to your profile…';
+    alert.className   = 'alert alert-success';
+    btn.innerHTML     = '✓ Success';
+
+    setTimeout(() => { window.location.href = '/profile.html'; }, 1400);
+
+  } catch (err) {
+    alert.textContent = '✗ ' + err.message;
+    alert.className   = 'alert alert-error';
+    btn.disabled      = false;
+    btn.innerHTML     = 'Create Account';
+  }
+});
+</script>
+</body>
+</html>

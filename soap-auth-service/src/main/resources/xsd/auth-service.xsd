@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://num.edu.mn/soapauth"
+           targetNamespace="http://num.edu.mn/soapauth"
+           elementFormDefault="qualified">
+
+    <!-- ══════════════════════════════════════════
+         RegisterUser operation
+         ══════════════════════════════════════════ -->
+    <xs:element name="RegisterUserRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="username" type="xs:string"/>
+                <xs:element name="email"    type="xs:string"/>
+                <xs:element name="password" type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="RegisterUserResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="success" type="xs:boolean"/>
+                <xs:element name="message" type="xs:string"/>
+                <xs:element name="userId"  type="xs:int" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- ══════════════════════════════════════════
+         LoginUser operation
+         ══════════════════════════════════════════ -->
+    <xs:element name="LoginUserRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="email"    type="xs:string"/>
+                <xs:element name="password" type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="LoginUserResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="success"  type="xs:boolean"/>
+                <xs:element name="token"    type="xs:string"  minOccurs="0"/>
+                <xs:element name="userId"   type="xs:int"     minOccurs="0"/>
+                <xs:element name="username" type="xs:string"  minOccurs="0"/>
+                <xs:element name="message"  type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- ══════════════════════════════════════════
+         ValidateToken operation
+         ══════════════════════════════════════════ -->
+    <xs:element name="ValidateTokenRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="token" type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="ValidateTokenResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="valid"    type="xs:boolean"/>
+                <xs:element name="userId"   type="xs:int"    minOccurs="0"/>
+                <xs:element name="username" type="xs:string" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

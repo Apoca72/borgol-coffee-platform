@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Profile – Borgol Coffee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --espresso  : #0C0400;
+  --roast     : #2B1005;
+  --caramel   : #A8621E;
+  --caramel-lt: #CB8840;
+  --gold      : #E8A030;
+  --amber     : #F5C060;
+  --cream     : #F6E8CC;
+  --milk      : #FDFAF3;
+  --surface   : #FFFEF8;
+  --border    : #EDDBBA;
+  --muted     : #8A7054;
+  --text      : #180F08;
+  --success   : #2D6A4F;
+  --error     : #B5321E;
+  --shadow    : 0 2px 16px rgba(12,4,0,.08);
+  --shadow-md : 0 6px 30px rgba(12,4,0,.13);
+  --shadow-lg : 0 16px 56px rgba(12,4,0,.18);
+  --radius    : 14px;
+  --radius-lg : 20px;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans : 'DM Sans', -apple-system, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { min-height: 100%; background: var(--milk); color: var(--text); font-family: var(--font-sans); overflow-x: hidden; }
+
+@keyframes slideDown { from { opacity:0; transform:translateY(-14px) } to { opacity:1; transform:none } }
+@keyframes fadeUp    { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:none } }
+@keyframes spin      { to { transform:rotate(360deg) } }
+@keyframes pulse     { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ── Navbar ───────────────────────────────────────────── */
+.navbar {
+  background: linear-gradient(135deg, var(--espresso) 0%, #1A0800 100%);
+  height: 62px; display: flex; align-items: center;
+  padding: 0 28px; gap: 16px;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  box-shadow: 0 2px 24px rgba(0,0,0,.45);
+  animation: slideDown .4s ease;
+}
+.nav-brand {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-serif); font-size: 19px; font-weight: 700;
+  color: #fff; cursor: pointer; text-decoration: none;
+}
+.nav-brand span { font-size: 24px; }
+.nav-links { display: flex; gap: 4px; flex: 1; justify-content: center; }
+.nav-link {
+  padding: 8px 14px; border-radius: 8px;
+  font-size: 13.5px; font-weight: 600;
+  color: rgba(255,255,255,.7);
+  transition: .2s; border: none; background: none; cursor: pointer;
+  text-decoration: none;
+}
+.nav-link:hover { color: #fff; background: rgba(255,255,255,.1); }
+.nav-link.active { color: var(--amber); background: rgba(232,160,48,.15); }
+.nav-right { display: flex; align-items: center; gap: 8px; }
+.btn-logout {
+  padding: 7px 16px; border-radius: 20px;
+  font-size: 13px; font-weight: 600;
+  color: rgba(255,255,255,.75); background: none;
+  border: 1.5px solid rgba(255,255,255,.25);
+  cursor: pointer; font-family: inherit; transition: .2s;
+}
+.btn-logout:hover { background: rgba(255,255,255,.1); color: #fff; border-color: rgba(255,255,255,.5); }
+
+/* ── Hamburger ────────────────────────────────────────── */
+.hamburger {
+  display: none; border: none; background: none;
+  color: rgba(255,255,255,.9); font-size: 24px;
+  cursor: pointer; padding: 4px; line-height: 1;
+}
+
+/* ── Mobile overlay nav ───────────────────────────────── */
+.mobile-overlay {
+  display: none; position: fixed; inset: 0;
+  background: linear-gradient(160deg, var(--espresso), #1E0A02);
+  z-index: 500; flex-direction: column; padding: 20px 24px; overflow-y: auto;
+}
+.mobile-overlay.open { display: flex; }
+.mobile-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px;
+}
+.mobile-brand { font-family: var(--font-serif); font-size: 20px; color: #fff; display: flex; align-items: center; gap: 8px; }
+.mobile-close {
+  border: none; background: rgba(255,255,255,.1); color: #fff;
+  width: 40px; height: 40px; border-radius: 10px; font-size: 20px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.mobile-nav-link {
+  padding: 15px 8px; font-size: 17px; font-weight: 600;
+  color: rgba(255,255,255,.8); border-radius: 10px;
+  border: none; background: none; text-align: left;
+  cursor: pointer; width: 100%; transition: .2s; display: block;
+}
+.mobile-nav-link:hover { background: rgba(255,255,255,.08); color: #fff; padding-left: 14px; }
+.mobile-divider { border: none; border-top: 1px solid rgba(255,255,255,.1); margin: 10px 0; }
+
+/* ── Page ─────────────────────────────────────────────── */
+.page {
+  max-width: 900px; margin: 0 auto;
+  padding: 90px 24px 60px;
+  animation: fadeUp .5s ease both;
+}
+
+/* ── States ───────────────────────────────────────────── */
+.state-panel {
+  text-align: center; padding: 80px 24px;
+  font-family: var(--font-serif); font-size: 1.4rem; color: var(--muted);
+}
+.state-panel .icon { font-size: 3rem; margin-bottom: 16px; }
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border); border-top-color: var(--caramel);
+  border-radius: 50%; animation: spin .8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+/* ── Profile header ───────────────────────────────────── */
+.profile-header {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px 40px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-md);
+  display: flex; gap: 28px; align-items: flex-start;
+}
+.avatar-ring {
+  flex-shrink: 0; position: relative;
+  width: 88px; height: 88px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--caramel), var(--caramel-lt));
+  padding: 3px; cursor: pointer;
+  box-shadow: 0 0 0 4px rgba(168,98,30,.12), 0 8px 24px rgba(168,98,30,.2);
+  transition: box-shadow .2s;
+}
+.avatar-ring:hover { box-shadow: 0 0 0 4px rgba(168,98,30,.25), 0 8px 28px rgba(168,98,30,.35); }
+.avatar-inner {
+  width: 100%; height: 100%; border-radius: 50%;
+  background: var(--cream); overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-serif); font-size: 2.2rem; font-weight: 700;
+  color: var(--caramel);
+}
+.avatar-inner img {
+  width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+}
+.avatar-overlay {
+  position: absolute; inset: 3px; border-radius: 50%;
+  background: rgba(12,4,0,.45); display: flex;
+  align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .2s; pointer-events: none;
+  font-size: 20px;
+}
+.avatar-ring:hover .avatar-overlay { opacity: 1; }
+.avatar-upload-hint {
+  font-size: .68rem; color: var(--muted); margin-top: 5px;
+  text-align: center; width: 88px; flex-shrink: 0;
+}
+.avatar-wrap { display: flex; flex-direction: column; align-items: center; gap: 0; flex-shrink: 0; }
+.profile-info { flex: 1; min-width: 0; }
+.profile-name {
+  font-family: var(--font-serif);
+  font-size: 2rem; font-weight: 700; color: var(--roast); line-height: 1.1;
+}
+.profile-email { color: var(--muted); font-size: .9rem; margin-top: 4px; }
+.profile-meta  { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.meta-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 12px; border-radius: 20px;
+  background: var(--cream); border: 1px solid var(--border);
+  font-size: .75rem; color: var(--muted);
+}
+.meta-badge.gold { color: var(--caramel); border-color: rgba(168,98,30,.25); background: rgba(232,160,48,.08); }
+.edit-btn {
+  flex-shrink: 0; padding: 9px 20px;
+  background: none; border: 1.5px solid var(--border);
+  border-radius: var(--radius); color: var(--caramel);
+  font-family: var(--font-sans); font-size: .85rem; font-weight: 600;
+  cursor: pointer; transition: all .2s; align-self: flex-start;
+}
+.edit-btn:hover { background: rgba(168,98,30,.06); border-color: var(--caramel); }
+
+/* ── Stats row ────────────────────────────────────────── */
+.stats-row {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  margin-bottom: 20px; border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.stat-cell {
+  background: var(--surface); padding: 20px; text-align: center;
+}
+.stat-num {
+  font-family: var(--font-serif);
+  font-size: 1.9rem; color: var(--caramel); font-weight: 700;
+}
+.stat-lbl {
+  font-size: .72rem; color: var(--muted);
+  letter-spacing: .06em; text-transform: uppercase; margin-top: 2px;
+}
+
+/* ── Grid ─────────────────────────────────────────────── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+/* ── Cards ────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px;
+  box-shadow: var(--shadow);
+}
+.card-title {
+  font-family: var(--font-serif);
+  font-size: 1.1rem; font-weight: 700;
+  color: var(--roast); margin-bottom: 20px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ── Field rows ───────────────────────────────────────── */
+.field-row { margin-bottom: 18px; }
+.field-label {
+  font-size: .72rem; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 5px;
+}
+.field-value { font-size: .95rem; color: var(--text); line-height: 1.5; }
+.field-value.empty { color: rgba(138,112,84,.5); font-style: italic; }
+
+.edit-input {
+  width: 100%; padding: 10px 13px;
+  background: var(--milk); border: 1.5px solid var(--border);
+  border-radius: 10px; color: var(--text);
+  font-family: var(--font-sans); font-size: .9rem;
+  outline: none; transition: all .2s; display: none;
+}
+.edit-input:focus {
+  border-color: var(--caramel); background: #fff;
+  box-shadow: 0 0 0 3px rgba(168,98,30,.12);
+}
+textarea.edit-input { resize: vertical; min-height: 80px; }
+select.edit-input { cursor: pointer; }
+
+.edit-mode .field-value { display: none; }
+.edit-mode .edit-input  { display: block; }
+
+/* ── Save/cancel row ──────────────────────────────────── */
+.save-row { margin-top: 20px; display: none; gap: 10px; }
+.edit-mode .save-row { display: flex; }
+
+/* ── Hashtag chips ────────────────────────────────────── */
+.hashtag-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 20px;
+  background: var(--cream); border: 1px solid var(--border);
+  font-size: .78rem; font-weight: 600; color: var(--caramel);
+  cursor: pointer; transition: .2s;
+}
+.hashtag-chip:hover { background: rgba(168,98,30,.12); border-color: var(--caramel); }
+
+/* ── Profile tabs ─────────────────────────────────────── */
+.profile-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
+.profile-tab { padding: 10px 20px; border: none; background: none; font-size: .875rem; font-weight: 600;
+  color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; transition: .2s; }
+.profile-tab.active { color: var(--roast); border-bottom-color: var(--caramel); }
+.profile-tab:hover:not(.active) { color: var(--roast); }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* ── Saved recipe mini-cards ──────────────────────────── */
+.saved-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.saved-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px; cursor: pointer; transition: .2s; }
+.saved-card:hover { border-color: var(--caramel); box-shadow: var(--shadow); transform: translateY(-2px); }
+.saved-card-title { font-family: var(--font-serif); font-size: .95rem; font-weight: 700; color: var(--roast); margin-bottom: 4px; }
+.saved-card-meta { font-size: .75rem; color: var(--muted); }
+.saved-card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.saved-tag { padding: 2px 7px; border-radius: 8px; font-size: .65rem; font-weight: 700;
+  background: var(--cream); color: var(--muted); text-transform: uppercase; }
+.btn-save {
+  flex: 1; padding: 10px;
+  background: linear-gradient(135deg, var(--caramel), var(--caramel-lt));
+  border: none; border-radius: var(--radius);
+  color: #fff; font-family: var(--font-sans);
+  font-size: .875rem; font-weight: 700; cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  box-shadow: 0 4px 14px rgba(168,98,30,.25);
+}
+.btn-save:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(168,98,30,.35); }
+.btn-cancel {
+  padding: 10px 18px; background: none;
+  border: 1.5px solid var(--border); border-radius: var(--radius);
+  color: var(--muted); font-family: var(--font-sans);
+  font-size: .875rem; cursor: pointer; transition: all .2s;
+}
+.btn-cancel:hover { color: var(--text); border-color: rgba(138,112,84,.5); }
+
+/* ── SOA Auth Flow card ───────────────────────────────── */
+.flow-step {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.flow-step:last-child { border-bottom: none; }
+.step-num {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  background: var(--cream); border: 1.5px solid var(--border);
+  color: var(--caramel); font-size: .72rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.step-text { font-size: .83rem; color: var(--muted); line-height: 1.45; padding-top: 3px; }
+.step-text strong { color: var(--text); }
+
+.token-box {
+  margin-top: 18px; padding: 14px;
+  background: var(--cream); border-radius: 10px; border: 1px solid var(--border);
+}
+.token-box-label { font-size: .7rem; color: var(--muted); letter-spacing: .07em; text-transform: uppercase; margin-bottom: 6px; font-weight: 700; }
+.token-preview   { font-size: .68rem; color: var(--caramel); word-break: break-all; line-height: 1.5; }
+.token-source    { margin-top: 6px; font-size: .7rem; color: var(--muted); }
+.token-source span { color: var(--caramel); font-weight: 600; }
+
+/* ── Toast ────────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 28px; right: 28px; z-index: 999;
+  padding: 12px 20px; border-radius: var(--radius);
+  font-size: .875rem; font-weight: 600;
+  pointer-events: none; transition: all .35s cubic-bezier(.16,1,.3,1);
+  transform: translateY(16px); opacity: 0; box-shadow: var(--shadow-md);
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { background: rgba(45,106,79,.1); border: 1px solid rgba(45,106,79,.3); color: var(--success); }
+.toast.error   { background: rgba(181,50,30,.1); border: 1px solid rgba(181,50,30,.3); color: var(--error); }
+
+/* ── SOA info strip ───────────────────────────────────── */
+.soa-strip {
+  background: var(--cream); border-bottom: 1px solid var(--border);
+  padding: 6px 28px; font-size: .7rem; color: var(--muted);
+  display: flex; align-items: center; gap: 6px;
+  overflow-x: auto; white-space: nowrap;
+  position: fixed; top: 62px; left: 0; right: 0; z-index: 100;
+}
+.soa-strip .n {
+  padding: 2px 8px; border-radius: 10px;
+  background: rgba(168,98,30,.1); border: 1px solid rgba(168,98,30,.2);
+  color: var(--caramel); font-weight: 600; font-size: .66rem;
+}
+.soa-strip .arr { color: rgba(168,98,30,.4); }
+.soa-strip .ok  { color: var(--success); font-weight: 600; }
+
+/* ── Mobile ───────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .navbar { padding: 0 16px; height: 56px; }
+  .nav-links { display: none; }
+  .hamburger { display: block; margin-left: auto; }
+  .btn-logout { display: none; }
+
+  .soa-strip { top: 56px; padding: 5px 14px; font-size: .62rem; }
+  .page { padding: 88px 14px 48px; }
+
+  .profile-header {
+    flex-direction: column; align-items: center;
+    text-align: center; padding: 24px 18px; gap: 16px;
+  }
+  .profile-meta { justify-content: center; }
+  .edit-btn { width: 100%; text-align: center; align-self: stretch; }
+  .avatar-ring { width: 76px; height: 76px; }
+  .avatar-inner { font-size: 1.9rem; }
+  .avatar-wrap { width: 76px; }
+  .avatar-upload-hint { width: 100%; }
+  .profile-name { font-size: 1.6rem; }
+
+  .stats-row { margin-bottom: 16px; }
+  .stat-cell { padding: 14px 8px; }
+  .stat-num  { font-size: 1.5rem; }
+  .stat-lbl  { font-size: .65rem; }
+
+  .grid-2 { grid-template-columns: 1fr; gap: 14px; }
+  .card { padding: 20px 16px; }
+
+  .save-row { flex-direction: column; }
+  .toast { bottom: 16px; right: 12px; left: 12px; text-align: center; }
+
+  .state-panel { padding: 60px 20px; font-size: 1.2rem; }
+}
+@media (max-width: 360px) {
+  .page { padding: 88px 10px 40px; }
+  .profile-name { font-size: 1.4rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <a href="/index.html" class="nav-brand"><span>☕</span> Borgol</a>
+  <div class="nav-links">
+    <a href="/index.html" class="nav-link">Explore</a>
+    <a href="/profile.html" class="nav-link active">Profile</a>
+  </div>
+  <div class="nav-right">
+    <button class="btn-logout" id="logoutBtn">Sign Out</button>
+  </div>
+  <button class="hamburger" id="hamburgerBtn">☰</button>
+</nav>
+
+<!-- Mobile overlay -->
+<div class="mobile-overlay" id="mobileOverlay">
+  <div class="mobile-header">
+    <div class="mobile-brand"><span>☕</span> Borgol</div>
+    <button class="mobile-close" id="mobileClose">✕</button>
+  </div>
+  <button class="mobile-nav-link" onclick="window.location='/index.html'">☕ Explore</button>
+  <button class="mobile-nav-link" onclick="window.location='/profile.html'">👤 Profile</button>
+  <hr class="mobile-divider"/>
+  <button class="mobile-nav-link" id="mobileLogout">↩ Sign Out</button>
+</div>
+
+<!-- SOA flow strip -->
+<div class="soa-strip" id="soaStrip" style="display:none;">
+  <span class="n">Frontend</span><span class="arr">→</span>
+  <span class="n">GET /api/users/:id</span><span class="arr">→</span>
+  <span class="n">JSON Service</span><span class="arr">→</span>
+  <span class="n">SOAP ValidateToken</span><span class="arr">→</span>
+  <span class="ok" id="soaStatus">⟳ Validating…</span>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Page content -->
+<div class="page" id="page" style="display:none;">
+
+  <!-- Hidden file input -->
+  <input type="file" id="avatarFileInput" accept="image/*" style="display:none"/>
+
+  <!-- Profile header -->
+  <div class="profile-header">
+    <div class="avatar-wrap">
+      <div class="avatar-ring" id="avatarRing" onclick="document.getElementById('avatarFileInput').click()">
+        <div class="avatar-inner" id="avatarIcon">C</div>
+        <div class="avatar-overlay">📷</div>
+      </div>
+      <div class="avatar-upload-hint">Tap to change</div>
+    </div>
+    <div class="profile-info">
+      <div class="profile-name"  id="profileName">—</div>
+      <div class="profile-email" id="profileEmail">—</div>
+      <div class="profile-meta"  id="profileMeta"></div>
+    </div>
+    <button class="edit-btn" id="editToggleBtn" onclick="toggleEdit()">✎ Edit Profile</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-cell">
+      <div class="stat-num" id="statRecipes">0</div>
+      <div class="stat-lbl">Recipes</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num" id="statFollowers">0</div>
+      <div class="stat-lbl">Followers</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num" id="statFollowing">0</div>
+      <div class="stat-lbl">Following</div>
+    </div>
+  </div>
+
+  <!-- Profile Tabs -->
+  <div class="profile-tabs">
+    <button class="profile-tab active" onclick="switchTab('tab-profile',this)">👤 Profile</button>
+    <button class="profile-tab" onclick="switchTab('tab-saved',this)">🔖 Saved</button>
+    <button class="profile-tab" onclick="switchTab('tab-hashtags',this)">🏷️ Hashtags</button>
+    <button class="profile-tab" onclick="switchTab('tab-soa',this)">🔐 Auth</button>
+  </div>
+
+  <!-- Tab: Profile details + edit -->
+  <div class="tab-pane active" id="tab-profile">
+    <div class="grid-2">
+      <div class="card" id="editCard">
+        <div class="card-title">👤 Profile Details</div>
+        <div class="field-row">
+          <div class="field-label">Bio</div>
+          <div class="field-value" id="bioValue"></div>
+          <textarea class="edit-input" id="bioInput" placeholder="Tell your coffee story…"></textarea>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Phone</div>
+          <div class="field-value" id="phoneValue"></div>
+          <input class="edit-input" id="phoneInput" type="tel" placeholder="+976 9911 0000"/>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Profile Photo</div>
+          <div class="field-value" id="avatarValue">Click the photo above to change</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Expertise Level</div>
+          <div class="field-value" id="expertiseValue"></div>
+          <select class="edit-input" id="expertiseInput">
+            <option value="BEGINNER">Beginner</option>
+            <option value="ENTHUSIAST">Enthusiast</option>
+            <option value="BARISTA">Barista</option>
+            <option value="EXPERT">Expert</option>
+          </select>
+        </div>
+        <div class="save-row">
+          <button class="btn-save" onclick="saveProfile()">Save Changes</button>
+          <button class="btn-cancel" onclick="cancelEdit()">Cancel</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏷️ Flavor Preferences</div>
+        <div id="flavorPrefsDisplay" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
+        <div class="field-label" style="margin-bottom:8px">Add a flavor tag</div>
+        <div style="display:flex;gap:8px">
+          <input id="newFlavorInput" type="text" placeholder="e.g. fruity, chocolate…"
+            style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:.875rem;outline:none;font-family:inherit"
+            onkeydown="if(event.key==='Enter')addFlavorTag()"/>
+          <button class="btn-save" style="padding:9px 16px;flex-shrink:0" onclick="addFlavorTag()">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Saved recipes -->
+  <div class="tab-pane" id="tab-saved">
+    <div class="card" style="padding:20px">
+      <div class="card-title">🔖 Saved Recipes</div>
+      <div id="savedRecipesGrid"><div style="text-align:center;padding:32px;color:var(--muted)">Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- Tab: Followed hashtags -->
+  <div class="tab-pane" id="tab-hashtags">
+    <div class="card" style="padding:20px">
+      <div class="card-title">🏷️ Followed Hashtags</div>
+      <div id="followedHashtags" style="display:flex;flex-wrap:wrap;gap:8px;min-height:40px"></div>
+      <div style="margin-top:16px;display:flex;gap:8px">
+        <input id="newHashtagInput" type="text" placeholder="Follow a hashtag… e.g. fruity"
+          style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:.875rem;outline:none;font-family:inherit"
+          onkeydown="if(event.key==='Enter')followNewHashtag()"/>
+        <button class="btn-save" style="padding:9px 16px;flex-shrink:0" onclick="followNewHashtag()">+ Follow</button>
+      </div>
+    </div>
+    <div class="card" style="padding:20px;margin-top:14px">
+      <div class="card-title">🔥 Trending Hashtags</div>
+      <div id="trendingHashtags" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+  </div>
+
+  <!-- Tab: SOA Auth Flow -->
+  <div class="tab-pane" id="tab-soa">
+    <div class="card">
+      <div class="card-title">🔐 SOA Auth Flow</div>
+      <div class="flow-step"><div class="step-num">1</div><div class="step-text"><strong>Frontend</strong> sends request with Bearer token</div></div>
+      <div class="flow-step"><div class="step-num">2</div><div class="step-text"><strong>JSON Service</strong> receives GET /api/users/:id</div></div>
+      <div class="flow-step"><div class="step-num">3</div><div class="step-text"><strong>Middleware</strong> calls SOAP ValidateToken</div></div>
+      <div class="flow-step"><div class="step-num">4</div><div class="step-text"><strong>SOAP Service</strong> verifies JWT → returns valid + userId</div></div>
+      <div class="flow-step"><div class="step-num">5</div><div class="step-text"><strong>JSON Service</strong> fetches profile from DB → returns JSON</div></div>
+      <div class="token-box">
+        <div class="token-box-label">Current Token (SOAP-issued)</div>
+        <div class="token-preview" id="tokenPreview">—</div>
+        <div class="token-source">Source: <span id="tokenSource">—</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Loading -->
+<div id="loadingState" class="state-panel">
+  <div class="spinner"></div>
+  <div>Loading your profile…</div>
+  <div style="font-size:.8rem;margin-top:8px;color:var(--muted);">Validating token via SOAP service</div>
+</div>
+
+<!-- Not authenticated -->
+<div id="authRequired" class="state-panel" style="display:none;">
+  <div class="icon">🔒</div>
+  <div>Authentication Required</div>
+  <div style="font-size:.85rem;font-family:var(--font-sans);margin-top:12px;color:var(--muted);">
+    Please <a href="/login.html" style="color:var(--caramel);font-weight:600;">sign in</a> to view your profile.
+  </div>
+</div>
+
+<script>
+const JSON_BASE = window.location.origin;
+let userData  = null;
+let isEditing = false;
+
+// ── Image compression ────────────────────────────────────────────────────────
+function compressImage(file, maxPx = 240, quality = 0.75) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+        const w = Math.round(img.width  * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width  = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function setAvatar(dataUrl) {
+  const inner = document.getElementById('avatarIcon');
+  inner.innerHTML = dataUrl
+    ? `<img src="${dataUrl}" alt="avatar"/>`
+    : (userData ? (userData.username || 'U').charAt(0).toUpperCase() : 'U');
+}
+
+// ── File picker handler ───────────────────────────────────────────────────────
+document.getElementById('avatarFileInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('Please select an image file', 'error'); return; }
+
+  const hint = document.querySelector('.avatar-upload-hint');
+  hint.textContent = 'Compressing…';
+
+  try {
+    const compressed = await compressImage(file);
+    const kb = Math.round((compressed.length * 3) / 4 / 1024);
+    localStorage.setItem('borgol_avatar', compressed);
+    setAvatar(compressed);
+    hint.textContent = `${kb} KB · saved`;
+    setTimeout(() => { hint.textContent = 'Tap to change'; }, 2500);
+
+    // Persist to server
+    const token = localStorage.getItem('borgol_token');
+    if (token) {
+      fetch(`${JSON_BASE}/api/users/me`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ avatarUrl: compressed })
+      }).catch(() => {}); // best-effort; avatar already saved locally
+    }
+    showToast('✓ Photo updated', 'success');
+  } catch (err) {
+    hint.textContent = 'Tap to change';
+    showToast('✗ Failed to process image', 'error');
+  }
+  e.target.value = ''; // reset so same file can be re-selected
+});
+
+// ── Mobile nav ──────────────────────────────────────────────────────────────
+document.getElementById('hamburgerBtn').addEventListener('click', () => {
+  document.getElementById('mobileOverlay').classList.add('open');
+});
+document.getElementById('mobileClose').addEventListener('click', () => {
+  document.getElementById('mobileOverlay').classList.remove('open');
+});
+document.getElementById('mobileLogout').addEventListener('click', logout);
+
+// ── Init ────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  const token    = localStorage.getItem('borgol_token');
+  const token_   = token;
+
+  if (!token) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('authRequired').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('soaStrip').style.display = 'flex';
+  document.getElementById('tokenPreview').textContent =
+    token.length > 80 ? token.substring(0, 80) + '…' : token;
+  document.getElementById('tokenSource').textContent =
+    localStorage.getItem('borgol_source') || 'SOAP Auth Service';
+
+  try {
+    const res = await fetch(`${JSON_BASE}/api/auth/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (res.status === 401) {
+      document.getElementById('soaStatus').textContent = '✗ Token invalid';
+      document.getElementById('soaStatus').style.color = 'var(--error)';
+      localStorage.clear();
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('authRequired').style.display = 'block';
+      return;
+    }
+
+    userData = await res.json();
+    document.getElementById('soaStatus').textContent = '✓ Token validated by SOAP';
+    document.getElementById('soaStatus').style.color = 'var(--success)';
+
+    renderProfile(userData);
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('page').style.display         = 'block';
+
+  } catch (err) {
+    document.getElementById('soaStatus').textContent = '⚠ SOAP unavailable (fallback)';
+    document.getElementById('soaStatus').style.color = 'var(--gold)';
+    try {
+      const res2 = await fetch(`${JSON_BASE}/api/auth/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      userData = await res2.json();
+      renderProfile(userData);
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('page').style.display         = 'block';
+    } catch (e2) {
+      showToast('Failed to load profile: ' + e2.message, 'error');
+      document.getElementById('loadingState').innerHTML =
+        '<div style="color:var(--error)">Failed to load profile</div>';
+    }
+  }
+});
+
+// ── Render ──────────────────────────────────────────────────────────────────
+function renderProfile(u) {
+  const initial = (u.username || 'U').charAt(0).toUpperCase();
+  // Avatar: prefer locally stored compressed image, then server avatarUrl
+  const localAvatar = localStorage.getItem('borgol_avatar');
+  const displayAvatar = localAvatar || u.avatarUrl || null;
+  setAvatar(displayAvatar || '');
+  if (!displayAvatar) document.getElementById('avatarIcon').textContent = initial;
+
+  document.getElementById('profileName').textContent  = u.username || '—';
+  document.getElementById('profileEmail').textContent = u.email    || '—';
+
+  const meta = document.getElementById('profileMeta');
+  meta.innerHTML = '';
+  if (u.expertiseLevel) {
+    const expertEmoji = { BEGINNER:'🌱', ENTHUSIAST:'☕', BARISTA:'🏅', EXPERT:'⭐' };
+    meta.innerHTML += `<span class="meta-badge gold">
+      ${expertEmoji[u.expertiseLevel] || '☕'} ${u.expertiseLevel}
+    </span>`;
+  }
+  if (u.createdAt) {
+    meta.innerHTML += `<span class="meta-badge">📅 Since ${new Date(u.createdAt).getFullYear()}</span>`;
+  }
+
+  document.getElementById('statRecipes').textContent   = u.recipeCount    || 0;
+  document.getElementById('statFollowers').textContent  = u.followerCount  || 0;
+  document.getElementById('statFollowing').textContent  = u.followingCount || 0;
+
+  const storedPhone = localStorage.getItem('borgol_phone') || '';
+  setFieldValue('bio',       u.bio        || '');
+  setFieldValue('phone',     storedPhone);
+  setFieldValue('expertise', u.expertiseLevel || 'ENTHUSIAST');
+
+  document.getElementById('bioInput').value       = u.bio || '';
+  document.getElementById('phoneInput').value     = storedPhone;
+  document.getElementById('expertiseInput').value = u.expertiseLevel || 'ENTHUSIAST';
+  renderFlavorPrefs(u.flavorPrefs || []);
+}
+
+function setFieldValue(field, value) {
+  const el = document.getElementById(field + 'Value');
+  if (!el) return;
+  if (value) { el.textContent = value; el.classList.remove('empty'); }
+  else       { el.textContent = 'Not set'; el.classList.add('empty'); }
+}
+
+// ── Edit ────────────────────────────────────────────────────────────────────
+function toggleEdit() {
+  isEditing = !isEditing;
+  document.getElementById('editCard').classList.toggle('edit-mode', isEditing);
+  document.getElementById('editToggleBtn').textContent = isEditing ? '← Cancel' : '✎ Edit Profile';
+}
+function cancelEdit() {
+  isEditing = false;
+  document.getElementById('editCard').classList.remove('edit-mode');
+  document.getElementById('editToggleBtn').textContent = '✎ Edit Profile';
+  if (userData) renderProfile(userData);
+}
+
+async function saveProfile() {
+  const token = localStorage.getItem('borgol_token');
+  if (!token) { showToast('Not authenticated', 'error'); return; }
+
+  const bio            = document.getElementById('bioInput').value.trim();
+  const phone          = document.getElementById('phoneInput').value.trim();
+  const expertiseLevel = document.getElementById('expertiseInput').value;
+  const avatarUrl      = localStorage.getItem('borgol_avatar') || userData?.avatarUrl || '';
+
+  localStorage.setItem('borgol_phone', phone);
+
+  try {
+    const res = await fetch(`${JSON_BASE}/api/users/me`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ bio, avatarUrl, expertiseLevel })
+    });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Update failed'); }
+    userData = await res.json();
+    renderProfile(userData);
+    cancelEdit();
+    showToast('✓ Profile updated', 'success');
+  } catch (err) {
+    showToast('✗ ' + err.message, 'error');
+  }
+}
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.profile-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+  if (tabId === 'tab-saved') loadSavedRecipes();
+  if (tabId === 'tab-hashtags') loadHashtags();
+}
+
+// ── Saved recipes ─────────────────────────────────────────────────────────────
+async function loadSavedRecipes() {
+  const token = localStorage.getItem('borgol_token');
+  const grid  = document.getElementById('savedRecipesGrid');
+  if (!token) { grid.innerHTML = '<div style="color:var(--muted);text-align:center;padding:24px">Sign in to see saved recipes</div>'; return; }
+  try {
+    const res = await fetch(`${JSON_BASE}/api/saved`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const recipes = await res.json();
+    if (!recipes.length) {
+      grid.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted)">No saved recipes yet. Bookmark recipes to find them here!</div>';
+      return;
+    }
+    grid.innerHTML = `<div class="saved-grid">${recipes.map(r => `
+      <div class="saved-card" onclick="window.location='/index.html'">
+        <div class="saved-card-title">${escHtml(r.title)}</div>
+        <div class="saved-card-meta">by ${escHtml(r.authorUsername||'?')} · ❤️ ${r.likesCount||0}</div>
+        ${r.flavorTags?.length ? `<div class="saved-card-tags">${r.flavorTags.slice(0,4).map(t=>`<span class="saved-tag">${t}</span>`).join('')}</div>` : ''}
+      </div>`).join('')}</div>`;
+  } catch(e) { grid.innerHTML = `<div style="color:var(--error);text-align:center;padding:24px">Failed to load: ${e.message}</div>`; }
+}
+
+// ── Hashtags ──────────────────────────────────────────────────────────────────
+async function loadHashtags() {
+  const token = localStorage.getItem('borgol_token');
+  await Promise.all([loadFollowedHashtags(token), loadTrendingHashtags()]);
+}
+
+async function loadFollowedHashtags(token) {
+  const el = document.getElementById('followedHashtags');
+  if (!token) { el.innerHTML = '<span style="color:var(--muted);font-size:.875rem">Sign in to follow hashtags</span>'; return; }
+  try {
+    const res  = await fetch(`${JSON_BASE}/api/users/me/hashtags`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const tags = await res.json();
+    if (!tags.length) { el.innerHTML = '<span style="color:var(--muted);font-size:.875rem">No hashtags followed yet</span>'; return; }
+    el.innerHTML = tags.map(t => `
+      <span class="hashtag-chip">
+        #${escHtml(t)}
+        <button onclick="unfollowHashtag('${escHtml(t)}')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.7rem;padding:0 0 0 2px" title="Unfollow">✕</button>
+      </span>`).join('');
+  } catch(e) { el.innerHTML = `<span style="color:var(--error);font-size:.875rem">Failed to load</span>`; }
+}
+
+async function loadTrendingHashtags() {
+  const el = document.getElementById('trendingHashtags');
+  try {
+    const res  = await fetch(`${JSON_BASE}/api/hashtags/trending`);
+    const tags = await res.json();
+    el.innerHTML = tags.map(t => `
+      <span class="hashtag-chip" onclick="followFromTrending('${escHtml(t.tag)}')">#${escHtml(t.tag)} <span style="font-size:.65rem;color:var(--muted)">${t.recipeCount}</span></span>`).join('');
+  } catch(e) { el.innerHTML = '<span style="color:var(--muted);font-size:.875rem">—</span>'; }
+}
+
+async function followNewHashtag() {
+  const input = document.getElementById('newHashtagInput');
+  const tag   = input.value.trim().replace(/^#+/, '').toLowerCase();
+  if (!tag) return;
+  const token = localStorage.getItem('borgol_token');
+  if (!token) { showToast('Sign in to follow hashtags', 'error'); return; }
+  try {
+    await fetch(`${JSON_BASE}/api/hashtags/${encodeURIComponent(tag)}/follow`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+    input.value = '';
+    await loadFollowedHashtags(token);
+    showToast(`Following #${tag}`, 'success');
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
+}
+
+async function unfollowHashtag(tag) {
+  const token = localStorage.getItem('borgol_token');
+  if (!token) return;
+  try {
+    await fetch(`${JSON_BASE}/api/hashtags/${encodeURIComponent(tag)}/follow`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    await loadFollowedHashtags(token);
+    showToast(`Unfollowed #${tag}`, 'success');
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
+}
+
+async function followFromTrending(tag) {
+  const token = localStorage.getItem('borgol_token');
+  if (!token) { showToast('Sign in to follow hashtags', 'error'); return; }
+  try {
+    await fetch(`${JSON_BASE}/api/hashtags/${encodeURIComponent(tag)}/follow`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+    await loadFollowedHashtags(token);
+    showToast(`Following #${tag}!`, 'success');
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
+}
+
+// ── Flavor prefs (inline add) ─────────────────────────────────────────────────
+async function addFlavorTag() {
+  const input = document.getElementById('newFlavorInput');
+  const tag   = input.value.trim().toLowerCase();
+  if (!tag) return;
+  const token = localStorage.getItem('borgol_token');
+  if (!token) { showToast('Not authenticated', 'error'); return; }
+  const current = userData?.flavorPrefs || [];
+  if (current.includes(tag)) { showToast('Already added', 'error'); return; }
+  const updated = [...current, tag];
+  try {
+    const res = await fetch(`${JSON_BASE}/api/users/me`, { method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ bio: userData?.bio||'', expertiseLevel: userData?.expertiseLevel||'BEGINNER', flavorPrefs: updated })
+    });
+    userData = await res.json();
+    renderFlavorPrefs(userData.flavorPrefs || []);
+    input.value = '';
+    showToast(`Added #${tag}`, 'success');
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
+}
+
+function renderFlavorPrefs(prefs) {
+  const el = document.getElementById('flavorPrefsDisplay');
+  if (!el) return;
+  el.innerHTML = prefs.length
+    ? prefs.map(f => `<span class="hashtag-chip" style="font-size:.72rem">#${escHtml(f)}</span>`).join('')
+    : '<span style="color:var(--muted);font-size:.875rem">No flavor preferences yet</span>';
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Logout ──────────────────────────────────────────────────────────────────
+function logout() {
+  localStorage.removeItem('borgol_token');
+  localStorage.removeItem('borgol_userId');
+  localStorage.removeItem('borgol_username');
+  localStorage.removeItem('borgol_phone');
+  window.location.href = '/login.html';
+}
+document.getElementById('logoutBtn').addEventListener('click', logout);
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = `toast ${type} show`;
+  setTimeout(() => { t.classList.remove('show'); }, 3200);
+}
+</script>
+</body>
+</html>

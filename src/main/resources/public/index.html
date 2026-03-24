@@ -124,6 +124,38 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
 .like-btn.liked{color:var(--danger)}
 .like-btn:active{transform:scale(.9)}
 .comment-count{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px}
+.save-btn{display:flex;align-items:center;gap:4px;border:none;background:none;font-size:13px;color:var(--muted);padding:5px 8px;border-radius:8px;transition:.15s;font-weight:600}
+.save-btn:hover{background:rgba(232,160,48,.12);color:var(--gold)}
+.save-btn.saved{color:var(--gold)}
+.save-btn:active{transform:scale(.9)}
+.report-btn{border:none;background:none;font-size:13px;color:var(--muted);padding:5px 8px;border-radius:8px;transition:.15s;opacity:.5}
+.report-btn:hover{background:#FFF0F0;color:var(--danger);opacity:1}
+.flavor-tag{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;background:var(--cream);color:var(--muted);text-transform:uppercase;letter-spacing:.3px;cursor:pointer;transition:.15s}
+.flavor-tag:hover{background:var(--border);color:var(--roast)}
+
+/* ── Notification bell ────────────────────────────────────────────────────── */
+.notif-wrap{position:relative}
+.notif-bell{border:none;background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);width:36px;height:36px;border-radius:50%;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s;position:relative}
+.notif-bell:hover{background:rgba(255,255,255,.2);color:#fff}
+.notif-badge{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;background:var(--danger);border-radius:10px;font-size:9px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;padding:0 3px;display:none}
+.notif-panel{position:absolute;top:calc(100% + 10px);right:0;width:340px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:400;display:none;overflow:hidden;max-height:460px;overflow-y:auto}
+.notif-panel.open{display:block;animation:scaleIn .18s ease}
+.notif-header{padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.notif-header-title{font-size:14px;font-weight:700;color:var(--roast)}
+.notif-mark-read{border:none;background:none;font-size:12px;color:var(--caramel);font-weight:600;cursor:pointer;padding:4px 8px;border-radius:6px}
+.notif-mark-read:hover{background:rgba(168,98,30,.08)}
+.notif-item{display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s}
+.notif-item:last-child{border-bottom:none}
+.notif-item:hover{background:var(--milk)}
+.notif-item.unread{background:rgba(168,98,30,.04)}
+.notif-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--caramel),var(--caramel-lt));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden}
+.notif-avatar img{width:100%;height:100%;object-fit:cover}
+.notif-msg{flex:1;min-width:0}
+.notif-text{font-size:13px;line-height:1.4;color:var(--text)}
+.notif-text strong{color:var(--roast)}
+.notif-time{font-size:11px;color:var(--muted);margin-top:2px}
+.notif-empty{padding:32px;text-align:center;color:var(--muted);font-size:13px}
+.notif-dot{width:7px;height:7px;border-radius:50%;background:var(--caramel);flex-shrink:0;margin-top:5px}
 
 /* ── Cafe card ───────────────────────────────────────────────────────────── */
 .cafe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
@@ -198,6 +230,18 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--caramel);box-shadow:0 0 0 3px rgba(168,98,30,.12);background:#fff}
 .field textarea{resize:vertical;min-height:80px}
 .field-help{font-size:11px;color:var(--muted);margin-top:4px}
+/* ── Recipe photo picker ─────────────────────────────────────────────────── */
+.photo-drop{border:2px dashed var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:.2s;background:var(--milk);position:relative}
+.photo-drop:hover,.photo-drop.drag-over{border-color:var(--caramel);background:rgba(168,98,30,.04)}
+.photo-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.photo-drop-icon{font-size:28px;margin-bottom:6px}
+.photo-drop-text{font-size:13px;color:var(--muted);font-weight:500}
+.photo-drop-sub{font-size:11px;color:var(--border);margin-top:2px}
+.photo-preview-wrap{position:relative;border-radius:12px;overflow:hidden;margin-top:10px;display:none}
+.photo-preview-wrap img{width:100%;max-height:200px;object-fit:cover;display:block;border-radius:12px}
+.photo-preview-remove{position:absolute;top:8px;right:8px;background:rgba(12,4,0,.6);color:#fff;border:none;border-radius:20px;width:28px;height:28px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.photo-or{text-align:center;font-size:11px;color:var(--muted);margin:8px 0;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.photo-compressing{font-size:11px;color:var(--caramel);margin-top:4px;display:none}
 .flavor-picker{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .flavor-opt{padding:5px 12px;border:1.5px solid var(--border);border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;background:var(--surface);color:var(--muted)}
 .flavor-opt:hover{border-color:var(--caramel-lt);color:var(--roast)}
@@ -442,6 +486,7 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
     <button class="nav-link" onclick="showPage('journal')" data-i18n="journal">📓 Journal</button>
     <button class="nav-link" onclick="showPage('learn')" data-i18n="learn">🎓 Learn</button>
     <button class="nav-link" onclick="showPage('map')" data-i18n="map">🗺️ Map</button>
+    <a class="nav-link" href="brew-timer.html" style="text-decoration:none">⏱️ Timer</a>
   </div>
   <div class="nav-right">
     <div class="search-wrap">
@@ -458,7 +503,20 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
         <span id="nav-username">User</span>
       </button>
     </div>
+    <div class="notif-wrap" id="notif-wrap" style="display:none">
+      <button class="notif-bell" id="notif-bell" onclick="toggleNotifPanel()" title="Notifications">🔔
+        <span class="notif-badge" id="notif-badge"></span>
+      </button>
+      <div class="notif-panel" id="notif-panel">
+        <div class="notif-header">
+          <div class="notif-header-title">Notifications</div>
+          <button class="notif-mark-read" onclick="markNotifsRead()">Mark all read</button>
+        </div>
+        <div id="notif-list"><div class="notif-empty">No notifications yet</div></div>
+      </div>
+    </div>
     <button class="btn-settings" onclick="openSettings()" title="Settings">⚙️</button>
+    <a id="nav-admin-link" href="admin.html" title="Admin Panel" style="display:none;align-items:center;gap:5px;padding:6px 13px;border-radius:20px;background:rgba(232,160,48,.18);border:1px solid rgba(232,160,48,.4);color:var(--amber);font-size:12px;font-weight:700;letter-spacing:.03em;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(232,160,48,.28)'" onmouseout="this.style.background='rgba(232,160,48,.18)'">⚙ Admin</a>
     <button class="hamburger" onclick="toggleMobileNav()" aria-label="Menu">☰</button>
   </div>
 </nav>
@@ -476,6 +534,7 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('journal')" data-i18n="journal">📓 Journal</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('learn')" data-i18n="learn">🎓 Learn</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('map')" data-i18n="map">🗺️ Map</button>
+  <a class="mobile-nav-link" href="brew-timer.html" style="text-decoration:none;display:block">⏱️ Brew Timer</a>
   <hr class="mobile-divider"/>
   <div id="mobile-auth-section">
     <button class="mobile-nav-link" onclick="toggleMobileNav();openModal('login-modal')" data-i18n="logIn">🔑 Log In</button>
@@ -485,6 +544,7 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
     <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('profile')" data-i18n="myProfile">👤 My Profile</button>
     <button class="mobile-nav-link" onclick="toggleMobileNav();openNewRecipeModal()" data-i18n="newRecipe">✍️ New Recipe</button>
     <button class="mobile-nav-link" onclick="toggleMobileNav();openSettings()" data-i18n="settings">⚙️ Settings</button>
+    <a id="mobile-admin-link" href="admin.html" class="mobile-nav-link" style="display:none;color:var(--amber)">⚙ Admin Panel</a>
     <button class="mobile-nav-link" style="color:#EF9A9A" onclick="toggleMobileNav();logout()" data-i18n="logOut">🚪 Log Out</button>
   </div>
 </div>
@@ -746,7 +806,23 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
         <label>Flavor Tags</label>
         <div class="flavor-picker" id="r-flavor-picker"></div>
       </div>
-      <div class="field"><label>Image URL (optional)</label><input id="r-imageurl" type="url" placeholder="https://…"/></div>
+      <div class="field">
+        <label>Photo (optional)</label>
+        <div class="photo-drop" id="r-photo-drop"
+             ondragover="recipeDragOver(event)" ondragleave="recipeDragLeave(event)" ondrop="recipeDrop(event)">
+          <input type="file" accept="image/*" id="r-photo-file" onchange="recipePhotoChosen(this)"/>
+          <div class="photo-drop-icon">📷</div>
+          <div class="photo-drop-text">Click to choose a photo or drag &amp; drop</div>
+          <div class="photo-drop-sub">JPG, PNG, WEBP — compressed automatically</div>
+        </div>
+        <div class="photo-compressing" id="r-photo-compressing">⏳ Compressing…</div>
+        <div class="photo-preview-wrap" id="r-photo-preview-wrap">
+          <img id="r-photo-preview" src="" alt="Preview"/>
+          <button class="photo-preview-remove" onclick="recipePhotoClear()" title="Remove photo">✕</button>
+        </div>
+        <div class="photo-or">or paste a URL</div>
+        <input id="r-imageurl" type="url" placeholder="https://example.com/photo.jpg" oninput="recipeUrlTyped(this)"/>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('new-recipe-modal')">Cancel</button>
@@ -1001,6 +1077,39 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
   </div>
 </div>
 
+<!-- Report -->
+<div class="modal-overlay" id="report-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title">⚑ Report Content</div>
+      <button class="modal-close" onclick="closeModal('report-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Reason</label>
+        <select id="report-reason" class="field" style="padding:10px 13px;border:1.5px solid var(--border);border-radius:10px;width:100%;font-size:14px;outline:none;background:var(--milk)">
+          <option value="">Select a reason…</option>
+          <option value="spam">Spam or misleading</option>
+          <option value="inappropriate">Inappropriate content</option>
+          <option value="harassment">Harassment or bullying</option>
+          <option value="false_info">False information</option>
+          <option value="copyright">Copyright violation</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Additional details (optional)</label>
+        <textarea id="report-desc" class="field" rows="3" placeholder="Tell us more…"
+          style="width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;resize:vertical;min-height:70px;outline:none;font-family:inherit;background:var(--milk)"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('report-modal')">Cancel</button>
+      <button class="btn btn-danger" onclick="submitReport()">Submit Report</button>
+    </div>
+  </div>
+</div>
+
 <!-- Add Equipment -->
 <div class="modal-overlay" id="add-equipment-modal">
   <div class="modal modal-sm">
@@ -1186,7 +1295,13 @@ function updateNavUser() {
     userMenu.style.display  = 'flex';
     mobileAuth.style.display = 'none';
     mobileUser.style.display = 'block';
+    document.getElementById('notif-wrap').style.display = 'block';
     document.getElementById('nav-username').textContent = ME.username;
+    // Show admin link only for the first registered user (id=1)
+    const adminLink = document.getElementById('nav-admin-link');
+    if (adminLink) adminLink.style.display = ME.id === 1 ? 'inline-flex' : 'none';
+    const mobileAdminLink = document.getElementById('mobile-admin-link');
+    if (mobileAdminLink) mobileAdminLink.style.display = ME.id === 1 ? 'block' : 'none';
     const avatarEl = document.getElementById('nav-avatar');
     if (ME.avatarUrl) {
       avatarEl.innerHTML = `<img src="${esc(ME.avatarUrl)}" alt="${ME.username[0].toUpperCase()}" onerror="this.parentElement.textContent='${ME.username[0].toUpperCase()}'"/>`;
@@ -1285,13 +1400,15 @@ function renderFeedCard(r) {
       <div class="feed-body">
         <div class="feed-title" onclick="openRecipeDetail(${r.id})">${esc(r.title)}</div>
         ${r.description ? `<div class="feed-desc">${esc(r.description).substring(0,120)}${r.description.length>120?'…':''}</div>` : ''}
-        ${r.flavorTags?.length ? `<div class="flavor-tags">${r.flavorTags.map(t=>`<span class="flavor-tag">${t.toLowerCase()}</span>`).join('')}</div>` : ''}
+        ${r.flavorTags?.length ? `<div class="flavor-tags">${r.flavorTags.map(t=>`<span class="flavor-tag" onclick="openHashtagPage('${t.toLowerCase()}')">#${t.toLowerCase()}</span>`).join('')}</div>` : ''}
       </div>
       <div class="feed-footer">
         <button class="like-btn${r.likedByCurrentUser?' liked':''}" onclick="toggleLike(${r.id},this)">
           ${r.likedByCurrentUser?'❤️':'🤍'} <span class="like-count">${r.likesCount||0}</span>
         </button>
         <span class="comment-count" onclick="openRecipeDetail(${r.id})">💬 ${r.commentCount||0}</span>
+        <button class="save-btn${r.savedByCurrentUser?' saved':''}" onclick="toggleSave(${r.id},this)" title="Save">🔖</button>
+        <button class="report-btn" onclick="openReportModal('recipe',${r.id})" title="Report">⚑</button>
         <button class="btn btn-sm btn-secondary" onclick="openRecipeDetail(${r.id})" style="margin-left:auto">View Recipe</button>
       </div>
     </div>`;
@@ -1456,13 +1573,17 @@ function renderRecipeCard(r) {
           ${r.brewTime ? `<span>⏱️ ${r.brewTime}min</span>` : ''}
           ${r.difficulty ? `<span>${diffIcon(r.difficulty)} ${cap(r.difficulty)}</span>` : ''}
         </div>
-        ${r.flavorTags?.length ? `<div class="flavor-tags">${r.flavorTags.slice(0,3).map(t=>`<span class="flavor-tag">${t.toLowerCase()}</span>`).join('')}</div>` : ''}
+        ${r.flavorTags?.length ? `<div class="flavor-tags">${r.flavorTags.slice(0,3).map(t=>`<span class="flavor-tag" onclick="event.stopPropagation();openHashtagPage('${t.toLowerCase()}')">#${t.toLowerCase()}</span>`).join('')}</div>` : ''}
       </div>
       <div class="recipe-actions" onclick="event.stopPropagation()">
         <button class="like-btn${r.likedByCurrentUser?' liked':''}" onclick="toggleLike(${r.id},this)">
           ${r.likedByCurrentUser?'❤️':'🤍'} <span class="like-count">${r.likesCount||0}</span>
         </button>
         <span class="comment-count">💬 ${r.commentCount||0}</span>
+        <button class="save-btn${r.savedByCurrentUser?' saved':''}" onclick="toggleSave(${r.id},this)" title="${r.savedByCurrentUser?'Unsave':'Save'}">
+          ${r.savedByCurrentUser?'🔖':'🔖'}<span style="font-size:11px">${r.savedByCurrentUser?'Saved':''}</span>
+        </button>
+        <button class="report-btn" onclick="openReportModal('recipe',${r.id})" title="Report">⚑</button>
       </div>
     </div>`;
 }
@@ -1532,6 +1653,10 @@ async function openRecipeDetail(id) {
           <button class="like-btn${r.likedByCurrentUser?' liked':''}" id="detail-like-btn" onclick="toggleLike(${r.id},this)">
             ${r.likedByCurrentUser?'❤️':'🤍'} <span class="like-count">${r.likesCount||0}</span> likes
           </button>
+          <button class="save-btn${r.savedByCurrentUser?' saved':''}" id="detail-save-btn" onclick="toggleSave(${r.id},this)">
+            🔖 ${r.savedByCurrentUser?'Saved':'Save'}
+          </button>
+          <button class="report-btn" style="opacity:1;margin-left:auto" onclick="openReportModal('recipe',${r.id})">⚑ Report</button>
         </div>
 
         <div class="comments-section">
@@ -1594,6 +1719,60 @@ async function toggleLike(recipeId, btn) {
   } catch (e) { toast(e.message, 'err'); }
 }
 
+// ── Recipe photo picker ───────────────────────────────────────────────────────
+function recipePhotoChosen(input) {
+  if (input.files && input.files[0]) compressRecipePhoto(input.files[0]);
+}
+function recipeDragOver(e) {
+  e.preventDefault();
+  document.getElementById('r-photo-drop').classList.add('drag-over');
+}
+function recipeDragLeave(e) {
+  document.getElementById('r-photo-drop').classList.remove('drag-over');
+}
+function recipeDrop(e) {
+  e.preventDefault();
+  document.getElementById('r-photo-drop').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) compressRecipePhoto(file);
+}
+function recipeUrlTyped(input) {
+  if (input.value.trim()) recipePhotoClear(true); // clear file pick if URL typed
+}
+function recipePhotoClear(urlOnly) {
+  if (!urlOnly) {
+    document.getElementById('r-imageurl').value = '';
+    document.getElementById('r-photo-file').value = '';
+  }
+  document.getElementById('r-photo-preview-wrap').style.display = 'none';
+  document.getElementById('r-photo-preview').src = '';
+  document.getElementById('r-photo-drop')._base64 = null;
+}
+function compressRecipePhoto(file) {
+  const compressEl = document.getElementById('r-photo-compressing');
+  compressEl.style.display = 'block';
+  document.getElementById('r-imageurl').value = ''; // clear URL field
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 900;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const base64 = canvas.toDataURL('image/jpeg', 0.78);
+      document.getElementById('r-photo-drop')._base64 = base64;
+      document.getElementById('r-photo-preview').src = base64;
+      document.getElementById('r-photo-preview-wrap').style.display = 'block';
+      compressEl.style.display = 'none';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 // ── New/Edit recipe ───────────────────────────────────────────────────────────
 function openNewRecipeModal() {
   if (!ME) { openModal('login-modal'); return; }
@@ -1607,7 +1786,7 @@ function openNewRecipeModal() {
   document.getElementById('r-difficulty').value     = 'MEDIUM';
   document.getElementById('r-ingredients').value    = '';
   document.getElementById('r-instructions').value   = '';
-  document.getElementById('r-imageurl').value       = '';
+  recipePhotoClear();
   openModal('new-recipe-modal');
 }
 
@@ -1624,7 +1803,15 @@ async function openEditRecipe(recipeId) {
     document.getElementById('r-difficulty').value     = r.difficulty || 'MEDIUM';
     document.getElementById('r-ingredients').value    = r.ingredients || '';
     document.getElementById('r-instructions').value   = r.instructions || '';
-    document.getElementById('r-imageurl').value       = r.imageUrl || '';
+    recipePhotoClear();
+    // Show existing image in preview if it's a URL (not base64)
+    if (r.imageUrl && !r.imageUrl.startsWith('data:')) {
+      document.getElementById('r-imageurl').value = r.imageUrl;
+    } else if (r.imageUrl) {
+      document.getElementById('r-photo-preview').src = r.imageUrl;
+      document.getElementById('r-photo-preview-wrap').style.display = 'block';
+      document.getElementById('r-photo-drop')._base64 = r.imageUrl;
+    }
     closeModal('recipe-detail-modal');
     openModal('new-recipe-modal');
   } catch (e) { toast(e.message, 'err'); }
@@ -1642,7 +1829,8 @@ async function saveRecipe() {
     ingredients:  document.getElementById('r-ingredients').value.trim(),
     instructions: document.getElementById('r-instructions').value.trim(),
     flavorTags:   getSelectedFlavors('r-flavor-picker'),
-    imageUrl:     document.getElementById('r-imageurl').value.trim()
+    imageUrl:     document.getElementById('r-photo-drop')._base64 ||
+                  document.getElementById('r-imageurl').value.trim()
   };
   try {
     if (id) {
@@ -2719,6 +2907,144 @@ function exportJournalCSV() {
   showToast('CSV downloaded!');
 }
 
+// ── Save (Bookmark) ────────────────────────────────────────────────────────────
+async function toggleSave(recipeId, btn) {
+  if (!ME) { openModal('login-modal'); return; }
+  try {
+    const result = await api(`/api/recipes/${recipeId}/save`, {method:'POST'});
+    document.querySelectorAll('.save-btn').forEach(b => {
+      if (b.getAttribute('onclick')?.includes(`toggleSave(${recipeId}`)) {
+        b.className = `save-btn${result.saved?' saved':''}`;
+        const isDetail = b.id === 'detail-save-btn';
+        b.innerHTML = isDetail
+          ? `🔖 ${result.saved?'Saved':'Save'}`
+          : `🔖<span style="font-size:11px">${result.saved?'Saved':''}</span>`;
+      }
+    });
+    showToast(result.saved ? '🔖 Recipe saved' : 'Removed from saved', result.saved ? 'ok' : 'info');
+  } catch(e) { showToast('✗ ' + e.message, 'err'); }
+}
+
+// ── Report modal ───────────────────────────────────────────────────────────────
+let _reportType = '', _reportId = 0;
+function openReportModal(type, id) {
+  if (!ME) { openModal('login-modal'); return; }
+  _reportType = type; _reportId = id;
+  document.getElementById('report-reason').value = '';
+  document.getElementById('report-desc').value = '';
+  openModal('report-modal');
+}
+async function submitReport() {
+  const reason = document.getElementById('report-reason').value;
+  const desc   = document.getElementById('report-desc').value;
+  if (!reason) { showToast('Please select a reason', 'err'); return; }
+  try {
+    await api('/api/report', {method:'POST', body: JSON.stringify({
+      contentType: _reportType, contentId: _reportId,
+      reason, description: desc
+    })});
+    closeModal('report-modal');
+    showToast('✓ Report submitted. Thank you.', 'ok');
+  } catch(e) { showToast('✗ ' + e.message, 'err'); }
+}
+
+// ── Notifications ──────────────────────────────────────────────────────────────
+let _notifOpen = false;
+async function toggleNotifPanel() {
+  _notifOpen = !_notifOpen;
+  document.getElementById('notif-panel').classList.toggle('open', _notifOpen);
+  if (_notifOpen) await loadNotifications();
+}
+document.addEventListener('click', e => {
+  if (_notifOpen && !document.getElementById('notif-wrap').contains(e.target)) {
+    _notifOpen = false;
+    document.getElementById('notif-panel').classList.remove('open');
+  }
+});
+async function loadNotifications() {
+  const list = document.getElementById('notif-list');
+  try {
+    const notifs = await api('/api/notifications');
+    if (!notifs.length) { list.innerHTML = '<div class="notif-empty">No notifications yet</div>'; return; }
+    list.innerHTML = notifs.map(n => `
+      <div class="notif-item${n.isRead?'':' unread'}" onclick="onNotifClick(${n.contentId},'${n.type}')">
+        <div class="notif-avatar">${n.fromAvatar ? `<img src="${esc(n.fromAvatar)}"/>` : (n.fromUsername||'?')[0].toUpperCase()}</div>
+        <div class="notif-msg">
+          <div class="notif-text"><strong>${esc(n.fromUsername||'Someone')}</strong> ${esc(n.message)}</div>
+          <div class="notif-time">${timeAgo(n.createdAt)}</div>
+        </div>
+        ${n.isRead?'':'<div class="notif-dot"></div>'}
+      </div>`).join('');
+  } catch(e) { list.innerHTML = '<div class="notif-empty">Failed to load</div>'; }
+}
+async function markNotifsRead() {
+  try {
+    await api('/api/notifications/read', {method:'POST'});
+    document.getElementById('notif-badge').style.display = 'none';
+    document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+    document.querySelectorAll('.notif-dot').forEach(el => el.remove());
+  } catch(e) {}
+}
+function onNotifClick(contentId, type) {
+  _notifOpen = false;
+  document.getElementById('notif-panel').classList.remove('open');
+  if (type === 'follow') showPage('explore');
+  else if (contentId) openRecipeDetail(contentId);
+}
+async function pollNotifCount() {
+  if (!ME) return;
+  try {
+    const {unread} = await api('/api/notifications/count');
+    const badge = document.getElementById('notif-badge');
+    if (unread > 0) {
+      badge.textContent = unread > 99 ? '99+' : unread;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch(e) {}
+}
+
+// ── Hashtag pages ──────────────────────────────────────────────────────────────
+async function openHashtagPage(tag) {
+  try {
+    const recipes = await api(`/api/hashtags/${encodeURIComponent(tag)}/recipes`);
+    const followed = ME ? (await api('/api/users/me/hashtags').catch(()=>[])) : [];
+    const isFollowing = followed.includes(tag);
+    const container = document.getElementById('recipe-detail-content');
+    document.getElementById('recipe-detail-modal').style.display = '';
+    document.querySelector('#recipe-detail-modal').classList.add('open');
+    container.innerHTML = `<div class="modal-header">
+      <div class="modal-title">#${esc(tag)}</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        ${ME ? `<button class="btn btn-sm ${isFollowing?'btn-secondary':'btn-primary'}" id="hashtag-follow-btn"
+          onclick="toggleHashtag('${esc(tag)}',this)">${isFollowing?'✓ Following':'+ Follow #'+esc(tag)}</button>` : ''}
+        <button class="modal-close" onclick="closeModal('recipe-detail-modal')">✕</button>
+      </div></div>
+      <div class="modal-body">
+        <div style="color:var(--muted);font-size:13px;margin-bottom:16px">${recipes.length} recipe${recipes.length!==1?'s':''} tagged #${esc(tag)}</div>
+        ${recipes.length ? `<div class="recipe-grid">${recipes.map(r=>buildRecipeCard(r)).join('')}</div>`
+          : `<div class="empty-state"><div class="empty-icon">🏷️</div><div class="empty-msg">No recipes with #${esc(tag)} yet</div></div>`}
+      </div>`;
+  } catch(e) { showToast('✗ ' + e.message, 'err'); }
+}
+async function toggleHashtag(tag, btn) {
+  if (!ME) { openModal('login-modal'); return; }
+  const following = btn.textContent.includes('Following');
+  try {
+    if (following) {
+      await api(`/api/hashtags/${encodeURIComponent(tag)}/follow`, {method:'DELETE'});
+      btn.className = 'btn btn-sm btn-primary';
+      btn.textContent = '+ Follow #' + tag;
+    } else {
+      await api(`/api/hashtags/${encodeURIComponent(tag)}/follow`, {method:'POST'});
+      btn.className = 'btn btn-sm btn-secondary';
+      btn.textContent = '✓ Following';
+    }
+    showToast(following ? `Unfollowed #${tag}` : `Following #${tag}!`, following ? 'info' : 'ok');
+  } catch(e) { showToast('✗ ' + e.message, 'err'); }
+}
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 (async () => {
   applyLang();
@@ -2727,6 +3053,274 @@ function exportJournalCSV() {
   await loadMe();
   updateNavUser();
   showPage(ME ? 'feed' : 'recipes');
+  if (ME) {
+    pollNotifCount();
+    setInterval(pollNotifCount, 60000); // poll every minute
+  }
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════
+     Bean — AI Coffee Assistant widget
+     ══════════════════════════════════════════════════════════════ -->
+<style>
+/* ── Bean FAB ─────────────────────────────────────────────── */
+#bean-fab {
+  position: fixed; bottom: 28px; right: 28px; z-index: 1000;
+  width: 58px; height: 58px; border-radius: 50%;
+  background: linear-gradient(135deg, #A8621E, #CB8840);
+  border: none; cursor: pointer; color: #fff; font-size: 26px;
+  box-shadow: 0 4px 20px rgba(168,98,30,.5);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .2s, box-shadow .2s;
+}
+#bean-fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(168,98,30,.65); }
+#bean-fab .bean-unread {
+  position: absolute; top: 4px; right: 4px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #e53935; border: 2px solid #fff; display: none;
+}
+
+/* ── Bean panel ───────────────────────────────────────────── */
+#bean-panel {
+  position: fixed; bottom: 96px; right: 28px; z-index: 999;
+  width: 360px; max-width: calc(100vw - 32px);
+  background: #FFFEF8; border: 1px solid #EDDBBA;
+  border-radius: 20px; box-shadow: 0 16px 56px rgba(12,4,0,.2);
+  display: flex; flex-direction: column; overflow: hidden;
+  transform-origin: bottom right;
+  animation: beanIn .22s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes beanIn { from { opacity:0; transform:scale(.85) } to { opacity:1; transform:scale(1) } }
+#bean-panel.hidden { display: none; }
+
+.bean-header {
+  background: linear-gradient(135deg, #0C0400, #1A0800);
+  padding: 14px 18px; display: flex; align-items: center; gap: 10px;
+  flex-shrink: 0;
+}
+.bean-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, #A8621E, #E8A030);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.bean-header-info { flex: 1; }
+.bean-header-name { font-family: 'Playfair Display',serif; color: #fff; font-size: 15px; font-weight: 700; }
+.bean-header-sub  { color: rgba(255,255,255,.55); font-size: 11px; margin-top: 1px; }
+.bean-close {
+  background: none; border: none; color: rgba(255,255,255,.6);
+  font-size: 20px; cursor: pointer; padding: 4px; line-height: 1;
+  transition: color .15s;
+}
+.bean-close:hover { color: #fff; }
+
+.bean-messages {
+  flex: 1; overflow-y: auto; padding: 16px;
+  display: flex; flex-direction: column; gap: 10px;
+  min-height: 280px; max-height: 380px;
+}
+.bean-msg {
+  max-width: 88%; padding: 10px 14px; border-radius: 14px;
+  font-size: .87rem; line-height: 1.55; word-break: break-word;
+}
+.bean-msg.assistant {
+  background: #F6E8CC; color: #180F08; align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+.bean-msg.user {
+  background: #A8621E; color: #fff; align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+.bean-msg.typing { opacity: .7; font-style: italic; }
+
+.bean-footer {
+  padding: 12px 14px; border-top: 1px solid #EDDBBA;
+  display: flex; gap: 8px; flex-shrink: 0;
+  background: #FFFEF8;
+}
+#bean-input {
+  flex: 1; border: 1.5px solid #EDDBBA; border-radius: 22px;
+  padding: 9px 14px; font-size: .87rem; font-family: inherit;
+  background: #fff; color: #180F08; outline: none; resize: none;
+  max-height: 90px; line-height: 1.4;
+  transition: border-color .2s;
+}
+#bean-input:focus { border-color: #A8621E; }
+#bean-send {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: #A8621E; border: none; color: #fff;
+  font-size: 16px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s;
+  align-self: flex-end;
+}
+#bean-send:hover { background: #CB8840; }
+#bean-send:disabled { opacity: .4; cursor: not-allowed; }
+</style>
+
+<!-- FAB button -->
+<button id="bean-fab" onclick="beanToggle()" title="Chat with Bean">
+  ☕
+  <span class="bean-unread" id="bean-unread"></span>
+</button>
+
+<!-- Chat panel -->
+<div id="bean-panel" class="hidden">
+  <div class="bean-header">
+    <div class="bean-avatar">☕</div>
+    <div class="bean-header-info">
+      <div class="bean-header-name">Bean</div>
+      <div class="bean-header-sub">AI Coffee Assistant</div>
+    </div>
+    <button class="bean-close" onclick="beanToggle()">×</button>
+  </div>
+  <div class="bean-messages" id="bean-messages">
+    <div class="bean-msg assistant">Hey! I'm Bean ☕ — your coffee companion. Ask me anything about brewing, recipes, or finding great cafes in Ulaanbaatar!</div>
+  </div>
+  <div class="bean-footer">
+    <textarea id="bean-input" rows="1" placeholder="Ask Bean anything…"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();beanSend()}"
+      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+    <button id="bean-send" onclick="beanSend()">➤</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  const HISTORY_KEY = 'bean_history';
+  let messages = [];   // {role, content}
+  let streaming = false;
+
+  // Restore history from sessionStorage
+  try {
+    const saved = sessionStorage.getItem(HISTORY_KEY);
+    if (saved) messages = JSON.parse(saved);
+  } catch {}
+
+  window.beanToggle = function() {
+    const panel = document.getElementById('bean-panel');
+    if (panel.classList.contains('hidden')) {
+      panel.classList.remove('hidden');
+      document.getElementById('bean-unread').style.display = 'none';
+      renderHistory();
+      document.getElementById('bean-input').focus();
+    } else {
+      panel.classList.add('hidden');
+    }
+  };
+
+  function renderHistory() {
+    const box = document.getElementById('bean-messages');
+    // Keep greeting, then append history
+    const greeting = box.querySelector('.bean-msg.assistant');
+    box.innerHTML = '';
+    if (!messages.length) {
+      box.appendChild(greeting);
+    } else {
+      messages.forEach(m => appendMsg(m.role, m.content));
+    }
+    scrollBean();
+  }
+
+  function appendMsg(role, text, isTyping = false) {
+    const box = document.getElementById('bean-messages');
+    const div = document.createElement('div');
+    div.className = `bean-msg ${role}${isTyping ? ' typing' : ''}`;
+    div.textContent = text;
+    box.appendChild(div);
+    scrollBean();
+    return div;
+  }
+
+  function scrollBean() {
+    const box = document.getElementById('bean-messages');
+    box.scrollTop = box.scrollHeight;
+  }
+
+  window.beanSend = async function() {
+    if (streaming) return;
+    const input = document.getElementById('bean-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+    document.getElementById('bean-send').disabled = true;
+
+    messages.push({ role: 'user', content: text });
+    appendMsg('user', text);
+    sessionStorage.setItem(HISTORY_KEY, JSON.stringify(messages));
+
+    // Typing indicator
+    const typingDiv = appendMsg('assistant', '…', true);
+    streaming = true;
+
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch('/api/bean/chat', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ messages })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Error' }));
+        typingDiv.remove();
+        appendMsg('assistant', err.error || 'Something went wrong.');
+        streaming = false;
+        document.getElementById('bean-send').disabled = false;
+        return;
+      }
+
+      // Stream SSE
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let reply = '';
+      typingDiv.classList.remove('typing');
+      typingDiv.textContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') break;
+          try {
+            const chunk = JSON.parse(data);
+            reply += chunk;
+            typingDiv.textContent = reply;
+            scrollBean();
+          } catch {}
+        }
+      }
+
+      if (reply) {
+        messages.push({ role: 'assistant', content: reply });
+        sessionStorage.setItem(HISTORY_KEY, JSON.stringify(messages));
+      }
+
+      // Show unread dot if panel is hidden
+      if (document.getElementById('bean-panel').classList.contains('hidden')) {
+        document.getElementById('bean-unread').style.display = 'block';
+      }
+    } catch (e) {
+      typingDiv.remove();
+      appendMsg('assistant', 'Sorry, I couldn\'t connect right now. Try again!');
+    }
+
+    streaming = false;
+    document.getElementById('bean-send').disabled = false;
+    document.getElementById('bean-input').focus();
+  };
 })();
 </script>
 </body>

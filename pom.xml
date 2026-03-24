@@ -20,11 +20,18 @@
   </properties>
 
   <dependencies>
-    <!-- H2 embedded database (file & in-memory modes) -->
+    <!-- H2 embedded database (file & in-memory modes — local / fallback) -->
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
       <version>2.2.224</version>
+    </dependency>
+
+    <!-- PostgreSQL driver — used on Railway when DATABASE_URL is set -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>42.7.3</version>
     </dependency>
 
     <!-- JavaFX — desktop UI -->
@@ -72,6 +79,13 @@
       <version>12.3.1</version>
     </dependency>
 
+    <!-- Anthropic Java SDK — Bean AI chatbot -->
+    <dependency>
+      <groupId>com.anthropic</groupId>
+      <artifactId>anthropic-java</artifactId>
+      <version>2.16.1</version>
+    </dependency>
+
     <!-- JUnit 5 -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -107,6 +121,52 @@
         <configuration>
           <mainClass>mn.edu.num.cafe.app.Main</mainClass>
         </configuration>
+      </plugin>
+
+      <!--
+        maven-shade-plugin — creates an executable fat JAR (all deps bundled).
+        Railway runs: java -jar target/cafe-project-1.0-SNAPSHOT.jar
+        JavaFX excluded — never loaded in web mode (MODE=web skips the else branch).
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.5.2</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals><goal>shade</goal></goals>
+            <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <!-- Exclude JavaFX — platform-specific, not needed in web mode -->
+              <artifactSet>
+                <excludes>
+                  <exclude>org.openjfx:*</exclude>
+                  <exclude>org.kordamp.ikonli:*</exclude>
+                </excludes>
+              </artifactSet>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>module-info.class</exclude>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+              <transformers>
+                <!-- Sets Main-Class in MANIFEST.MF so java -jar works -->
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>mn.edu.num.cafe.app.Main</mainClass>
+                </transformer>
+                <!-- Merges META-INF/services (required by Javalin/Jetty) -->
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+              </transformers>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

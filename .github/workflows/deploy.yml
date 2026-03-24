@@ -1,0 +1,61 @@
+name: Build & Test — Borgol Coffee Platform
+
+# Triggers on every push and pull request
+# Railway auto-deploys from GitHub push — this workflow just guards quality
+on:
+  push:
+    branches:
+      - main
+      - feature/borgol-platform
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # ── Job 1: Build & Test (JSON service + frontend) ───────────────────────────
+  build-json-service:
+    name: Build cafe-project
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build fat JAR
+        run: mvn package -DskipTests -B -q
+
+      - name: Run tests
+        run: mvn test -B
+
+      - name: Verify JAR is executable
+        run: |
+          unzip -p target/cafe-project-1.0-SNAPSHOT.jar META-INF/MANIFEST.MF \
+            | grep "Main-Class"
+          echo "JAR is executable"
+
+  # ── Job 2: Build (SOAP auth service) ────────────────────────────────────────
+  build-soap-service:
+    name: Build soap-auth-service
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build SOAP service
+        working-directory: soap-auth-service
+        run: mvn package -DskipTests -B -q

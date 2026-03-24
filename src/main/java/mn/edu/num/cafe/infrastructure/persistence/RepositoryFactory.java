@@ -18,8 +18,9 @@ public class RepositoryFactory {
 
     public static IMenuRepository createMenuRepository() {
         DatabaseConnection db = DatabaseConnection.getInstance();
-        String mode = db.getProperty("app.persistence.mode");
-        return switch (mode.trim().toUpperCase()) {
+        String raw  = db.getProperty("app.persistence.mode");
+        String mode = (raw != null) ? raw.trim().toUpperCase() : "DB";
+        return switch (mode) {
             case "DB"  -> new JdbcMenuRepository(db);
             case "MEM" -> new InMemoryMenuRepository();
             default    -> throw new IllegalArgumentException(

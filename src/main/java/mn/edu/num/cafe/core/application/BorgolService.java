@@ -8,23 +8,44 @@ import mn.edu.num.cafe.infrastructure.security.PasswordUtil;
 import java.util.*;
 
 /**
- * Main application service for the Borgol Coffee Enthusiast Platform.
+ * Borgol платформын үндсэн бизнесийн логикийн давхарга.
  *
- * Handles: authentication, user management, recipes, cafes, social features.
+ * ════════════════════════════════════════════════════════════
+ * Загвар: Service Layer (Fowler's Patterns of Enterprise App)
+ * ════════════════════════════════════════════════════════════
+ * Зорилго: HTTP handler (BorgolApiServer) болон SQL (BorgolRepository)
+ * хоёрын хооронд бизнесийн дүрмийг хэрэгжүүлнэ.
+ *
+ * Зарчим (SOLID):
+ *  - Single Responsibility → Auth, User, Recipe, Cafe тус бүрийн
+ *    бизнес дүрмийг нэг газар хариуцна.
+ *  - Open/Closed → Repository-г солих боломжтой, Service өөрчлөгдөхгүй.
+ *
+ * Архитектур: Hexagonal (Ports & Adapters)
+ *  - Core domain (энэ класс) нь web болон DB-ийн технологиос тусгаарлагдана.
+ *  - BorgolRepository → DB Adapter (гадагш порт)
+ *  - BorgolApiServer  → Web Adapter (дотогш порт)
  */
 public class BorgolService {
 
+    // Repository-г DI (Dependency Injection) аргаар хүлээн авна
+    // → тест хийхэд mock оруулах боломжтой
     private final BorgolRepository repo;
 
     public BorgolService(BorgolRepository repo) {
         this.repo = repo;
     }
 
-    // ── Auth ──────────────────────────────────────────────────────────────────
+    // ── Нэвтрэх / Бүртгэх ────────────────────────────────────────────────────
+    // Зарчим: Fail Fast — оролтын баталгаажуулалт эхэлж хийнэ,
+    // DB-д хандахаас өмнө алдааг илрүүлж, 400 буцаана.
 
+    // Java Record → immutable value object, getter автоматаар үүснэ
     public record AuthResult(String token, UserView user) {}
 
     public AuthResult register(String username, String email, String password) {
+        // ── Оролтын баталгаажуулалт (Input Validation) ──────────────────────
+        // Зарчим: Defense in Depth — хэрэглэгчийн оролтыг хэзээ ч итгэхгүй
         if (username == null || username.isBlank())  throw new IllegalArgumentException("Username is required");
         if (email == null    || email.isBlank())     throw new IllegalArgumentException("Email is required");
         if (password == null || password.length() < 6) throw new IllegalArgumentException("Password must be ≥ 6 characters");
@@ -32,11 +53,15 @@ public class BorgolService {
         if (username.length() < 3 || username.length() > 50) throw new IllegalArgumentException("Username must be 3–50 characters");
         if (!username.matches("[a-zA-Z0-9_]+"))     throw new IllegalArgumentException("Username: letters, numbers, underscores only");
 
+        // ── Давхардал шалгах (Uniqueness check) ─────────────────────────────
         if (repo.findUserByEmail(email).isPresent())      throw new IllegalArgumentException("Email already registered");
         if (repo.findUserByUsername(username).isPresent()) throw new IllegalArgumentException("Username already taken");
 
+        // ── Нууц үг хэш хийх + хэрэглэгч үүсгэх ───────────────────────────
+        // PasswordUtil.hash() → SHA-256 + random salt — текст хадгалахгүй
         String hash = PasswordUtil.hash(password);
         User user   = repo.createUser(username, email, hash);
+        // JwtUtil → HMAC-SHA256 токен үүсгэнэ, 7 хоног хүчинтэй
         String token = JwtUtil.createToken(user.getId(), user.getUsername());
         return new AuthResult(token, toView(user, 0, false));
     }
@@ -45,8 +70,11 @@ public class BorgolService {
         if (email == null || email.isBlank())       throw new IllegalArgumentException("Email is required");
         if (password == null || password.isBlank()) throw new IllegalArgumentException("Password is required");
 
+        // Optional.orElseThrow() → хэрэглэгч олдохгүй бол "Invalid email or password"
+        // Аюулгүй байдал: "User not found" гэж хэлэхгүй — тухайн и-мэйл бүртгэлтэй эсэхийг нуuna
         User user = repo.findUserByEmail(email)
             .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+        // constantTimeEquals → timing attack-аас хамгаалсан нууц үг шалгалт
         if (!PasswordUtil.verify(password, user.getPasswordHash()))
             throw new IllegalArgumentException("Invalid email or password");
 
@@ -60,9 +88,11 @@ public class BorgolService {
         return toView(user, 0, false);
     }
 
-    // ── Users ─────────────────────────────────────────────────────────────────
+    // ── Хэрэглэгчийн үйлдлүүд ────────────────────────────────────────────────
 
     public UserView getUserProfile(int targetId, int currentUserId) {
+        // isFollowing → дагаж байгаа эсэхийг нэмэлт мэдээлэл болгон буцаана
+        // currentUserId == 0 → нэвтрээгүй хэрэглэгч (зочин)
         User user = repo.findUserById(targetId)
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
         boolean isFollowing = currentUserId > 0 && repo.isFollowing(currentUserId, targetId);
@@ -87,8 +117,12 @@ public class BorgolService {
     }
 
     public void followUser(int followerId, int followingId) {
+        // Өөрийгөө дагах боломжгүй — бизнесийн дүрэм
         if (followerId == followingId) throw new IllegalArgumentException("Cannot follow yourself");
         repo.followUser(followerId, followingId);
+        // Дагасны дараа автоматаар мэдэгдэл үүсгэнэ — Observer хэв маягтай төстэй
+        repo.createNotification(followingId, "follow", followerId, 0,
+            "started following you");
     }
 
     public void unfollowUser(int followerId, int followingId) {
@@ -104,7 +138,9 @@ public class BorgolService {
             }).toList();
     }
 
-    // ── Recipes ───────────────────────────────────────────────────────────────
+    // ── Жорын үйлдлүүд ───────────────────────────────────────────────────────
+    // Зарчим: Thin Controller, Fat Service — HTTP handler нь зөвхөн дамжуулна,
+    // бизнес логик (баталгаажуулалт, мэдэгдэл) энд байна.
 
     public List<Recipe> getRecipes(int currentUserId, String search, String drinkType, String sort) {
         return repo.findAllRecipes(currentUserId, search, drinkType, sort);
@@ -169,6 +205,7 @@ public class BorgolService {
     }
 
     public Map<String, Object> toggleLike(int userId, int recipeId) {
+        // ── Toggle логик: одоо like дарсан эсэхийг шалгаад эсрэгийг хийнэ ──
         boolean liked;
         if (repo.findRecipeById(recipeId, userId)
                 .map(Recipe::isLikedByCurrentUser).orElse(false)) {
@@ -177,13 +214,21 @@ public class BorgolService {
         } else {
             repo.likeRecipe(userId, recipeId);
             liked = true;
+            // Өөрийн жорт like дарсан бол мэдэгдэл илгээхгүй (spam хориглох)
+            repo.findRecipeById(recipeId, userId).ifPresent(r -> {
+                if (r.getAuthorId() != userId) {
+                    repo.createNotification(r.getAuthorId(), "like", userId, recipeId,
+                        "liked your recipe \"" + r.getTitle() + "\"");
+                }
+            });
         }
+        // Шинэчлэгдсэн тооллогыг буцаана — frontend дахин дуудахгүйгээр шинэчилнэ
         int count = repo.findRecipeById(recipeId, userId)
             .map(Recipe::getLikesCount).orElse(0);
         return Map.of("liked", liked, "likesCount", count);
     }
 
-    // ── Comments ──────────────────────────────────────────────────────────────
+    // ── Сэтгэгдлийн үйлдлүүд ─────────────────────────────────────────────────
 
     public List<RecipeComment> getComments(int recipeId) {
         return repo.findCommentsByRecipeId(recipeId);
@@ -192,10 +237,18 @@ public class BorgolService {
     public RecipeComment addComment(int recipeId, int authorId, String content) {
         if (content == null || content.isBlank()) throw new IllegalArgumentException("Comment cannot be empty");
         if (content.length() > 1000) throw new IllegalArgumentException("Comment too long (max 1000 chars)");
-        return repo.addComment(recipeId, authorId, content);
+        RecipeComment comment = repo.addComment(recipeId, authorId, content);
+        // Notify author
+        repo.findRecipeById(recipeId, authorId).ifPresent(r -> {
+            if (r.getAuthorId() != authorId) {
+                repo.createNotification(r.getAuthorId(), "comment", authorId, recipeId,
+                    "commented on your recipe \"" + r.getTitle() + "\"");
+            }
+        });
+        return comment;
     }
 
-    // ── Cafes ─────────────────────────────────────────────────────────────────
+    // ── Кафены үйлдлүүд ──────────────────────────────────────────────────────
 
     public List<CafeListing> getCafes(int currentUserId, String search, String district) {
         return repo.findAllCafes(currentUserId, search, district);
@@ -235,12 +288,20 @@ public class BorgolService {
     }
 
     /**
-     * Return cafes within {@code radiusKm} kilometres of (lat, lng).
-     * Uses equirectangular bounding-box approximation — accurate enough for city-scale distances.
+     * (lat, lng) координатаас radiusKm км-ийн дотор байгаа кафенуудыг буцаана.
+     *
+     * Алгоритм: Equirectangular bounding-box наближение
+     * ─ 111 км ≈ 1 өргөрөгийн зэрэг (latitude degree)
+     * ─ Longitude зэрэг нь өргөргийн cosine-тай пропорциональ
+     * ─ Хот дотор (< 50 км) энэ алдаа хүлцэгдэхүйц нарийвчлалтай
+     *
+     * Зарчим: Good Enough Solution — тригонометрийн нарийн томьёо
+     * (Haversine) хэрэггүй, тойргийн хайлт бус дөрвөлжин хайлт хийнэ.
      */
     public List<CafeListing> getCafesNearby(int currentUserId, double lat, double lng, double radiusKm) {
         double latDelta = radiusKm / 111.0;
         double lngDelta = radiusKm / (111.0 * Math.cos(Math.toRadians(lat)));
+        // Дөрвөлжин bounding box → SQL-д BETWEEN ашиглаж шүүнэ
         return repo.findCafesNearby(currentUserId,
             lat - latDelta, lat + latDelta,
             lng - lngDelta, lng + lngDelta);
@@ -588,6 +649,111 @@ public class BorgolService {
 
     public void deleteEquipment(int equipmentId, int userId) {
         repo.deleteEquipment(equipmentId, userId);
+    }
+
+    // ── Saved Recipes ─────────────────────────────────────────────────────────
+
+    public Map<String, Object> toggleSave(int userId, int recipeId) {
+        boolean saved;
+        if (repo.isRecipeSaved(userId, recipeId)) {
+            repo.unsaveRecipe(userId, recipeId);
+            saved = false;
+        } else {
+            repo.saveRecipe(userId, recipeId);
+            saved = true;
+        }
+        return Map.of("saved", saved);
+    }
+
+    public List<Recipe> getSavedRecipes(int userId, int currentUserId) {
+        return repo.getSavedRecipes(userId, currentUserId);
+    }
+
+    // ── Notifications ─────────────────────────────────────────────────────────
+
+    public List<Map<String, Object>> getNotifications(int userId) {
+        return repo.getNotifications(userId, 50);
+    }
+
+    public void markNotificationsRead(int userId) {
+        repo.markNotificationsRead(userId);
+    }
+
+    public Map<String, Object> getNotificationCount(int userId) {
+        return Map.of("unread", repo.getUnreadNotificationCount(userId));
+    }
+
+    // ── Reports ───────────────────────────────────────────────────────────────
+
+    public void submitReport(int reporterId, String contentType, int contentId,
+                              String reason, String description) {
+        if (reason == null || reason.isBlank()) throw new IllegalArgumentException("Reason is required");
+        List<String> validTypes = List.of("recipe", "user", "comment");
+        if (!validTypes.contains(contentType)) throw new IllegalArgumentException("Invalid content type");
+        repo.createReport(reporterId, contentType, contentId, reason, description);
+    }
+
+    public List<Map<String, Object>> getReports(String status) {
+        return repo.getAllReports(status);
+    }
+
+    public void resolveReport(int reportId, int adminId, String action) {
+        List<String> valid = List.of("resolved", "dismissed");
+        if (!valid.contains(action)) throw new IllegalArgumentException("Action must be 'resolved' or 'dismissed'");
+        repo.resolveReport(reportId, adminId, action);
+    }
+
+    public Map<String, Object> getAdminStats() {
+        return Map.of("pendingReports", repo.getPendingReportCount());
+    }
+
+    public boolean isAdmin(int userId) {
+        if (userId == 1) return true;
+        String adminEmail = System.getenv("ADMIN_EMAIL");
+        if (adminEmail != null && !adminEmail.isBlank()) {
+            return repo.findUserById(userId)
+                .map(u -> adminEmail.equalsIgnoreCase(u.getEmail()))
+                .orElse(false);
+        }
+        return false;
+    }
+
+    // ── Block ─────────────────────────────────────────────────────────────────
+
+    public void blockUser(int blockerId, int blockedId) {
+        if (blockerId == blockedId) throw new IllegalArgumentException("Cannot block yourself");
+        repo.blockUser(blockerId, blockedId);
+    }
+
+    public void unblockUser(int blockerId, int blockedId) {
+        repo.unblockUser(blockerId, blockedId);
+    }
+
+    public boolean isBlocked(int blockerId, int blockedId) {
+        return repo.isBlocked(blockerId, blockedId);
+    }
+
+    // ── Hashtags ──────────────────────────────────────────────────────────────
+
+    public void followHashtag(int userId, String tag) {
+        if (tag == null || tag.isBlank()) throw new IllegalArgumentException("Tag is required");
+        repo.followHashtag(userId, tag.toLowerCase().replaceAll("[^a-z0-9_]", ""));
+    }
+
+    public void unfollowHashtag(int userId, String tag) {
+        repo.unfollowHashtag(userId, tag.toLowerCase());
+    }
+
+    public List<String> getUserHashtags(int userId) {
+        return repo.getUserHashtags(userId);
+    }
+
+    public List<Recipe> getHashtagRecipes(int currentUserId, String tag) {
+        return repo.getRecipesByHashtag(currentUserId, tag);
+    }
+
+    public List<Map<String, Object>> getTrendingHashtags() {
+        return repo.getTrendingHashtags(20);
     }
 
     // ── View mapping ──────────────────────────────────────────────────────────

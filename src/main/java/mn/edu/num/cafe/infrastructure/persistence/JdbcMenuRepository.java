@@ -35,7 +35,7 @@ public class JdbcMenuRepository implements IMenuRepository {
                     id        INT          PRIMARY KEY,
                     name      VARCHAR(255) NOT NULL,
                     category  VARCHAR(50)  NOT NULL,
-                    price     DOUBLE       NOT NULL DEFAULT 0.0,
+                    price     DOUBLE PRECISION NOT NULL DEFAULT 0.0,
                     available BOOLEAN      NOT NULL DEFAULT TRUE
                 )
                 """;
@@ -53,9 +53,13 @@ public class JdbcMenuRepository implements IMenuRepository {
     @Override
     public void save(MenuItem item) {
         String sql = """
-                MERGE INTO menu_item (id, name, category, price, available)
-                KEY(id)
+                INSERT INTO menu_item (id, name, category, price, available)
                 VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT (id) DO UPDATE SET
+                    name      = EXCLUDED.name,
+                    category  = EXCLUDED.category,
+                    price     = EXCLUDED.price,
+                    available = EXCLUDED.available
                 """;
         try (PreparedStatement ps = db.getConnection().prepareStatement(sql)) {
             ps.setInt(1,     item.getId());

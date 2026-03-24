@@ -9,45 +9,64 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Lightweight JWT implementation using HMAC-SHA256.
- * No external dependencies — uses only Java standard library.
+ * Жингүй JWT хэрэгжүүлэлт — HMAC-SHA256 гарын үсэг ашиглана.
  *
- * Token format: base64url(header).base64url(payload).base64url(signature)
+ * ════════════════════════════════════════════════════════════
+ * Зарчим: Zero External Dependency — Java standard library-г ашиглана
+ * (javax.crypto.Mac, java.util.Base64)
+ * ════════════════════════════════════════════════════════════
+ *
+ * Токены бүтэц (RFC 7519 JWT стандарт):
+ *   base64url(header) . base64url(payload) . base64url(signature)
+ *
+ * Header:  {"alg":"HS256","typ":"JWT"}
+ * Payload: {"sub":<userId>,"username":"...","exp":<unix_timestamp>}
+ * Signature: HMAC-SHA256(header.payload, SECRET_KEY)
+ *
+ * Аюулгүй байдал:
+ *  - Constant-time comparison → timing attack-аас хамгаалсан
+ *  - 7 хоногийн хугацаатай → нэвтрэлт дуусахад дахин нэвтрэх шаардлагатай
  */
 public class JwtUtil {
 
+    // SECRET: production-д environment variable-аас уншина
+    // Одоо hardcode хийсэн — тестийн/боловсролын зорилгоор
     private static final String SECRET      = "borgol-coffee-platform-jwt-secret-2026-num";
-    private static final long   EXPIRY_SECS = 86400L * 7; // 7 days
+    private static final long   EXPIRY_SECS = 86400L * 7; // 7 хоног (секундаар)
 
-    // ── Token creation ────────────────────────────────────────────────────────
+    // ── Токен үүсгэх ──────────────────────────────────────────────────────────
 
     public static String createToken(int userId, String username) {
+        // Header: алгоритм мэдэгдэнэ (HS256 = HMAC-SHA256)
         String header  = b64("{\"alg\":\"HS256\",\"typ\":\"JWT\"}");
         long   exp     = Instant.now().getEpochSecond() + EXPIRY_SECS;
-        // Escape username to avoid JSON injection
+        // JSON injection-оос хамгаалж нэрийг escape хийнэ
         String safeUser = username.replace("\\", "\\\\").replace("\"", "\\\"");
+        // sub = subject (хэрэглэгчийн ID), exp = expiry (дуусах хугацаа)
         String payload = b64(
             String.format("{\"sub\":%d,\"username\":\"%s\",\"exp\":%d}", userId, safeUser, exp));
+        // Гарын үсэг: header.payload-г SECRET-р хэш хийнэ
         String sig = sign(header + "." + payload);
         return header + "." + payload + "." + sig;
     }
 
-    // ── Token verification ────────────────────────────────────────────────────
+    // ── Токен баталгаажуулах ──────────────────────────────────────────────────
 
     /**
-     * Returns claims map if valid, null if invalid/expired.
-     * Claims contain: sub (Long), username (String), exp (Long)
+     * Хүчинтэй бол claims map буцаана, хүчингүй/дууссан бол null.
+     * Claims: sub (Long) → userId, username (String), exp (Long)
      */
     public static Map<String, Object> verify(String token) {
         if (token == null || token.isBlank()) return null;
         String[] parts = token.split("\\.");
-        if (parts.length != 3) return null;
+        if (parts.length != 3) return null;   // JWT формат буруу
 
-        // Verify signature
+        // ── Гарын үсгийг шалгана ─────────────────────────────────────────────
+        // Хэрэв токен өөрчлөгдсөн бол гарын үсэг таарахгүй → null буцаана
         String expectedSig = sign(parts[0] + "." + parts[1]);
         if (!constantTimeEquals(expectedSig, parts[2])) return null;
 
-        // Decode payload
+        // ── Payload-г decode хийнэ ───────────────────────────────────────────
         String payloadJson;
         try {
             payloadJson = new String(
@@ -88,9 +107,10 @@ public class JwtUtil {
         return u != null ? u.toString() : null;
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
+    // ── Туслах аргууд ─────────────────────────────────────────────────────────
 
     private static String b64(String data) {
+        // URL-safe Base64 (+ → -, / → _, = padding-гүй) → JWT стандартын дагуу
         return Base64.getUrlEncoder().withoutPadding()
             .encodeToString(data.getBytes(StandardCharsets.UTF_8));
     }
@@ -106,12 +126,18 @@ public class JwtUtil {
         }
     }
 
-    /** Constant-time comparison to prevent timing attacks. */
+    /**
+     * Тогтмол цагийн харьцуулалт — timing attack-аас хамгаална.
+     *
+     * Ердийн equals() нь эхний ялгаатай тэмдэгт дээр зогсдог → хугацааны ялгааг
+     * хэмжиж халдагч нууц үгийг таамаглах боломжтой болно.
+     * XOR + OR-ийн аргаар бүх тэмдэгтийг тэгш хугацаанд шалгана.
+     */
     private static boolean constantTimeEquals(String a, String b) {
         if (a.length() != b.length()) return false;
         int result = 0;
         for (int i = 0; i < a.length(); i++) result |= a.charAt(i) ^ b.charAt(i);
-        return result == 0;
+        return result == 0; // result == 0 → бүх байт тааралдсан
     }
 
     /**

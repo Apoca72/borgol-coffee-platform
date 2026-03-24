@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Brew Timer – Borgol Coffee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --espresso  : #0C0400;
+  --roast     : #2B1005;
+  --caramel   : #A8621E;
+  --caramel-lt: #CB8840;
+  --gold      : #E8A030;
+  --amber     : #F5C060;
+  --cream     : #F6E8CC;
+  --milk      : #FDFAF3;
+  --surface   : #FFFEF8;
+  --border    : #EDDBBA;
+  --muted     : #8A7054;
+  --text      : #180F08;
+  --success   : #2D6A4F;
+  --error     : #B5321E;
+  --shadow    : 0 2px 16px rgba(12,4,0,.08);
+  --shadow-md : 0 6px 30px rgba(12,4,0,.13);
+  --shadow-lg : 0 16px 56px rgba(12,4,0,.18);
+  --radius    : 14px;
+  --radius-lg : 20px;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans : 'DM Sans', -apple-system, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  min-height: 100%; background: var(--milk); color: var(--text);
+  font-family: var(--font-sans); overflow-x: hidden;
+}
+
+@keyframes slideDown { from { opacity:0; transform:translateY(-14px) } to { opacity:1; transform:none } }
+@keyframes fadeUp    { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:none } }
+@keyframes spin      { to { transform:rotate(360deg) } }
+@keyframes ringPulse { 0%,100%{box-shadow:0 0 0 0 rgba(168,98,30,.4)} 50%{box-shadow:0 0 0 16px rgba(168,98,30,0)} }
+@keyframes stepSlide { from{opacity:0;transform:translateX(-12px)} to{opacity:1;transform:none} }
+@keyframes celebrate { 0%{transform:scale(1)} 30%{transform:scale(1.08)} 60%{transform:scale(.96)} 100%{transform:scale(1)} }
+
+/* ── Navbar ──────────────────────────────────────────── */
+.navbar {
+  background: linear-gradient(135deg, var(--espresso) 0%, #1A0800 100%);
+  height: 62px; display: flex; align-items: center;
+  padding: 0 28px; gap: 16px;
+  position: sticky; top: 0; z-index: 200;
+  box-shadow: 0 2px 24px rgba(0,0,0,.45);
+  animation: slideDown .4s ease;
+}
+.nav-brand {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-serif); font-size: 19px; font-weight: 700;
+  color: #fff; text-decoration: none;
+}
+.nav-brand span { font-size: 22px; }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.btn-back {
+  padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+  color: rgba(255,255,255,.75); background: none;
+  border: 1.5px solid rgba(255,255,255,.25);
+  cursor: pointer; font-family: inherit; transition: .2s;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-back:hover { background: rgba(255,255,255,.1); color: #fff; border-color: rgba(255,255,255,.5); }
+
+/* ── Page ─────────────────────────────────────────────── */
+.page {
+  max-width: 860px; margin: 0 auto;
+  padding: 36px 24px calc(env(safe-area-inset-bottom) + 80px);
+  animation: fadeUp .4s ease both;
+}
+.page-title {
+  font-family: var(--font-serif); font-size: 1.9rem; color: var(--roast);
+  margin-bottom: 4px;
+}
+.page-sub { color: var(--muted); font-size: .875rem; margin-bottom: 28px; }
+
+/* ── Method picker ────────────────────────────────────── */
+.method-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px; margin-bottom: 28px;
+}
+.method-btn {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px; padding: 14px 10px; border-radius: var(--radius);
+  background: var(--surface); border: 2px solid var(--border);
+  cursor: pointer; transition: all .2s; font-family: var(--font-sans);
+}
+.method-btn:hover { border-color: var(--caramel-lt); transform: translateY(-2px); box-shadow: var(--shadow); }
+.method-btn.selected {
+  border-color: var(--caramel); background: rgba(168,98,30,.06);
+  box-shadow: 0 0 0 3px rgba(168,98,30,.12);
+}
+.method-icon { font-size: 1.8rem; }
+.method-name { font-size: .75rem; font-weight: 700; color: var(--roast); text-align: center; }
+.method-time { font-size: .65rem; color: var(--muted); }
+
+/* ── Ratio calculator ─────────────────────────────────── */
+.ratio-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 24px 28px; margin-bottom: 24px;
+  box-shadow: var(--shadow);
+}
+.ratio-card h3 {
+  font-family: var(--font-serif); font-size: 1.1rem; color: var(--roast);
+  margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+}
+.ratio-inputs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; align-items: center; }
+.ratio-field { display: flex; flex-direction: column; gap: 4px; }
+.ratio-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.ratio-input {
+  width: 100%; padding: 14px 16px;
+  font-size: 1.5rem; font-weight: 700; color: var(--caramel);
+  background: var(--milk); border: 2px solid var(--border);
+  border-radius: var(--radius); font-family: var(--font-sans);
+  outline: none; transition: all .2s; text-align: center;
+  -moz-appearance: textfield;
+}
+.ratio-input::-webkit-inner-spin-button,
+.ratio-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+.ratio-input:focus { border-color: var(--caramel); background: #fff; box-shadow: 0 0 0 3px rgba(168,98,30,.1); }
+.ratio-input.linked { background: rgba(168,98,30,.04); border-color: rgba(168,98,30,.3); }
+.ratio-unit { font-size: .7rem; color: var(--muted); margin-top: 2px; text-align: center; }
+.ratio-sep {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 0 16px;
+}
+.ratio-sep-line { color: var(--muted); font-size: 1.2rem; font-weight: 700; }
+.ratio-sep-label { font-size: .65rem; color: var(--muted); white-space: nowrap; }
+.ratio-presets { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
+.ratio-preset {
+  padding: 5px 12px; border-radius: 20px; font-size: .75rem; font-weight: 600;
+  background: var(--cream); border: 1px solid var(--border);
+  color: var(--caramel); cursor: pointer; transition: .15s;
+}
+.ratio-preset:hover, .ratio-preset.active {
+  background: var(--caramel); color: #fff; border-color: var(--caramel);
+}
+
+/* ── Timer ────────────────────────────────────────────── */
+.timer-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 32px 28px; margin-bottom: 24px;
+  box-shadow: var(--shadow-md); text-align: center;
+}
+.timer-ring-wrap { position: relative; display: inline-flex; margin-bottom: 24px; }
+.timer-svg { transform: rotate(-90deg); }
+.timer-track { fill: none; stroke: var(--cream); stroke-width: 8; }
+.timer-arc   { fill: none; stroke: var(--caramel); stroke-width: 8;
+  stroke-linecap: round; transition: stroke-dashoffset .95s linear;
+}
+.timer-arc.done { stroke: var(--success); }
+.timer-display {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.timer-time {
+  font-family: var(--font-serif); font-size: 2.6rem; font-weight: 700;
+  color: var(--roast); line-height: 1; letter-spacing: -.02em;
+}
+.timer-phase { font-size: .75rem; color: var(--muted); margin-top: 4px; font-weight: 600; }
+.timer-total { font-size: .68rem; color: var(--border-color,var(--border)); margin-top: 2px; }
+
+.timer-controls { display: flex; gap: 12px; justify-content: center; margin-bottom: 20px; }
+.timer-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 28px; border-radius: var(--radius); border: none;
+  font-family: var(--font-sans); font-size: .9rem; font-weight: 700;
+  cursor: pointer; transition: all .18s;
+}
+.timer-btn.primary {
+  background: linear-gradient(135deg, var(--caramel), var(--caramel-lt));
+  color: #fff; box-shadow: 0 4px 16px rgba(168,98,30,.28);
+}
+.timer-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(168,98,30,.38); }
+.timer-btn.secondary {
+  background: var(--cream); color: var(--caramel);
+  border: 1.5px solid var(--border);
+}
+.timer-btn.secondary:hover { background: var(--border); }
+.timer-btn:disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
+
+/* ── Steps ────────────────────────────────────────────── */
+.steps-list { list-style: none; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.step-item {
+  display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+  border-radius: var(--radius); border: 1.5px solid transparent;
+  transition: all .3s; background: var(--milk);
+}
+.step-item.active {
+  border-color: var(--caramel); background: rgba(168,98,30,.05);
+  animation: stepSlide .3s ease;
+}
+.step-item.done { opacity: .55; }
+.step-bullet {
+  width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .75rem; font-weight: 700; border: 2px solid var(--border);
+  color: var(--muted); background: var(--surface); transition: .2s;
+}
+.step-item.active .step-bullet { background: var(--caramel); color: #fff; border-color: var(--caramel); }
+.step-item.done  .step-bullet  { background: var(--success); color: #fff; border-color: var(--success); content: '✓'; }
+.step-time { font-size: .7rem; color: var(--muted); flex-shrink: 0; margin-left: auto; }
+.step-text { font-size: .875rem; color: var(--text); line-height: 1.4; }
+.step-item.active .step-text { font-weight: 600; color: var(--roast); }
+
+/* ── Done banner ──────────────────────────────────────── */
+.done-banner {
+  display: none; text-align: center; padding: 28px;
+  background: linear-gradient(135deg, rgba(45,106,79,.08), rgba(45,106,79,.04));
+  border: 1.5px solid rgba(45,106,79,.25); border-radius: var(--radius-lg);
+  margin-bottom: 24px; animation: celebrate .5s ease;
+}
+.done-banner.show { display: block; }
+.done-banner .icon { font-size: 2.8rem; margin-bottom: 10px; }
+.done-banner h2 { font-family: var(--font-serif); font-size: 1.6rem; color: var(--success); margin-bottom: 6px; }
+.done-banner p { color: var(--muted); font-size: .875rem; }
+
+/* ── Bottom safe area ─────────────────────────────────── */
+.bottom-safe { height: env(safe-area-inset-bottom, 0px); }
+
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 600px) {
+  .page { padding: 20px 14px calc(env(safe-area-inset-bottom) + 60px); }
+  .page-title { font-size: 1.5rem; }
+  .ratio-inputs { grid-template-columns: 1fr auto 1fr; }
+  .ratio-input { font-size: 1.2rem; padding: 10px 8px; }
+  .timer-time { font-size: 2rem; }
+  .ratio-card, .timer-card { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="nav-brand"><span>☕</span> Borgol</a>
+  <div class="nav-right">
+    <a href="index.html" class="btn-back">← Back</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-title">⏱️ Brew Timer</div>
+  <p class="page-sub">Step-by-step guidance with a ratio calculator for your perfect cup</p>
+
+  <!-- Method selection -->
+  <div class="method-grid" id="method-grid"></div>
+
+  <!-- Ratio calculator -->
+  <div class="ratio-card">
+    <h3>⚖️ Ratio Calculator</h3>
+    <div class="ratio-inputs">
+      <div class="ratio-field">
+        <div class="ratio-label">Coffee</div>
+        <input class="ratio-input" id="coffee-g" type="number" min="1" max="500" value="20" step="0.5"/>
+        <div class="ratio-unit">grams</div>
+      </div>
+      <div class="ratio-sep">
+        <div class="ratio-sep-line">:</div>
+        <div class="ratio-sep-label" id="ratio-display">1 : 15</div>
+      </div>
+      <div class="ratio-field">
+        <div class="ratio-label">Water</div>
+        <input class="ratio-input linked" id="water-ml" type="number" min="1" max="3000" value="300" step="5"/>
+        <div class="ratio-unit">ml</div>
+      </div>
+    </div>
+    <div class="ratio-presets" id="ratio-presets"></div>
+  </div>
+
+  <!-- Done banner -->
+  <div class="done-banner" id="done-banner">
+    <div class="icon">☕</div>
+    <h2>Your brew is ready!</h2>
+    <p id="done-msg">Enjoy every sip.</p>
+  </div>
+
+  <!-- Timer -->
+  <div class="timer-card">
+    <div class="timer-ring-wrap">
+      <svg class="timer-svg" width="180" height="180" viewBox="0 0 180 180">
+        <circle class="timer-track" cx="90" cy="90" r="82"/>
+        <circle class="timer-arc" id="timer-arc" cx="90" cy="90" r="82"
+          stroke-dasharray="515.2" stroke-dashoffset="0"/>
+      </svg>
+      <div class="timer-display">
+        <div class="timer-time" id="timer-display">0:00</div>
+        <div class="timer-phase" id="timer-phase">Ready</div>
+        <div class="timer-total" id="timer-total-disp"></div>
+      </div>
+    </div>
+    <div class="timer-controls">
+      <button class="timer-btn primary" id="btn-start" onclick="startTimer()">▶ Start</button>
+      <button class="timer-btn secondary" id="btn-reset" onclick="resetTimer()">↺ Reset</button>
+    </div>
+    <ul class="steps-list" id="steps-list"></ul>
+  </div>
+</div>
+
+<div class="bottom-safe"></div>
+
+<script>
+// ── Brew method definitions ───────────────────────────────────────────────────
+const METHODS = [
+  {
+    id: 'v60', name: 'V60', icon: '🔺', time: '3–4 min',
+    defaultRatio: 15, ratioPresets: [{label:'1:15',r:15},{label:'1:16',r:16},{label:'1:17',r:17}],
+    steps: [
+      { t: 0,   label: 'Rinse & preheat', note: 'Rinse filter with hot water, discard' },
+      { t: 15,  label: 'Bloom', note: '2× coffee weight of water (e.g. 40 ml), wait 30 s' },
+      { t: 45,  label: '1st Pour', note: 'Pour to 120 ml in slow spirals' },
+      { t: 90,  label: '2nd Pour', note: 'Pour to total water weight in spirals' },
+      { t: 150, label: 'Drain', note: 'Let coffee drain fully' },
+      { t: 220, label: 'Done ☕', note: 'Remove dripper, enjoy!' }
+    ]
+  },
+  {
+    id: 'espresso', name: 'Espresso', icon: '☕', time: '25–30 s',
+    defaultRatio: 2.5, ratioPresets: [{label:'1:2',r:2},{label:'1:2.5',r:2.5},{label:'1:3',r:3}],
+    steps: [
+      { t: 0,  label: 'Dose & tamp', note: 'Grind fine, tamp level at 30 lbs' },
+      { t: 5,  label: 'Pre-infusion', note: '3–4 s low-pressure pre-infuse' },
+      { t: 10, label: 'Extract', note: 'Full pressure — target golden-brown crema' },
+      { t: 35, label: 'Done ☕', note: 'Pull shot, taste for balance' }
+    ]
+  },
+  {
+    id: 'frenchpress', name: 'French Press', icon: '🫖', time: '4 min',
+    defaultRatio: 12, ratioPresets: [{label:'1:10',r:10},{label:'1:12',r:12},{label:'1:15',r:15}],
+    steps: [
+      { t: 0,   label: 'Add grounds', note: 'Coarse grind — like raw sugar' },
+      { t: 15,  label: 'Bloom pour', note: 'Add 2× coffee weight water, stir gently' },
+      { t: 45,  label: 'Full pour', note: 'Add remaining water' },
+      { t: 60,  label: 'Place lid', note: 'Put lid on, do NOT press yet' },
+      { t: 240, label: 'Press & pour', note: 'Press slowly, pour immediately to stop brewing' },
+      { t: 280, label: 'Done ☕', note: 'Enjoy! Leave dregs in press.' }
+    ]
+  },
+  {
+    id: 'aeropress', name: 'AeroPress', icon: '🧪', time: '2 min',
+    defaultRatio: 13, ratioPresets: [{label:'1:10',r:10},{label:'1:13',r:13},{label:'1:16',r:16}],
+    steps: [
+      { t: 0,  label: 'Setup', note: 'Insert filter, rinse, place on cup (inverted)' },
+      { t: 15, label: 'Add coffee', note: 'Medium-fine grind, 15–20 g' },
+      { t: 25, label: 'Add water', note: 'Fully saturate grounds with hot water (~80°C)' },
+      { t: 35, label: 'Stir', note: 'Stir 10 seconds, attach plunger' },
+      { t: 55, label: 'Steep', note: 'Wait 45–60 seconds' },
+      { t: 100, label: 'Press', note: 'Flip onto cup, press in 20–30 seconds' },
+      { t: 120, label: 'Done ☕', note: 'Dilute to taste or enjoy as is!' }
+    ]
+  },
+  {
+    id: 'moka', name: 'Moka Pot', icon: '🏺', time: '5 min',
+    defaultRatio: 7, ratioPresets: [{label:'1:7',r:7},{label:'1:8',r:8},{label:'1:9',r:9}],
+    steps: [
+      { t: 0,   label: 'Fill bottom', note: 'Fill base with hot water to valve line' },
+      { t: 30,  label: 'Add coffee', note: 'Fine grind, fill basket level (don\'t tamp)' },
+      { t: 45,  label: 'Heat', note: 'Medium-low heat, lid open' },
+      { t: 180, label: 'Watch', note: 'Gurgling? Reduce heat — stop at blond stream' },
+      { t: 280, label: 'Cool base', note: 'Run cold water on base to stop extraction' },
+      { t: 300, label: 'Done ☕', note: 'Pour and enjoy concentrated coffee!' }
+    ]
+  },
+  {
+    id: 'coldbrew', name: 'Cold Brew', icon: '🧊', time: '12–18 h',
+    defaultRatio: 6, ratioPresets: [{label:'1:5',r:5},{label:'1:6',r:6},{label:'1:8',r:8}],
+    steps: [
+      { t: 0,     label: 'Coarse grind', note: 'Like very coarse sea salt' },
+      { t: 30,    label: 'Combine', note: 'Mix coffee + cold water in jar, stir' },
+      { t: 60,    label: 'Cover', note: 'Seal jar, refrigerate' },
+      { t: 43200, label: 'Strain', note: 'After 12 h, strain through filter into bottle' },
+      { t: 43260, label: 'Done ☕', note: 'Dilute 1:1 with water or milk. Keeps 2 weeks.' }
+    ]
+  }
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentMethod = METHODS[0];
+let coffeeG  = 20;
+let waterMl  = 300;
+let timerInterval = null;
+let elapsed  = 0;
+let totalSec = 0;
+let running  = false;
+const CIRCUM = 515.2; // 2π × 82
+
+// ── Build UI ──────────────────────────────────────────────────────────────────
+function buildMethodGrid() {
+  const grid = document.getElementById('method-grid');
+  grid.innerHTML = METHODS.map(m => `
+    <button class="method-btn${m.id === currentMethod.id ? ' selected' : ''}"
+      onclick="selectMethod('${m.id}')">
+      <span class="method-icon">${m.icon}</span>
+      <span class="method-name">${m.name}</span>
+      <span class="method-time">${m.time}</span>
+    </button>`).join('');
+}
+
+function selectMethod(id) {
+  currentMethod = METHODS.find(m => m.id === id);
+  resetTimer();
+  buildMethodGrid();
+  buildRatioPresets();
+  updateRatioDisplay();
+  buildSteps();
+  // Apply method's default ratio
+  const preset = currentMethod.defaultRatio;
+  waterMl = Math.round(coffeeG * preset);
+  document.getElementById('water-ml').value = waterMl;
+  updateRatioDisplay();
+}
+
+function buildRatioPresets() {
+  const el = document.getElementById('ratio-presets');
+  el.innerHTML = currentMethod.ratioPresets.map(p => `
+    <button class="ratio-preset${Math.abs(waterMl/coffeeG - p.r) < 0.1 ? ' active' : ''}"
+      onclick="applyPreset(${p.r})">${p.label}</button>`).join('');
+}
+
+function applyPreset(r) {
+  waterMl = Math.round(coffeeG * r);
+  document.getElementById('water-ml').value = waterMl;
+  updateRatioDisplay();
+  buildRatioPresets();
+}
+
+function updateRatioDisplay() {
+  const c = parseFloat(document.getElementById('coffee-g').value) || coffeeG;
+  const w = parseFloat(document.getElementById('water-ml').value) || waterMl;
+  const r = w / c;
+  document.getElementById('ratio-display').textContent = `1 : ${r.toFixed(1)}`;
+}
+
+// ── Bidirectional ratio linking ───────────────────────────────────────────────
+document.getElementById('coffee-g').addEventListener('input', function() {
+  coffeeG = parseFloat(this.value) || 1;
+  const ratio = waterMl / (parseFloat(document.getElementById('water-ml').defaultValue || 300));
+  waterMl = Math.round(coffeeG * (currentMethod.defaultRatio));
+  document.getElementById('water-ml').value = waterMl;
+  updateRatioDisplay();
+  buildRatioPresets();
+});
+
+document.getElementById('water-ml').addEventListener('input', function() {
+  waterMl = parseFloat(this.value) || 1;
+  updateRatioDisplay();
+  buildRatioPresets();
+});
+
+// ── Step builder ──────────────────────────────────────────────────────────────
+function buildSteps() {
+  const steps = currentMethod.steps;
+  totalSec = steps[steps.length - 1].t;
+  const ul = document.getElementById('steps-list');
+  ul.innerHTML = steps.map((s, i) => `
+    <li class="step-item${i === 0 ? ' active' : ''}" id="step-${i}">
+      <div class="step-bullet">${i === 0 ? '▶' : i + 1}</div>
+      <div>
+        <div class="step-text"><strong>${s.label}</strong>${s.note ? ' — ' + s.note : ''}</div>
+      </div>
+      <div class="step-time">${formatTime(s.t)}</div>
+    </li>`).join('');
+}
+
+// ── Timer ─────────────────────────────────────────────────────────────────────
+function startTimer() {
+  if (running) {
+    // Pause
+    clearInterval(timerInterval);
+    running = false;
+    document.getElementById('btn-start').textContent = '▶ Resume';
+    return;
+  }
+  running = true;
+  document.getElementById('btn-start').textContent = '⏸ Pause';
+  document.getElementById('done-banner').classList.remove('show');
+
+  timerInterval = setInterval(() => {
+    elapsed++;
+    updateTimerDisplay();
+    updateSteps();
+    if (elapsed >= totalSec) {
+      clearInterval(timerInterval);
+      running = false;
+      document.getElementById('btn-start').disabled = true;
+      document.getElementById('btn-start').textContent = '✓ Done';
+      showDone();
+    }
+  }, 1000);
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  running = false; elapsed = 0;
+  document.getElementById('btn-start').textContent = '▶ Start';
+  document.getElementById('btn-start').disabled = false;
+  document.getElementById('done-banner').classList.remove('show');
+  updateTimerDisplay();
+  buildSteps();
+}
+
+function updateTimerDisplay() {
+  const steps   = currentMethod.steps;
+  const last    = steps[steps.length - 1].t;
+  const prog    = Math.min(elapsed / last, 1);
+  const offset  = CIRCUM * (1 - prog);
+
+  const arc = document.getElementById('timer-arc');
+  arc.style.strokeDashoffset = offset;
+  arc.classList.toggle('done', prog >= 1);
+
+  document.getElementById('timer-display').textContent = formatTime(elapsed);
+
+  // Current phase name
+  let phase = steps[0].label;
+  for (let i = steps.length - 1; i >= 0; i--) {
+    if (elapsed >= steps[i].t) { phase = steps[i].label; break; }
+  }
+  document.getElementById('timer-phase').textContent = phase;
+  document.getElementById('timer-total-disp').textContent =
+    `${formatTime(elapsed)} / ${formatTime(last)}`;
+}
+
+function updateSteps() {
+  const steps = currentMethod.steps;
+  steps.forEach((s, i) => {
+    const el   = document.getElementById(`step-${i}`);
+    const next = steps[i + 1];
+    const done = next ? elapsed > next.t : elapsed >= s.t;
+    const active = elapsed >= s.t && (next ? elapsed < next.t : true);
+    el.classList.toggle('active', active);
+    el.classList.toggle('done',   done);
+    const bullet = el.querySelector('.step-bullet');
+    if (done)        bullet.textContent = '✓';
+    else if (active) bullet.textContent = '▶';
+    else             bullet.textContent = i + 1;
+    if (active) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+}
+
+function showDone() {
+  const banner = document.getElementById('done-banner');
+  banner.classList.add('show');
+  const method = currentMethod;
+  document.getElementById('done-msg').textContent =
+    `${method.name} with ${coffeeG}g coffee & ${waterMl}ml water. Enjoy every sip! ☕`;
+  // Try notify
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('Borgol ☕', { body: `Your ${method.name} is ready!`, icon: '/favicon.ico' });
+  }
+}
+
+function formatTime(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+function init() {
+  buildMethodGrid();
+  buildRatioPresets();
+  updateRatioDisplay();
+  buildSteps();
+  updateTimerDisplay();
+
+  // Request notification permission
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+init();
+</script>
+</body>
+</html>

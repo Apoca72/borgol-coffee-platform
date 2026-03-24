@@ -1,0 +1,12 @@
+# Railway deployment configuration — Borgol Coffee Platform
+# Forces Railway to use the Dockerfile instead of auto-detect (Nixpacks)
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
