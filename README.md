@@ -294,15 +294,18 @@ Typography: **Playfair Display** (headings) + **DM Sans** (body)
 
 ## 🧩 Design Patterns
 
-| Pattern | Where |
-|---|---|
-| **Singleton** | `DatabaseConnection` (DCL + volatile), `AppSession` |
-| **Repository / DAO** | `BorgolRepository` — all SQL |
-| **Service Layer** | `BorgolService` — business logic |
-| **Proxy / Delegation** | `BorgolApiServer` → `SoapAuthClient` → SOAP |
-| **Observer** | `MenuChangeObserver` (legacy desktop) |
-| **Hexagonal Architecture** | Core domain isolated from UI and DB |
-| **Strategy** | SOAP auth with local JWT fallback |
+| Pattern | Where | Монгол тайлбар |
+|---|---|---|
+| **Singleton** | `DatabaseConnection` (DCL + volatile) | Програмын туршид нэг DB холболтын объект |
+| **Repository / DAO** | `BorgolRepository` | SQL-г сервисээс тусгаарлана |
+| **Service Layer** | `BorgolService` | Бизнесийн дүрэм нэг газарт |
+| **Front Controller** | `BorgolApiServer` | Бүх HTTP хүсэлтийг нэг цэгт хүлээнэ |
+| **Proxy / Adapter** | `SoapAuthClient` | JSON сервис SOAP-г шууд мэдэхгүйгээр ашиглана |
+| **Observer** | `MenuChangeObserver` | Цэсийн өөрчлөлтийг сонсогч |
+| **Strategy** | `Main` (MODE=web/desktop) | Нэг codebase, хоёр горимд ажиллана |
+| **Hexagonal Architecture** | Core domain | UI болон DB-ийн технологиос тусгаарлагдана |
+| **Composition Root** | `Main.java` | Бүх dependency нэг газарт угсарна |
+| **Fallback Chain** | `soapLogin` / `soapRegister` | SOAP унасан → local JWT-р graceful degradation |
 
 ---
 
@@ -313,6 +316,25 @@ The first registered account (`id = 1`) is automatically admin.
 - Admin-only endpoints return `403 Forbidden` for all others
 - Reports lifecycle: `pending` → `resolved` / `dismissed`
 - `resolved_by` and `resolved_at` tracked per report
+
+---
+
+---
+
+## 💬 Code Comments (Монгол тайлбар)
+
+Бүх Java эх кодонд **Монгол хэл дээрх дэлгэрэнгүй тайлбар** нэмэгдсэн:
+
+| Файл | Тайлбарласан зүйлс |
+|---|---|
+| `Main.java` | Composition Root загвар, Strategy горим, Observer угсралт |
+| `DatabaseConnection.java` | DCL Singleton, volatile, тэргүүлэх дарааллын connection fallback |
+| `BorgolRepository.java` | Repository/DAO загвар, PreparedStatement (SQL injection хамгаалалт), идемпотент миграц, CASCADE дүрмүүд |
+| `BorgolService.java` | Service Layer, Fail Fast баталгаажуулалт, Toggle логик, Observer мэдэгдэл, Hexagonal архитектур |
+| `BorgolApiServer.java` | Front Controller, CORS, SOA урсгал, Proxy/Delegate, Least Privilege (admin) |
+| `JwtUtil.java` | JWT RFC 7519 бүтэц, HMAC-SHA256, constant-time comparison (timing attack хамгаалалт) |
+| `PasswordUtil.java` | Salted Hash загвар, SecureRandom, SHA-256, Defense in Depth |
+| `SoapAuthClient.java` | Proxy/Adapter загвар, Graceful Degradation, SOAP envelope бүтэц |
 
 ---
 
