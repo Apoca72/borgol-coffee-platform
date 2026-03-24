@@ -11,30 +11,44 @@ import mn.edu.num.cafe.ui.desktop.BorgolApp;
 import mn.edu.num.cafe.ui.web.BorgolApiServer;
 
 /**
- * Application entry point — Composition Root.
+ * Програмын оруулах цэг — Composition Root.
  *
- * Wires together:
- *   - DatabaseConnection (Singleton)
- *   - BorgolRepository   → BorgolService   → BorgolApp (JavaFX desktop)
- *   - IMenuRepository    → MenuService      (legacy, kept for backward compat)
+ * ════════════════════════════════════════════════════════════
+ * Загвар: Composition Root (DI хэв маяг)
+ * ════════════════════════════════════════════════════════════
+ * Зорилго: Бүх объектуудыг нэг газарт угсарна.
+ * main() нь бүх dependency-г үүсгэж, хамааралтай класс руу
+ * "inject" хийнэ — объект бие бие нь шинэ хийхгүй.
+ *
+ * Объект угсралтын дараалал:
+ *   DatabaseConnection (Singleton)
+ *     └─ BorgolRepository
+ *           └─ BorgolService
+ *                 └─ BorgolApiServer (web) эсвэл BorgolApp (JavaFX)
+ *
+ * Загвар: Strategy (MODE=web / MODE=desktop)
+ * Нэг codebase, хоёр өөр environment-д ажиллана.
  */
 public class Main {
 
     public static void main(String[] args) {
 
-        // ── 1. Database connection (shared singleton) ────────────────────────
+        // ── 1. DB холболт — Singleton загвар, програмын туршид нэг объект ────
         DatabaseConnection db = DatabaseConnection.getInstance();
 
-        // ── 2. Borgol platform: repository + service ─────────────────────────
+        // ── 2. Borgol платформ: Repository → Service (DI) ────────────────────
+        // BorgolRepository нь db-г хүлээн авна → өгөгдлийн сангаас тусгаарлагдана
         BorgolRepository borgolRepo    = new BorgolRepository(db);
         BorgolService    borgolService = new BorgolService(borgolRepo);
 
-        // ── 3. Legacy menu management ─────────────────────────────────────────
+        // ── 3. Legacy цэсний сервис — Observer загвар ─────────────────────────
+        // RepositoryFactory → Strategy: H2 эсвэл JDBC repository сонгоно
         IMenuRepository menuRepo    = RepositoryFactory.createMenuRepository();
         MenuService     menuService = new MenuService(menuRepo);
+        // Observer загвар: цэсийн өөрчлөлтийг ConsoleMenuObserver сонсоно
         menuService.addObserver(new ConsoleMenuObserver());
 
-        // ── 4. Seed menu items if empty ───────────────────────────────────────
+        // ── 4. Цэсийн анхны өгөгдлийг тарина (идемпотент) ───────────────────
         if (menuService.getAllItems().isEmpty()) {
             menuService.addItem("Espresso",         MenuCategory.COFFEE,   3.50);
             menuService.addItem("Caffe Latte",       MenuCategory.COFFEE,   4.50);
@@ -57,10 +71,13 @@ public class Main {
         // ── 6b. Seed GPS coordinates for demo cafes (idempotent) ─────────────
         seedCafeCoordinates(borgolService);
 
-        // ── 7. Launch — web server OR JavaFX desktop ─────────────────────────
-        // Set MODE=web  (or -Dmode=web) to run as a headless REST API server.
-        // Railway, Docker, and any cloud deployment use MODE=web automatically.
-        // Local development launches the JavaFX desktop app as before.
+        // ── 7. Эхлүүлэх — web сервер ЭСВЭЛ JavaFX desktop ──────────────────
+        // ════════════════════════════════════════════════════════
+        // Загвар: Strategy — орчны хувьсагчаар горимыг сонгоно
+        // ════════════════════════════════════════════════════════
+        // MODE=web  → Railway/Docker cloud deployment (headless)
+        // MODE=desktop → орон нутгийн JavaFX GUI горим
+        // PORT → Railway автоматаар тохируулна, default: 7000
         String mode = System.getenv().getOrDefault("MODE",
                       System.getProperty("mode", "desktop"));
 
@@ -70,11 +87,13 @@ public class Main {
             System.out.println("  [MODE] Web server mode — port " + port);
             BorgolApiServer server = new BorgolApiServer(borgolService, menuService);
             server.start(port);
-            // Keep main thread alive (Javalin/Jetty runs on background threads)
+            // Javalin/Jetty нь ард (background thread)-д ажиллана
+            // main thread-г унтраахгүйн тулд join() хийнэ
             try { Thread.currentThread().join(); }
             catch (InterruptedException e) { Thread.currentThread().interrupt(); }
         } else {
             System.out.println("  [MODE] Desktop JavaFX mode");
+            // BorgolApp.setService() → JavaFX Application нь static field-р сервис авна
             BorgolApp.setService(borgolService);
             javafx.application.Application.launch(BorgolApp.class, args);
         }

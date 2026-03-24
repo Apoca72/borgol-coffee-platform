@@ -8,23 +8,44 @@ import mn.edu.num.cafe.infrastructure.security.PasswordUtil;
 import java.util.*;
 
 /**
- * Main application service for the Borgol Coffee Enthusiast Platform.
+ * Borgol платформын үндсэн бизнесийн логикийн давхарга.
  *
- * Handles: authentication, user management, recipes, cafes, social features.
+ * ════════════════════════════════════════════════════════════
+ * Загвар: Service Layer (Fowler's Patterns of Enterprise App)
+ * ════════════════════════════════════════════════════════════
+ * Зорилго: HTTP handler (BorgolApiServer) болон SQL (BorgolRepository)
+ * хоёрын хооронд бизнесийн дүрмийг хэрэгжүүлнэ.
+ *
+ * Зарчим (SOLID):
+ *  - Single Responsibility → Auth, User, Recipe, Cafe тус бүрийн
+ *    бизнес дүрмийг нэг газар хариуцна.
+ *  - Open/Closed → Repository-г солих боломжтой, Service өөрчлөгдөхгүй.
+ *
+ * Архитектур: Hexagonal (Ports & Adapters)
+ *  - Core domain (энэ класс) нь web болон DB-ийн технологиос тусгаарлагдана.
+ *  - BorgolRepository → DB Adapter (гадагш порт)
+ *  - BorgolApiServer  → Web Adapter (дотогш порт)
  */
 public class BorgolService {
 
+    // Repository-г DI (Dependency Injection) аргаар хүлээн авна
+    // → тест хийхэд mock оруулах боломжтой
     private final BorgolRepository repo;
 
     public BorgolService(BorgolRepository repo) {
         this.repo = repo;
     }
 
-    // ── Auth ──────────────────────────────────────────────────────────────────
+    // ── Нэвтрэх / Бүртгэх ────────────────────────────────────────────────────
+    // Зарчим: Fail Fast — оролтын баталгаажуулалт эхэлж хийнэ,
+    // DB-д хандахаас өмнө алдааг илрүүлж, 400 буцаана.
 
+    // Java Record → immutable value object, getter автоматаар үүснэ
     public record AuthResult(String token, UserView user) {}
 
     public AuthResult register(String username, String email, String password) {
+        // ── Оролтын баталгаажуулалт (Input Validation) ──────────────────────
+        // Зарчим: Defense in Depth — хэрэглэгчийн оролтыг хэзээ ч итгэхгүй
         if (username == null || username.isBlank())  throw new IllegalArgumentException("Username is required");
         if (email == null    || email.isBlank())     throw new IllegalArgumentException("Email is required");
         if (password == null || password.length() < 6) throw new IllegalArgumentException("Password must be ≥ 6 characters");
@@ -32,11 +53,15 @@ public class BorgolService {
         if (username.length() < 3 || username.length() > 50) throw new IllegalArgumentException("Username must be 3–50 characters");
         if (!username.matches("[a-zA-Z0-9_]+"))     throw new IllegalArgumentException("Username: letters, numbers, underscores only");
 
+        // ── Давхардал шалгах (Uniqueness check) ─────────────────────────────
         if (repo.findUserByEmail(email).isPresent())      throw new IllegalArgumentException("Email already registered");
         if (repo.findUserByUsername(username).isPresent()) throw new IllegalArgumentException("Username already taken");
 
+        // ── Нууц үг хэш хийх + хэрэглэгч үүсгэх ───────────────────────────
+        // PasswordUtil.hash() → SHA-256 + random salt — текст хадгалахгүй
         String hash = PasswordUtil.hash(password);
         User user   = repo.createUser(username, email, hash);
+        // JwtUtil → HMAC-SHA256 токен үүсгэнэ, 7 хоног хүчинтэй
         String token = JwtUtil.createToken(user.getId(), user.getUsername());
         return new AuthResult(token, toView(user, 0, false));
     }
@@ -45,8 +70,11 @@ public class BorgolService {
         if (email == null || email.isBlank())       throw new IllegalArgumentException("Email is required");
         if (password == null || password.isBlank()) throw new IllegalArgumentException("Password is required");
 
+        // Optional.orElseThrow() → хэрэглэгч олдохгүй бол "Invalid email or password"
+        // Аюулгүй байдал: "User not found" гэж хэлэхгүй — тухайн и-мэйл бүртгэлтэй эсэхийг нуuna
         User user = repo.findUserByEmail(email)
             .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+        // constantTimeEquals → timing attack-аас хамгаалсан нууц үг шалгалт
         if (!PasswordUtil.verify(password, user.getPasswordHash()))
             throw new IllegalArgumentException("Invalid email or password");
 
@@ -60,9 +88,11 @@ public class BorgolService {
         return toView(user, 0, false);
     }
 
-    // ── Users ─────────────────────────────────────────────────────────────────
+    // ── Хэрэглэгчийн үйлдлүүд ────────────────────────────────────────────────
 
     public UserView getUserProfile(int targetId, int currentUserId) {
+        // isFollowing → дагаж байгаа эсэхийг нэмэлт мэдээлэл болгон буцаана
+        // currentUserId == 0 → нэвтрээгүй хэрэглэгч (зочин)
         User user = repo.findUserById(targetId)
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
         boolean isFollowing = currentUserId > 0 && repo.isFollowing(currentUserId, targetId);
@@ -87,8 +117,10 @@ public class BorgolService {
     }
 
     public void followUser(int followerId, int followingId) {
+        // Өөрийгөө дагах боломжгүй — бизнесийн дүрэм
         if (followerId == followingId) throw new IllegalArgumentException("Cannot follow yourself");
         repo.followUser(followerId, followingId);
+        // Дагасны дараа автоматаар мэдэгдэл үүсгэнэ — Observer хэв маягтай төстэй
         repo.createNotification(followingId, "follow", followerId, 0,
             "started following you");
     }
@@ -106,7 +138,9 @@ public class BorgolService {
             }).toList();
     }
 
-    // ── Recipes ───────────────────────────────────────────────────────────────
+    // ── Жорын үйлдлүүд ───────────────────────────────────────────────────────
+    // Зарчим: Thin Controller, Fat Service — HTTP handler нь зөвхөн дамжуулна,
+    // бизнес логик (баталгаажуулалт, мэдэгдэл) энд байна.
 
     public List<Recipe> getRecipes(int currentUserId, String search, String drinkType, String sort) {
         return repo.findAllRecipes(currentUserId, search, drinkType, sort);
@@ -171,6 +205,7 @@ public class BorgolService {
     }
 
     public Map<String, Object> toggleLike(int userId, int recipeId) {
+        // ── Toggle логик: одоо like дарсан эсэхийг шалгаад эсрэгийг хийнэ ──
         boolean liked;
         if (repo.findRecipeById(recipeId, userId)
                 .map(Recipe::isLikedByCurrentUser).orElse(false)) {
@@ -179,7 +214,7 @@ public class BorgolService {
         } else {
             repo.likeRecipe(userId, recipeId);
             liked = true;
-            // notify author
+            // Өөрийн жорт like дарсан бол мэдэгдэл илгээхгүй (spam хориглох)
             repo.findRecipeById(recipeId, userId).ifPresent(r -> {
                 if (r.getAuthorId() != userId) {
                     repo.createNotification(r.getAuthorId(), "like", userId, recipeId,
@@ -187,12 +222,13 @@ public class BorgolService {
                 }
             });
         }
+        // Шинэчлэгдсэн тооллогыг буцаана — frontend дахин дуудахгүйгээр шинэчилнэ
         int count = repo.findRecipeById(recipeId, userId)
             .map(Recipe::getLikesCount).orElse(0);
         return Map.of("liked", liked, "likesCount", count);
     }
 
-    // ── Comments ──────────────────────────────────────────────────────────────
+    // ── Сэтгэгдлийн үйлдлүүд ─────────────────────────────────────────────────
 
     public List<RecipeComment> getComments(int recipeId) {
         return repo.findCommentsByRecipeId(recipeId);
@@ -212,7 +248,7 @@ public class BorgolService {
         return comment;
     }
 
-    // ── Cafes ─────────────────────────────────────────────────────────────────
+    // ── Кафены үйлдлүүд ──────────────────────────────────────────────────────
 
     public List<CafeListing> getCafes(int currentUserId, String search, String district) {
         return repo.findAllCafes(currentUserId, search, district);
@@ -252,12 +288,20 @@ public class BorgolService {
     }
 
     /**
-     * Return cafes within {@code radiusKm} kilometres of (lat, lng).
-     * Uses equirectangular bounding-box approximation — accurate enough for city-scale distances.
+     * (lat, lng) координатаас radiusKm км-ийн дотор байгаа кафенуудыг буцаана.
+     *
+     * Алгоритм: Equirectangular bounding-box наближение
+     * ─ 111 км ≈ 1 өргөрөгийн зэрэг (latitude degree)
+     * ─ Longitude зэрэг нь өргөргийн cosine-тай пропорциональ
+     * ─ Хот дотор (< 50 км) энэ алдаа хүлцэгдэхүйц нарийвчлалтай
+     *
+     * Зарчим: Good Enough Solution — тригонометрийн нарийн томьёо
+     * (Haversine) хэрэггүй, тойргийн хайлт бус дөрвөлжин хайлт хийнэ.
      */
     public List<CafeListing> getCafesNearby(int currentUserId, double lat, double lng, double radiusKm) {
         double latDelta = radiusKm / 111.0;
         double lngDelta = radiusKm / (111.0 * Math.cos(Math.toRadians(lat)));
+        // Дөрвөлжин bounding box → SQL-д BETWEEN ашиглаж шүүнэ
         return repo.findCafesNearby(currentUserId,
             lat - latDelta, lat + latDelta,
             lng - lngDelta, lng + lngDelta);

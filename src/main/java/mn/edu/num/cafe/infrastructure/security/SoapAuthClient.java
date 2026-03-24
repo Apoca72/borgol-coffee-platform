@@ -7,19 +7,28 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 
 /**
- * HTTP client that communicates with the SOAP Authentication Service (port 8081).
+ * SOAP Authentication Service-тэй харилцах HTTP клиент.
  *
- * Architecture:
- *   JSON Service (this)  →  SOAP Service
- *                              ├── RegisterUser
- *                              ├── LoginUser
- *                              └── ValidateToken
+ * ════════════════════════════════════════════════════════════
+ * Загвар: Proxy / Adapter (GoF)
+ * ════════════════════════════════════════════════════════════
+ * Зорилго: JSON сервис нь SOAP протоколыг шууд мэдэхгүйгээр
+ * auth сервисийг ашиглах боломж олгоно.
+ * Java Record-оор type-safe хариу буцаана.
  *
- * The client sends raw SOAP/XML over HTTP and parses the text response
- * without JAXB, keeping the JSON service dependency-free of SOAP libraries.
+ * SOA урсгал:
+ *   Frontend (JSON) → JSON Service → SoapAuthClient → SOAP Service
+ *                                                        ├── RegisterUser
+ *                                                        ├── LoginUser
+ *                                                        └── ValidateToken
  *
- * If the SOAP service is unreachable, all methods return a "failed" result
- * so the JSON service can fall back to its own JWT validation gracefully.
+ * Хэрэгжүүлэлтийн онцлог:
+ *  - Raw SOAP/XML over HTTP — JAXB/Spring-WS-г ашиглахгүй
+ *    → JSON сервис SOAP dependency-гүй хөнгөн байна
+ *  - Regex-гүй XML парсинг → tag нэрээр хайна (хялбар боловч хангалттай)
+ *  - SOAP унасан үед "failed" буцаана → JSON сервис local JWT-р fallback хийнэ
+ *
+ * Зарчим: Graceful Degradation — нэг сервис унасан ч систем ажиллана
  */
 public class SoapAuthClient {
 
@@ -31,9 +40,12 @@ public class SoapAuthClient {
      *                     in the cafe-project service's Railway environment variables.
      */
     private final String soapUrl;
+    // NAMESPACE → SOAP XML namespace, SOAP сервисийн конфигтой таарах ёстой
     private static final String NAMESPACE = "http://num.edu.mn/soapauth";
+    // TIMEOUT 5 сек → SOAP сервис хойрго байвал хэрэглэгчийг удаан хүлээлгэхгүй
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
 
+    // Java 11-с нэмэгдсэн стандарт HTTP клиент — гадны library хэрэггүй
     private final HttpClient http = HttpClient.newHttpClient();
 
     public SoapAuthClient() {
@@ -43,13 +55,16 @@ public class SoapAuthClient {
         System.out.println("  [SOAP] Client → " + soapUrl);
     }
 
-    // ── Public API ─────────────────────────────────────────────────────────────
+    // ── Нийтийн API ───────────────────────────────────────────────────────────
 
-    /** Result of a register or login call. */
+    // Java Record → immutable value object, getter автоматаар үүснэ
+    // Бүтэц тодорхой, null-safe хариу буцаана
+
+    /** Бүртгэх / нэвтрэх дуудлагын хариу */
     public record AuthResult(boolean success, String message,
                              String token,    Integer userId,  String username) {}
 
-    /** Result of a validateToken call. */
+    /** Токен баталгаажуулалтын хариу */
     public record ValidationResult(boolean valid, Integer userId, String username) {}
 
     // ── RegisterUser ───────────────────────────────────────────────────────────

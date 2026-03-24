@@ -25,7 +25,22 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Borgol Coffee Enthusiast Platform — REST API server.
+ * Borgol платформын REST API сервер — Javalin дээр суурилсан.
+ *
+ * ════════════════════════════════════════════════════════════
+ * Загвар: Front Controller (GoF) + Facade
+ * ════════════════════════════════════════════════════════════
+ * Зорилго: Бүх HTTP хүсэлтийг нэг цэгт хүлээн авч, холбогдох
+ * handler руу чиглүүлнэ. BorgolService-г "facade" болгон ашиглана —
+ * API handler нь бизнес логикийг мэдэхгүй, зөвхөн дамжуулна.
+ *
+ * Зарчим (SOLID):
+ *  - Single Responsibility: Энэ класс зөвхөн HTTP хүсэлт/хариу
+ *    боловсруулах үүрэгтэй.
+ *  - Dependency Inversion: BorgolService-г конструктороор хүлээн авна.
+ *
+ * SOA (Service-Oriented Architecture):
+ *  Frontend → JSON REST Service (энэ) → SOAP Auth Service
  *
  * API groups:
  *   POST /api/auth/register     — register new user
@@ -61,27 +76,32 @@ import java.util.Map;
  */
 public class BorgolApiServer {
 
-    private final BorgolService  borgol;
-    private final MenuService    menuService;
-    private final Javalin        app;
-    /** SOAP client – delegates auth to the SOAP Authentication Service (port 8081). */
+    private final BorgolService  borgol;      // бизнесийн логик
+    private final MenuService    menuService;  // legacy цэсний сервис
+    private final Javalin        app;          // Javalin/Jetty HTTP сервер
+    // SOAP клиент — SOA архитектурын дагуу auth-г тусдаа сервист шилжүүлнэ
+    // Загвар: Proxy / Delegate — JSON сервис нь SOAP-г ил гаргахгүйгээр ашиглана
     private final SoapAuthClient soapClient = new SoapAuthClient();
 
     public BorgolApiServer(BorgolService borgol, MenuService menuService) {
         this.borgol      = borgol;
         this.menuService = menuService;
         this.app = Javalin.create(cfg -> {
-            cfg.staticFiles.add("/public");
+            cfg.staticFiles.add("/public");   // /public доторх HTML/CSS/JS файлуудыг шууд хүргэнэ
             cfg.showJavalinBanner = false;
+            // Jetty-ийн хүсэлтийн хэмжээний хязгаарыг 8 MB болгоно
+            // → base64 зураг (рецепт, профайл зураг) дэмжинэ
             cfg.jetty.modifyServletContextHandler(h ->
                 h.setMaxFormContentSize(8 * 1024 * 1024)); // 8 MB for base64 images
         });
-        // ── Global CORS headers (allows frontend on any port to call this API) ──
+        // ── CORS header: ямар ч портын frontend хандах боломжтой ────────────
+        // Зарчим: Wildcard "*" — local dev болон Railway deployment хоёуланд ажиллана
         app.before(ctx -> {
             ctx.header("Access-Control-Allow-Origin",  "*");
             ctx.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
             ctx.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
         });
+        // OPTIONS preflight хүсэлтэд 200 хариу өгнө — browser security protocol
         app.options("/*", ctx -> ctx.status(200));
         registerRoutes();
     }
@@ -96,19 +116,24 @@ public class BorgolApiServer {
         System.out.println("  ╚══════════════════════════════════════════════╝");
     }
 
-    // ── Route registration ────────────────────────────────────────────────────
+    // ── Маршрут бүртгэл ───────────────────────────────────────────────────────
+    // Загвар: Front Controller — бүх URL маршрутыг нэг газарт бүртгэнэ.
+    // Method reference (this::handler) → Lambda-г богиносгосон хэлбэр.
 
     private void registerRoutes() {
+        // Үндсэн хуудас руу дахин чиглүүлнэ
         app.get("/", ctx -> ctx.redirect("/index.html"));
+        // Railway health check — deployment амьд эсэхийг шалгах
         app.get("/health", ctx -> ctx.json(Map.of("status", "ok")));
 
-        // Auth (local)
+        // ── Дотоод auth (SOAP унасан үед fallback болно) ────────────────────
         app.post("/api/auth/register", this::register);
         app.post("/api/auth/login",    this::login);
         app.get ("/api/auth/me",       this::getMe);
 
-        // ── Lab 06: SOAP-proxied auth endpoints ──────────────────────────────
-        // Frontend → JSON Service → SOAP Service (RegisterUser / LoginUser)
+        // ── Lab 06: SOA — SOAP Auth Service-р дамжуулах endpoint-ууд ────────
+        // SOA загвар: JSON сервис нь SOAP сервист чиглүүлж, бие даасан
+        // auth микросервис ажиллана. Хэрэв SOAP унасан бол local auth руу унана.
         app.post("/api/soap/register", this::soapRegister);
         app.post("/api/soap/login",    this::soapLogin);
 
@@ -176,12 +201,15 @@ public class BorgolApiServer {
         // Reports
         app.post("/api/report", this::submitReport);
 
-        // Admin
+        // ── Admin панел — зөвхөн id=1 хэрэглэгч хандах боломжтой ───────────
+        // Зарчим: Least Privilege — admin эрх зөвхөн шаардлагатай endpoint-д
+        // isAdmin() шалгалт handler дотор хийгдэнэ → 403 Forbidden буцаана
         app.get  ("/api/admin/reports",           this::adminGetReports);
         app.post ("/api/admin/reports/{id}/resolve", this::adminResolveReport);
         app.get  ("/api/admin/stats",             this::adminGetStats);
 
-        // Bean — AI coffee assistant
+        // ── Bean AI — Google Gemini 1.5 Flash-д суурилсан чат туслагч ───────
+        // Server-Sent Events (SSE) → хариуг үг бүрээр дамжуулна (streaming)
         app.post("/api/bean/chat", this::beanChat);
 
         // Block
@@ -195,7 +223,9 @@ public class BorgolApiServer {
         app.delete("/api/hashtags/{tag}/follow",      this::unfollowHashtag);
         app.get   ("/api/users/me/hashtags",          this::getUserHashtags);
 
-        // Legacy menu API (kept for backward compatibility)
+        // ── Legacy цэсний API — backward compatibility ───────────────────────
+        // JavaFX desktop app-тай нийцэх зорилгоор хадгалсан
+        // Шинэ код нэмэхгүй — Open/Closed зарчим: нэмэх боломжтой, хасахгүй
         app.get   ("/api/menu",      ctx -> ctx.json(menuService.getAllItems()));
         app.get   ("/api/menu/{id}", ctx -> {
             int id = intParam(ctx, "id");
@@ -218,34 +248,39 @@ public class BorgolApiServer {
         });
     }
 
-    // ── Lab 06: SOAP-proxied auth handlers ────────────────────────────────────
+    // ── Lab 06: SOAP-р дамжуулах auth handler-ууд ────────────────────────────
+    // Загвар: Strategy + Fallback Chain
+    // SOAP амжилттай → SOAP токен ашиглана
+    // SOAP унасан → local JWT-р орлуулна (graceful degradation)
 
     /**
      * POST /api/soap/register
      *
-     * SOA flow:
-     *   1. JSON Service receives REST request
-     *   2. JSON Service calls SOAP RegisterUser   (auth / credentials)
-     *   3. If SOAP succeeds, JSON Service creates local user profile
-     *   4. Returns SOAP-issued JWT token
+     * SOA урсгал:
+     *   1. Frontend → JSON сервис (энэ) HTTP/JSON
+     *   2. JSON сервис → SOAP сервис XML/HTTP (RegisterUser)
+     *   3. SOAP амжилттай бол → local DB-д профайл үүсгэнэ
+     *   4. SOAP токен (эсвэл local JWT) frontend-д буцаана
      */
     private void soapRegister(Context ctx) {
         var req = ctx.bodyAsClass(AuthReq.class);
 
-        // Step 1 – delegate auth to SOAP service
+        // ── SOAP сервист бүртгэлийн хүсэлт илгээнэ ──────────────────────────
         SoapAuthClient.AuthResult soapResult =
                 soapClient.register(req.username, req.email, req.password);
 
+        // SOAP сервис унасан эсэхийг мессежээр тодорхойлно
         boolean soapDown = soapResult.message() != null &&
                            soapResult.message().startsWith("SOAP service unavailable");
 
         if (!soapResult.success() && !soapDown) {
-            // SOAP is up but explicitly rejected the registration (e.g. duplicate user)
+            // SOAP ажиллаж байгаа ч татгалзсан (жишээ: нэр давхардсан)
             ctx.status(400).json(err(soapResult.message()));
             return;
         }
 
-        // Step 2 – create profile in local DB (fallback path when SOAP is down)
+        // ── Дотоод DB-д профайл үүсгэнэ (SOAP унасан үед fallback) ──────────
+        // Зарчим: Defensive Programming — нэг сервис унасан ч систем ажиллана
         try {
             var profile = borgol.register(req.username, req.email, req.password);
             ctx.status(201).json(Map.of(
