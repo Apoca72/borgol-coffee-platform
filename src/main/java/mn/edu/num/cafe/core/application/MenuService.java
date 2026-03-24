@@ -19,9 +19,18 @@ import java.util.stream.Collectors;
  *   - Зөвхөн IMenuRepository портоор репозитортой харилцана.
  *   - java.sql.*, javax.swing.* импорт хориглоно.
  */
+// ═══════════════════════════════════════════════════════════════
+// OBSERVER PATTERN — SUBJECT (мэдэгдэгч тал)
+//
+// MenuService энэ pattern-д Subject үүрэг гүйцэтгэнэ:
+//   1. Observer-уудыг жагсаалтад бүртгэнэ (addObserver)
+//   2. Цэс өөрчлөгдөх бүрт бүх observer-т мэдэгдэнэ (notify)
+// ═══════════════════════════════════════════════════════════════
 public class MenuService {
 
     private final IMenuRepository            repository;
+
+    // [SUBJECT] Observer-уудын жагсаалт — бүртгэгдсэн бүх сонсогч энд хадгалагдана
     private final List<MenuChangeObserver>   observers = new ArrayList<>();
 
     public MenuService(IMenuRepository repository) {
@@ -30,10 +39,12 @@ public class MenuService {
 
     // ── Observer бүртгэл ─────────────────────────────────────────────────────
 
+    // [SUBJECT] Observer бүртгэх метод — ямар нэг класс сонсохыг хүсвэл энд бүртгүүлнэ
     public void addObserver(MenuChangeObserver observer) {
         observers.add(observer);
     }
 
+    // [SUBJECT] Observer хасах метод — сонсохоо болих үед дуудна
     public void removeObserver(MenuChangeObserver observer) {
         observers.remove(observer);
     }
@@ -50,6 +61,7 @@ public class MenuService {
                 .mapToInt(MenuItem::getId).max().orElse(0) + 1;
         MenuItem item = new MenuItem(nextId, name, category, price, available);
         repository.save(item);
+        // [SUBJECT — NOTIFY] Шинэ зүйл нэмэгдсэн тухай бүх observer-т мэдэгдэнэ
         observers.forEach(o -> o.onItemAdded(item));
         return toDto(item);
     }
@@ -81,6 +93,7 @@ public class MenuService {
         item.setPrice(price);
         item.setAvailable(available);
         repository.save(item);
+        // [SUBJECT — NOTIFY] Зүйл шинэчлэгдсэн тухай бүх observer-т мэдэгдэнэ
         observers.forEach(o -> o.onItemUpdated(item));
         return toDto(item);
     }
@@ -88,6 +101,7 @@ public class MenuService {
     /** Цэсний зүйлийг устгана. */
     public void removeItem(int id) {
         repository.deleteById(id);
+        // [SUBJECT — NOTIFY] Зүйл устгагдсан тухай бүх observer-т мэдэгдэнэ
         observers.forEach(o -> o.onItemDeleted(id));
     }
 
