@@ -1,343 +1,318 @@
-# ☕ Borgol — Coffee Enthusiast Platform
+# Borgol — Кофе Сонирхогчдын Платформ
 
-**Course:** ICSI486 Software Construction
-**Student:** С.Тэмүүлэн — 22B1NUM6637
-**Live:** https://borgol-production.up.railway.app
-
----
-
-## Overview
-
-Borgol is a **full-stack coffee social platform** where enthusiasts share recipes, explore cafes, log brew sessions, follow hashtags, save recipes, and connect with other coffee lovers — powered by a Service-Oriented Architecture and an AI coffee assistant.
-
-The system is built on **SOA**:
-- **JSON REST API** — Javalin (Java 21), handles all platform features
-- **SOAP Auth Service** — Spring-WS (Spring Boot), issues and validates JWT tokens
-- **Web Frontend** — Vanilla HTML/CSS/JS, served directly from the Java server
-- **PostgreSQL** — hosted on Railway for cloud persistence
-- **Bean AI** — Google Gemini 1.5 Flash chatbot, coffee-focused assistant
+**Хичээл:** ICSI486 Программ хангамжийн бүтээлт
+**Оюутан:** С.Тэмүүлэн — 22B1NUM6637
+**Цахим хаяг:** https://borgol-production.up.railway.app
 
 ---
 
-## 🗺️ Pages
+## Танилцуулга
 
-| Page | URL | Purpose |
+Borgol нь кофе сонирхогчдод зориулсан нийгмийн платформ бөгөөд хэрэглэгчид жор хуваалцах, кафе судлах, дарлалтын тэмдэглэл хөтлөх, хэштэг дагах, жор хадгалах болон бусад хэрэглэгчтэй холбогдох боломж олгодог.
+
+Систем нь үйлчилгээнд суурилсан архитектур (SOA) дээр бүтээгдсэн:
+- JSON REST API — Javalin (Java 21), бүх платформын функцийг хариуцна
+- SOAP Auth Service — Spring-WS (Spring Boot), JWT токен олгох, баталгаажуулах
+- Веб интерфэйс — Vanilla HTML/CSS/JS, Java сервер дээрээс шууд хүргэгдэнэ
+- PostgreSQL — Railway дээр байршуулсан өгөгдлийн сан
+- Bean AI — Google Gemini 1.5 Flash дээр суурилсан кофены туслагч чат бот
+
+---
+
+## Хуудсууд
+
+| Хуудас | Зам | Зорилго |
 |---|---|---|
-| `index.html` | `/` | Main app — feed, recipes, cafes, explore, journal, learn, map |
-| `profile.html` | `/profile.html` | Profile, avatar upload, bio, saved recipes, hashtags |
-| `brew-timer.html` | `/brew-timer.html` | ⏱️ Brew timer + ratio calculator |
-| `admin.html` | `/admin.html` | 🔐 Admin panel — moderate reports (id=1 only) |
-| `login.html` | `/login.html` | Sign in |
-| `register.html` | `/register.html` | Create account |
+| index.html | / | Үндсэн апп — feed, жор, кафе, судлах, тэмдэглэл, суралцах, газрын зураг |
+| profile.html | /profile.html | Профайл засах, зураг оруулах, биографи, хадгалсан жор, хэштэг |
+| brew-timer.html | /brew-timer.html | Дарлалтын таймер ба харьцааны тооцоолуур |
+| admin.html | /admin.html | Админ самбар — гомдол шийдвэрлэх (зөвхөн id=1 хэрэглэгч) |
+| login.html | /login.html | Нэвтрэх |
+| register.html | /register.html | Бүртгүүлэх |
 
 ---
 
-## ✨ Features
+## Функцүүд
 
-### 🤖 Bean — AI Coffee Assistant _(new)_
-- Floating **☕ chat widget** on every page (bottom-right)
-- Powered by **Google Gemini 1.5 Flash** (free tier — 1,500 req/day)
-- Streaming word-by-word replies via Server-Sent Events
-- Knows Borgol's platform, Ulaanbaatar's coffee scene, and all brew methods
-- Session history persists across navigations
-- Responds in the user's language (Mongolian, English, etc.)
-- Unread dot indicator when a reply arrives while panel is closed
+### Bean — AI кофены туслагч
 
-### 🔐 Authentication (SOA/SOAP)
-- SOAP `RegisterUser` — create new account
-- SOAP `LoginUser` — sign in, receive JWT
-- SOAP `ValidateToken` — middleware validates every protected request
-- HMAC-SHA256 JWT (7-day expiry), SHA-256 + salt password hashing
-- Graceful fallback to local JWT if SOAP service is unreachable
+- Хуудас бүрт байрших чат цонх (баруун доод буланд)
+- Google Gemini 1.5 Flash дээр суурилсан (өдөрт 1500 хүсэлт үнэгүй)
+- Server-Sent Events ашиглан хариуг бодит цагт үг бүрээр дамжуулна
+- Платформын мэдлэг, Улаанбаатарын кофены газрууд, бүх дарлалтын аргыг мэддэг
+- Хэрэглэгчийн хэл дээр хариулна (монгол, англи гэх мэт)
 
-### 👤 Profile
-- **Avatar upload** — client-side canvas compression (max 240px, JPEG), stored as base64 `TEXT`
-- **Editable bio** — saved to PostgreSQL
-- **Expertise level** — BEGINNER → ENTHUSIAST → BARISTA → EXPERT
-- **Flavor preference tags** — add/remove personal flavor chips
-- **Stats** — recipe count, follower/following counts
+### Нэвтрэх ба бүртгэх (SOA/SOAP)
 
-### 📖 Recipes
-- Create, edit, delete with brew time, difficulty, ingredients, instructions
-- **Photo upload** — client-side compressed, stored as base64 `TEXT` (up to 8 MB)
-- Flavor tags, drink type filter
-- ❤️ Like / unlike
-- 💬 Comments
-- 🔖 Save / unsave (accessible from profile)
-- 🚩 Report (sends to admin moderation queue)
+- SOAP RegisterUser — шинэ бүртгэл үүсгэх
+- SOAP LoginUser — нэвтрэх, JWT токен олгох
+- SOAP ValidateToken — хамгаалагдсан хүсэлт бүрт шалгах
+- HMAC-SHA256 JWT (7 хоногийн хүчинтэй хугацаа), SHA-256 + давс нууц үг хаш
+- SOAP унасан тохиолдолд дотоод JWT-р орлуулна
 
-### 🏠 Feed
-- Recipes from users you follow
-- Explore tab — trending recipes when following nobody
+### Профайл
 
-### 🏷️ Hashtags
-- Follow hashtags to surface matching recipes in feed
-- Trending hashtags panel
+- Зураг оруулах — клиент тал дээр canvas-аар шахах (дахин 240px, JPEG), base64 TEXT болгон хадгалах
+- Биографи засах — PostgreSQL-д хадгалагдана
+- Мэргэшлийн түвшин — BEGINNER, ENTHUSIAST, BARISTA, EXPERT
+- Амтын сонголтын шошго — нэмэх, хасах
+- Статистик — жорын тоо, дагагч, дагаж буй тоо
 
-### ☕ Cafes
-- Browse and add cafes with star ratings and reviews
-- 📍 Nearby filter — GPS + radius search
-- Interactive Leaflet.js map (OpenStreetMap, no API key)
+### Жор
 
-### 📓 Brew Journal
-- Personal brew log with 6-axis **radar chart** (Aroma, Taste, Acidity, Body, Sweetness, Finish)
-- CSV export
+- Жор үүсгэх, засах, устгах — дарлалтын хугацаа, хүндрэл, найрлага, заавар
+- Зураг оруулах — клиент тал дээр шахагдсан, base64 TEXT болгон хадгалах (8 MB хүртэл)
+- Амтын шошго, ундааны төрлөөр шүүх
+- Like дарах, сэтгэгдэл бичих
+- Жор хадгалах, профайлаас үзэх
+- Жор мэдээлэх (гомдол шийдвэрлэх дараалалд орно)
 
-### ⏱️ Brew Timer
-Step-by-step guided brewing for 6 methods:
+### Feed
 
-| Method | Steps | Ratio Presets |
+- Дагаж буй хэрэглэгчдийн жорууд
+- Хэн ч дагаагүй бол trending жорыг харуулна
+
+### Хэштэг
+
+- Хэштэг дагаж feed-д холбогдох жорыг гарган ирэх
+- Тренд хэштэгийн самбар
+
+### Кафе
+
+- Кафе үзэх, нэмэх, одоор үнэлэх, сэтгэгдэл бичих
+- GPS-д суурилсан ойролцоо хайлт
+- Leaflet.js газрын зураг (OpenStreetMap, API түлхүүр шаардахгүй)
+
+### Дарлалтын тэмдэглэл
+
+- Хувийн дарлалтын бичлэг, 6 тэнхлэгт radar chart (Aroma, Taste, Acidity, Body, Sweetness, Finish)
+- CSV экспорт
+
+### Дарлалтын таймер
+
+6 аргад зориулсан алхам алхмаар удирдамж:
+
+| Арга | Алхам | Харьцааны тохиргоо |
 |---|---|---|
-| V60 | 6 (bloom → drain) | 1:15, 1:16, 1:17 |
+| V60 | 6 (цэцэглэх — урсах) | 1:15, 1:16, 1:17 |
 | Espresso | 4 | 1:2, 1:2.5, 1:3 |
 | French Press | 6 | 1:10, 1:12, 1:15 |
 | AeroPress | 7 | 1:10, 1:13, 1:16 |
 | Moka Pot | 6 | 1:7, 1:8, 1:9 |
-| Cold Brew | 6 (12–18 h) | 1:5, 1:6, 1:8 |
+| Cold Brew | 6 (12-18 цаг) | 1:5, 1:6, 1:8 |
 
-- **Bidirectional ratio calculator** — change coffee → water auto-updates, and vice versa
-- Animated SVG ring countdown, pause/resume/reset
-- System notification on completion
-- `env(safe-area-inset-bottom)` for iOS Safari notch
+- Хоёр талт харьцааны тооцоолуур — кофены жин өөрчлөхөд ус автоматаар шинэчлэгдэнэ
+- SVG цагираг тоолуур, түр зогсоох, үргэлжлүүлэх, дахин эхлүүлэх
+- Дарлалт дууссанд системийн мэдэгдэл
 
-### 🚩 Reports & Admin Panel
-- Any user can report a recipe or user with reason + description
-- **Admin panel** (`/admin.html`) — first registered account only:
-  - Live pending/resolved/dismissed counts
-  - Filter tabs, resolve/dismiss buttons
-  - Skeleton loading, toast notifications
+### Гомдол ба админ самбар
 
-### 🔔 Notifications
-- Bell icon with unread count in navbar
-- Notified on likes, comments, follows
+- Хэрэглэгч аливаа жор эсвэл хэрэглэгчийг шалтгаан, тайлбартайгаар мэдээлж болно
+- Админ самбар (/admin.html) — зөвхөн анх бүртгүүлсэн хэрэглэгч (id=1) хандах боломжтой
+- Хүлээгдэж буй, шийдвэрлэсэн, татгалзсан гомдлын тоо, шүүлтийн таб
+- Шийдвэрлэх, татгалзах товч, skeleton ачаалалт, toast мэдэгдэл
 
-### 👥 Social Graph
-- Follow / unfollow users
-- Block / unblock users
+### Мэдэгдэл
+
+- Навигацийн хонхны дүрс, уншаагүй тоолуур
+- Like, сэтгэгдэл, дагасны мэдэгдэл
 
 ---
 
-## 🏗️ Architecture
+## Архитектур
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│             Web Frontend (HTML / CSS / Vanilla JS)              │
-│  index.html │ profile.html │ brew-timer.html │ admin.html       │
-│                                                                 │
-│                     ☕ Bean chat widget                         │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ HTTP REST (JSON) + SSE
-                           ▼
-┌──────────────────────────────────────┐
-│   JSON REST API  (Javalin)           │
-│   BorgolApiServer                    │
-│                                      │
-│  POST /api/bean/chat ─────────────►  Google Gemini 1.5 Flash
-│                                      │
-│  authRequired() ──────────────────┐  │
-│  POST /api/soap/register ─────────┤  │
-│  POST /api/soap/login ────────────┤  │ SOAP XML
-│                                   ▼  │
-│  ┌─────────────────────────────┐     │
-│  │  SOAP Auth Service  :8081   │     │
-│  │  Spring-WS (Spring Boot)    │     │
-│  │  ▸ RegisterUser             │     │
-│  │  ▸ LoginUser → JWT          │     │
-│  │  ▸ ValidateToken            │     │
-│  └─────────────────────────────┘     │
-│                                      │
-│  BorgolRepository ────────────────►  PostgreSQL (Railway)
-└──────────────────────────────────────┘
+Веб интерфэйс (HTML / CSS / Vanilla JS)
+  index.html | profile.html | brew-timer.html | admin.html
+
+         HTTP REST (JSON) + SSE
+                  |
+         JSON REST API (Javalin)
+         BorgolApiServer
+
+  POST /api/bean/chat ─────► Google Gemini 1.5 Flash
+
+  POST /api/soap/register ──────────┐
+  POST /api/soap/login ─────────────┤  SOAP XML
+                                    ▼
+                     SOAP Auth Service (Spring-WS)
+                       ├── RegisterUser
+                       ├── LoginUser → JWT
+                       └── ValidateToken
+
+  BorgolRepository ──────────────────► PostgreSQL (Railway)
 ```
 
-### Code Structure
+### Кодын бүтэц
 
 ```
 cafe-project/
-├── soap-auth-service/              SOAP auth microservice (Spring Boot)
+├── soap-auth-service/              SOAP auth микросервис (Spring Boot)
 │   └── src/main/java/com/example/soapauth/
-│       ├── endpoint/AuthEndpoint   @PayloadRoot SOAP dispatcher
-│       ├── service/AuthService     HMAC-SHA256 JWT + SHA-256 passwords
-│       ├── dto/                    JAXB request/response DTOs
-│       └── config/                 Spring-WS + CORS config
+│       ├── endpoint/AuthEndpoint   SOAP dispatcher
+│       ├── service/AuthService     JWT + нууц үг
+│       ├── dto/                    JAXB DTO
+│       └── config/                 Spring-WS тохиргоо
 │
 └── src/main/java/mn/edu/num/cafe/
-    ├── app/Main.java               Composition root
+    ├── app/Main.java               Composition Root
     ├── core/
-    │   ├── domain/                 Entity classes (User, Recipe, Cafe…)
-    │   └── application/BorgolService  Business logic + admin checks
+    │   ├── domain/                 Entity классууд
+    │   └── application/BorgolService   Бизнесийн логик
     ├── infrastructure/
-    │   ├── persistence/BorgolRepository  All SQL + schema migrations
+    │   ├── persistence/BorgolRepository  SQL, схемийн миграц
     │   └── security/
-    │       ├── JwtUtil             Local JWT fallback
-    │       ├── PasswordUtil        SHA-256 + salt
-    │       └── SoapAuthClient      SOAP HTTP client
+    │       ├── JwtUtil             Дотоод JWT
+    │       ├── PasswordUtil        SHA-256 + давс
+    │       └── SoapAuthClient      SOAP HTTP клиент
     └── ui/
-        ├── web/BorgolApiServer     REST endpoints + Bean AI + admin
-        └── desktop/                JavaFX panes (legacy)
+        ├── web/BorgolApiServer     REST endpoint, Bean AI, админ
+        └── desktop/                JavaFX (legacy)
 ```
 
 ---
 
-## 🗄️ Database
+## Өгөгдлийн сан
 
-PostgreSQL hosted on Railway. Schema auto-created and migrated on startup.
+PostgreSQL, Railway дээр байршуулсан. Схем нь програм эхлэх бүрт автоматаар үүсч, шинэчлэгдэнэ.
 
-| Table | Purpose |
+| Хүснэгт | Зориулалт |
 |---|---|
-| `borgol_users` | Accounts — username, email, bio, avatar (`TEXT`), expertise |
-| `user_flavor_prefs` | Per-user flavor tags |
-| `user_follows` | Follow graph |
-| `recipes` | Coffee recipes (image_url: `TEXT`) |
-| `recipe_flavor_tags` | Recipe tags |
-| `recipe_likes` | Like records |
-| `recipe_comments` | Comments |
-| `saved_recipes` | Bookmarked recipes |
-| `cafes` | Cafe listings |
-| `cafe_ratings` | Ratings + reviews |
-| `brew_guides` | Brew method guides |
-| `brew_journal` | Personal brew log |
-| `user_equipment` | User gear |
-| `learn_articles` | Educational articles |
-| `user_hashtags` | Followed hashtags |
-| `reports` | Reports (pending / resolved / dismissed) |
-| `notifications` | User notifications |
-| `blocked_users` | Block list |
+| borgol_users | Бүртгэл — нэр, и-мэйл, биографи, зураг (TEXT), мэргэшил |
+| user_flavor_prefs | Хэрэглэгч бүрийн амтын сонголт |
+| user_follows | Дагах граф |
+| recipes | Кофе жор (image_url: TEXT) |
+| recipe_flavor_tags | Жорын шошго |
+| recipe_likes | Like бүртгэл |
+| recipe_comments | Сэтгэгдэл |
+| saved_recipes | Хадгалсан жор |
+| cafes | Кафены жагсаалт |
+| cafe_ratings | Үнэлгээ ба сэтгэгдэл |
+| brew_guides | Дарлалтын арга зааварчилгаа |
+| brew_journal | Хувийн дарлалтын тэмдэглэл |
+| user_equipment | Хэрэглэгчийн тоног төхөөрөмж |
+| learn_articles | Боловсролын нийтлэл |
+| user_hashtags | Дагасан хэштэг |
+| reports | Гомдол (хүлээгдэж буй / шийдвэрлэсэн / татгалзсан) |
+| notifications | Мэдэгдэл |
+| blocked_users | Хаасан хэрэглэгч |
 
 ---
 
-## 🔌 API Endpoints
+## API
 
-| Group | Endpoints |
+| Бүлэг | Endpoint |
 |---|---|
-| **Auth (SOAP)** | `POST /api/soap/register`, `POST /api/soap/login` |
-| **Auth (local)** | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` |
-| **Users** | `GET /api/users/{id}`, `PUT /api/users/me`, `DELETE /api/users/{id}` |
-| **Social** | `POST/DELETE /api/users/{id}/follow`, `POST/DELETE /api/users/{id}/block` |
-| **Hashtags** | `POST/DELETE /api/hashtags/{tag}/follow`, `GET /api/hashtags/trending` |
-| **Recipes** | `GET/POST /api/recipes`, `GET/PUT/DELETE /api/recipes/{id}` |
-| **Recipe actions** | `POST /api/recipes/{id}/like`, `GET/POST /api/recipes/{id}/comments`, `POST /api/recipes/{id}/save` |
-| **Feed** | `GET /api/feed` |
-| **Cafes** | `GET/POST /api/cafes`, `POST /api/cafes/{id}/rate`, `GET /api/cafes/nearby` |
-| **Journal** | `GET/POST /api/journal`, `PUT/DELETE /api/journal/{id}` |
-| **Guides** | `GET /api/brew-guides`, `GET /api/learn` |
-| **Notifications** | `GET /api/notifications`, `POST /api/notifications/read` |
-| **Reports** | `POST /api/report` |
-| **Admin** | `GET /api/admin/reports?status=`, `POST /api/admin/reports/{id}/resolve`, `GET /api/admin/stats` |
-| **Bean AI** | `POST /api/bean/chat` — streaming SSE (Google Gemini 1.5 Flash) |
+| Auth (SOAP) | POST /api/soap/register, POST /api/soap/login |
+| Auth (дотоод) | POST /api/auth/register, POST /api/auth/login, GET /api/auth/me |
+| Хэрэглэгч | GET /api/users/{id}, PUT /api/users/me, DELETE /api/users/{id} |
+| Нийгмийн | POST/DELETE /api/users/{id}/follow, POST/DELETE /api/users/{id}/block |
+| Хэштэг | POST/DELETE /api/hashtags/{tag}/follow, GET /api/hashtags/trending |
+| Жор | GET/POST /api/recipes, GET/PUT/DELETE /api/recipes/{id} |
+| Жорын үйлдэл | POST /api/recipes/{id}/like, GET/POST /api/recipes/{id}/comments, POST /api/recipes/{id}/save |
+| Feed | GET /api/feed |
+| Кафе | GET/POST /api/cafes, POST /api/cafes/{id}/rate, GET /api/cafes/nearby |
+| Тэмдэглэл | GET/POST /api/journal, PUT/DELETE /api/journal/{id} |
+| Зааварчилгаа | GET /api/brew-guides, GET /api/learn |
+| Мэдэгдэл | GET /api/notifications, POST /api/notifications/read |
+| Гомдол | POST /api/report |
+| Админ | GET /api/admin/reports, POST /api/admin/reports/{id}/resolve, GET /api/admin/stats |
+| Bean AI | POST /api/bean/chat — SSE дамжуулалт (Google Gemini 1.5 Flash) |
 
 ---
 
-## 🚀 Running Locally
+## Орон нутагт ажиллуулах
 
-### 1. SOAP Auth Service (start first)
+### 1. SOAP Auth Service (эхлэж эхлүүлнэ)
 
 ```bash
 cd soap-auth-service
 mvn spring-boot:run
 ```
 
-> WSDL at `http://localhost:8081/ws/authService.wsdl`
+WSDL: http://localhost:8081/ws/authService.wsdl
 
-### 2. JSON API + Frontend
+### 2. JSON API ба интерфэйс
 
 ```bash
 cd cafe-project
 mvnw.cmd javafx:run
 ```
 
-> App at `http://localhost:7000`
+Апп: http://localhost:7000
 
-### 3. Environment Variables (for Bean AI)
+### 3. Bean AI-д зориулсан орчны хувьсагч
 
-```bash
-GEMINI_API_KEY=your-google-ai-studio-key   # https://aistudio.google.com/apikey
+```
+GEMINI_API_KEY=google-ai-studio-таас-авсан-түлхүүр
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## Технологийн стек
 
-| Layer | Technology |
+| Давхарга | Технологи |
 |---|---|
 | REST API | Javalin 6.3 |
 | SOAP Auth | Spring Boot 3.2.5 + Spring-WS |
-| AI Chatbot | Google Gemini 1.5 Flash (free tier) |
-| Frontend | HTML5 / CSS3 / Vanilla JS |
-| Database | PostgreSQL on Railway |
-| Desktop UI | JavaFX 21 (legacy) |
+| AI чат бот | Google Gemini 1.5 Flash |
+| Интерфэйс | HTML5 / CSS3 / Vanilla JS |
+| Өгөгдлийн сан | PostgreSQL (Railway) |
+| Desktop | JavaFX 21 (legacy) |
 | JWT | HMAC-SHA256 |
-| Passwords | SHA-256 + random salt |
-| Maps | Leaflet.js + OpenStreetMap |
-| Fonts | Playfair Display + DM Sans |
-| Build | Maven Wrapper |
-| Language | Java 21 |
-| Hosting | Railway |
+| Нууц үг | SHA-256 + санамсаргүй давс |
+| Газрын зураг | Leaflet.js + OpenStreetMap |
+| Фонт | Playfair Display + DM Sans |
+| Бүтээх хэрэгсэл | Maven |
+| Програмчлалын хэл | Java 21 |
+| Байршуулалт | Railway |
 
 ---
 
-## 🎨 Design System
+## Загвар хэв маягууд
 
-**Warm Light palette** — inspired by morning espresso
-
-| Token | Value | Usage |
+| Загвар | Байршил | Тайлбар |
 |---|---|---|
-| `--espresso` | `#0C0400` | Navbar |
-| `--caramel` | `#A8621E` | Primary actions |
-| `--amber` | `#F5C060` | Active states |
-| `--cream` | `#F6E8CC` | Subtle backgrounds |
-| `--milk` | `#FDFAF3` | Page background |
-
-Typography: **Playfair Display** (headings) + **DM Sans** (body)
-
----
-
-## 🧩 Design Patterns
-
-| Pattern | Where | Монгол тайлбар |
-|---|---|---|
-| **Singleton** | `DatabaseConnection` (DCL + volatile) | Програмын туршид нэг DB холболтын объект |
-| **Repository / DAO** | `BorgolRepository` | SQL-г сервисээс тусгаарлана |
-| **Service Layer** | `BorgolService` | Бизнесийн дүрэм нэг газарт |
-| **Front Controller** | `BorgolApiServer` | Бүх HTTP хүсэлтийг нэг цэгт хүлээнэ |
-| **Proxy / Adapter** | `SoapAuthClient` | JSON сервис SOAP-г шууд мэдэхгүйгээр ашиглана |
-| **Observer** | `MenuChangeObserver` | Цэсийн өөрчлөлтийг сонсогч |
-| **Strategy** | `Main` (MODE=web/desktop) | Нэг codebase, хоёр горимд ажиллана |
-| **Hexagonal Architecture** | Core domain | UI болон DB-ийн технологиос тусгаарлагдана |
-| **Composition Root** | `Main.java` | Бүх dependency нэг газарт угсарна |
-| **Fallback Chain** | `soapLogin` / `soapRegister` | SOAP унасан → local JWT-р graceful degradation |
+| Singleton | DatabaseConnection (DCL + volatile) | Програмын туршид нэг DB холболтын объект |
+| Repository / DAO | BorgolRepository | SQL-г сервисээс тусгаарлана |
+| Service Layer | BorgolService | Бизнесийн дүрэм нэг газарт |
+| Front Controller | BorgolApiServer | Бүх HTTP хүсэлтийг нэг цэгт хүлээнэ |
+| Proxy / Adapter | SoapAuthClient | JSON сервис SOAP-г шууд мэдэхгүйгээр ашиглана |
+| Observer | MenuChangeObserver | Цэсийн өөрчлөлтийг сонсогч |
+| Strategy | Main.java (MODE=web/desktop) | Нэг codebase, хоёр горимд ажиллана |
+| Hexagonal | Core domain | UI болон DB-ийн технологиос тусгаарлагдана |
+| Composition Root | Main.java | Бүх dependency нэг газарт угсарна |
+| Fallback Chain | soapLogin / soapRegister | SOAP унасан үед local JWT-р орлуулна |
 
 ---
 
-## 🔐 Admin System
+## Код дахь тайлбар
 
-The first registered account (`id = 1`) is automatically admin.
-
-- Admin-only endpoints return `403 Forbidden` for all others
-- Reports lifecycle: `pending` → `resolved` / `dismissed`
-- `resolved_by` and `resolved_at` tracked per report
-
----
-
----
-
-## 💬 Code Comments (Монгол тайлбар)
-
-Бүх Java эх кодонд **Монгол хэл дээрх дэлгэрэнгүй тайлбар** нэмэгдсэн:
+Бүх Java эх кодонд монгол хэл дээрх дэлгэрэнгүй тайлбар нэмэгдсэн:
 
 | Файл | Тайлбарласан зүйлс |
 |---|---|
-| `Main.java` | Composition Root загвар, Strategy горим, Observer угсралт |
-| `DatabaseConnection.java` | DCL Singleton, volatile, тэргүүлэх дарааллын connection fallback |
-| `BorgolRepository.java` | Repository/DAO загвар, PreparedStatement (SQL injection хамгаалалт), идемпотент миграц, CASCADE дүрмүүд |
-| `BorgolService.java` | Service Layer, Fail Fast баталгаажуулалт, Toggle логик, Observer мэдэгдэл, Hexagonal архитектур |
-| `BorgolApiServer.java` | Front Controller, CORS, SOA урсгал, Proxy/Delegate, Least Privilege (admin) |
-| `JwtUtil.java` | JWT RFC 7519 бүтэц, HMAC-SHA256, constant-time comparison (timing attack хамгаалалт) |
-| `PasswordUtil.java` | Salted Hash загвар, SecureRandom, SHA-256, Defense in Depth |
-| `SoapAuthClient.java` | Proxy/Adapter загвар, Graceful Degradation, SOAP envelope бүтэц |
+| Main.java | Composition Root загвар, Strategy горим, Observer угсралт |
+| DatabaseConnection.java | DCL Singleton, volatile, connection fallback дараалал |
+| BorgolRepository.java | Repository/DAO загвар, PreparedStatement, идемпотент миграц, CASCADE |
+| BorgolService.java | Service Layer, Fail Fast баталгаажуулалт, Toggle логик, Hexagonal архитектур |
+| BorgolApiServer.java | Front Controller, CORS, SOA урсгал, Proxy/Delegate, Least Privilege |
+| JwtUtil.java | JWT RFC 7519 бүтэц, HMAC-SHA256, constant-time comparison |
+| PasswordUtil.java | Salted Hash загвар, SecureRandom, SHA-256, Defense in Depth |
+| SoapAuthClient.java | Proxy/Adapter загвар, Graceful Degradation, SOAP envelope бүтэц |
 
 ---
 
-`feature/borgol-platform` → [github.com/Apoca72/borgol-coffee-platform](https://github.com/Apoca72/borgol-coffee-platform)
+## Админ систем
 
-> Also mirrored to GitLab for academic submission.
+Анх бүртгүүлсэн хэрэглэгч (id=1) автоматаар админ болно.
+
+- Админ зориулалтын endpoint-уудад бусад хэрэглэгч хандахад 403 Forbidden буцаана
+- Гомдлын амьдралын мөчлөг: хүлээгдэж буй → шийдвэрлэсэн / татгалзсан
+- resolved_by, resolved_at баганаар хэн, хэзээ шийдвэрлэсэн бүртгэгдэнэ
+
+---
+
+`feature/borgol-platform` — [github.com/Apoca72/borgol-coffee-platform](https://github.com/Apoca72/borgol-coffee-platform)
+
+GitLab-д академик илгээлтийн зорилгоор тусдаа хуулбарлагдана.
