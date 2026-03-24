@@ -48,7 +48,7 @@ public class Main {
         // Observer загвар: цэсийн өөрчлөлтийг ConsoleMenuObserver сонсоно
         menuService.addObserver(new ConsoleMenuObserver());
 
-        // ── 4. Цэсийн анхны өгөгдлийг тарина (идемпотент) ───────────────────
+        // ── 4. Цэсийн анхны өгөгдлийг inject хийнж (идемпотент) ───────────────────
         if (menuService.getAllItems().isEmpty()) {
             menuService.addItem("Espresso",         MenuCategory.COFFEE,   3.50);
             menuService.addItem("Caffe Latte",       MenuCategory.COFFEE,   4.50);
