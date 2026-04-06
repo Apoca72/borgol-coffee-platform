@@ -72,7 +72,7 @@ public class ProfilePane {
         }
 
         // ── Header card ──────────────────────────────────────────────────────
-        Label avatar = UiUtils.createAvatar(profile.username(), 64);
+        javafx.scene.Node avatar = UiUtils.createAvatar(profile.username(), 64);
 
         Label username = new Label("@" + profile.username());
         username.setStyle("-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#1C1E21;");
@@ -178,9 +178,13 @@ public class ProfilePane {
         flavorField.setText(profile.flavorPrefs() != null
             ? String.join(", ", profile.flavorPrefs()) : "");
 
+        TextField avatarField = MainWindow.styledField("https://example.com/photo.jpg");
+        avatarField.setText(profile.avatarUrl() != null ? profile.avatarUrl() : "");
+
         grid.add(lbl("Bio"),          0, 0); grid.add(bioArea,     1, 0);
         grid.add(lbl("Level"),        0, 1); grid.add(levelBox,    1, 1);
         grid.add(lbl("Flavor Prefs"), 0, 2); grid.add(flavorField, 1, 2);
+        grid.add(lbl("Avatar URL"),   0, 3); grid.add(avatarField, 1, 3);
         dlg.getDialogPane().setContent(grid);
 
         dlg.showAndWait().ifPresent(bt -> {
@@ -189,7 +193,7 @@ public class ProfilePane {
                     List<String> prefs = List.of(flavorField.getText().split(","))
                         .stream().map(String::trim).filter(s -> !s.isBlank()).toList();
                     service.updateProfile(AppSession.userId(),
-                        bioArea.getText().trim(), "", levelBox.getValue(), prefs);
+                        bioArea.getText().trim(), avatarField.getText().trim(), levelBox.getValue(), prefs);
                     root.getChildren().clear();
                     build();
                     UiUtils.showToast("Profile updated!");

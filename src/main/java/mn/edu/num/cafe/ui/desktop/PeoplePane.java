@@ -102,7 +102,7 @@ public class PeoplePane {
         card.setMaxWidth(680);
 
         // Avatar
-        Label avatar = UiUtils.createAvatar(u.username(), 44);
+        javafx.scene.Node avatar = UiUtils.createAvatar(u.username(), 44);
 
         // Info
         VBox info = new VBox(3);

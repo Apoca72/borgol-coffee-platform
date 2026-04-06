@@ -52,8 +52,26 @@ class UiUtils {
 
     // ── Avatar ────────────────────────────────────────────────────────────────
 
-    /** Creates a colored circular avatar Label for the given username and pixel size. */
-    static Label createAvatar(String username, int size) {
+    /** Creates a circular avatar for the given username and pixel size. */
+    static javafx.scene.Node createAvatar(String username, int size) {
+        return createAvatar(username, null, size);
+    }
+
+    /** Creates a circular avatar, using an image URL if provided, otherwise falling back to a letter initial. */
+    static javafx.scene.Node createAvatar(String username, String imageUrl, int size) {
+        if (imageUrl != null && !imageUrl.isBlank()) {
+            try {
+                javafx.scene.image.Image img =
+                    new javafx.scene.image.Image(imageUrl, size, size, true, true, true);
+                javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(img);
+                iv.setFitWidth(size); iv.setFitHeight(size);
+                javafx.scene.shape.Circle clip =
+                    new javafx.scene.shape.Circle(size / 2.0, size / 2.0, size / 2.0);
+                iv.setClip(clip);
+                return iv;
+            } catch (Exception ignored) {}
+        }
+        // Fallback: letter initial label
         String initial = (username != null && !username.isEmpty())
             ? username.substring(0, 1).toUpperCase() : "?";
         Label av = new Label(initial);
@@ -180,7 +198,7 @@ class UiUtils {
         likeChip.getStyleClass().add(r.isLikedByCurrentUser() ? "detail-chip-liked" : "detail-chip");
         chips.getChildren().addAll(typeChip, diffChip, timeChip, likeChip);
 
-        Label av = createAvatar(r.getAuthorUsername(), 28);
+        javafx.scene.Node av = createAvatar(r.getAuthorUsername(), 28);
         Label authorLbl = new Label("@" + r.getAuthorUsername());
         authorLbl.getStyleClass().add("username-link");
         authorLbl.setOnMouseClicked(e -> showUserProfileDialog(service, r.getAuthorId()));
@@ -241,7 +259,7 @@ class UiUtils {
                 if (empty || c == null) { setText(null); setGraphic(null); return; }
                 HBox row = new HBox(10);
                 row.setAlignment(Pos.TOP_LEFT);
-                Label av2 = createAvatar(c.getAuthorUsername(), 24);
+                javafx.scene.Node av2 = createAvatar(c.getAuthorUsername(), 24);
                 VBox info = new VBox(2);
                 Label name = new Label("@" + c.getAuthorUsername());
                 name.setStyle("-fx-font-weight:700;-fx-font-size:12px;-fx-text-fill:" + text() + ";");
@@ -327,7 +345,7 @@ class UiUtils {
             "-fx-border-color:transparent transparent " + border() + " transparent;" +
             "-fx-border-width:0 0 1 0;");
 
-        Label avatar = createAvatar(profile.username(), 56);
+        javafx.scene.Node avatar = createAvatar(profile.username(), 56);
 
         Label nameLabel = new Label("@" + profile.username());
         nameLabel.setStyle("-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:" + text() + ";");
@@ -594,7 +612,7 @@ class UiUtils {
                     row.setStyle("-fx-border-color:transparent transparent " + border() + " transparent;" +
                         "-fx-border-width:0 0 1 0;");
 
-                    Label av = createAvatar(u.username(), 36);
+                    javafx.scene.Node av = createAvatar(u.username(), 36);
                     VBox info = new VBox(2);
                     Label name = new Label("@" + u.username());
                     name.setStyle("-fx-font-weight:700;-fx-font-size:13px;-fx-text-fill:" + text() + ";" +

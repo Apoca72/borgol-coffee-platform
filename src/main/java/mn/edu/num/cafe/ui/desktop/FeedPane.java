@@ -194,7 +194,7 @@ public class FeedPane {
         HBox row = new HBox(10);
         row.setAlignment(Pos.CENTER_LEFT);
 
-        Label av = UiUtils.createAvatar(u.username(), 32);
+        javafx.scene.Node av = UiUtils.createAvatar(u.username(), 32);
 
         VBox info = new VBox(1);
         Label name = new Label("@" + u.username());
@@ -274,7 +274,7 @@ public class FeedPane {
         header.setPadding(new Insets(16, 20, 12, 20));
         header.setAlignment(Pos.CENTER_LEFT);
 
-        Label avatar = UiUtils.createAvatar(r.getAuthorUsername(), 36);
+        javafx.scene.Node avatar = UiUtils.createAvatar(r.getAuthorUsername(), 36);
 
         VBox authorInfo = new VBox(1);
         Label authorLabel = new Label("@" + r.getAuthorUsername());

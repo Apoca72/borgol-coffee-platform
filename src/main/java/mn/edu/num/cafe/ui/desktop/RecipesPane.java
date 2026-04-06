@@ -263,7 +263,7 @@ public class RecipesPane {
         HBox header = new HBox(10);
         header.setPadding(new Insets(14, 18, 10, 18));
         header.setAlignment(Pos.CENTER_LEFT);
-        Label avatar = UiUtils.createAvatar(r.getAuthorUsername(), 34);
+        javafx.scene.Node avatar = UiUtils.createAvatar(r.getAuthorUsername(), 34);
         VBox authorInfo = new VBox(2);
         Label authorLabel = new Label("@" + r.getAuthorUsername());
         authorLabel.getStyleClass().add("username-link");
