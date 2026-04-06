@@ -5,12 +5,9 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.stage.FileChooser;
 import mn.edu.num.cafe.core.application.BorgolService;
 import mn.edu.num.cafe.core.domain.BrewJournalEntry;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,11 +45,11 @@ public class JournalPane {
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Button btnNew  = new Button("+ New Entry");
-        Button btnCsv  = new Button("\uD83D\uDCCA Export CSV");
+        Button btnCsv  = new Button("\uD83D\uDCC4 Export");
         btnNew.getStyleClass().add("btn-primary");
         btnCsv.getStyleClass().add("btn-secondary");
         btnNew.setOnAction(e -> showNewDialog());
-        btnCsv.setOnAction(e -> exportCsv());
+        btnCsv.setOnAction(e -> openExportDialog());
         if (!AppSession.loggedIn()) btnNew.setDisable(true);
 
         bar.getChildren().addAll(title, spacer, btnCsv, btnNew);
@@ -471,36 +468,219 @@ public class JournalPane {
         });
     }
 
-    // ── CSV Export ────────────────────────────────────────────────────────────
+    // ── Export dialog + CSV/PDF ───────────────────────────────────────────────
 
-    private void exportCsv() {
-        if (entries.isEmpty()) { MainWindow.info("Nothing to export", "No journal entries to export."); return; }
-        FileChooser fc = new FileChooser();
-        fc.setTitle("Save Journal CSV");
-        fc.setInitialFileName("borgol-journal.csv");
-        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV files", "*.csv"));
-        java.io.File file = fc.showSaveDialog(root.getScene().getWindow());
+    private void openExportDialog() {
+        if (entries.isEmpty()) {
+            MainWindow.info("Nothing to export", "Add some journal entries first.");
+            return;
+        }
+        Dialog<ButtonType> dlg = new Dialog<>();
+        dlg.setTitle("Export Journal");
+        dlg.setHeaderText("Select entries to export:");
+        ButtonType csvBtn = new ButtonType("Export CSV", ButtonBar.ButtonData.OTHER);
+        ButtonType pdfBtn = new ButtonType("Export PDF", ButtonBar.ButtonData.OTHER);
+        dlg.getDialogPane().getButtonTypes().addAll(csvBtn, pdfBtn, ButtonType.CANCEL);
+        dlg.getDialogPane().setPrefWidth(420);
+
+        VBox checkList = new VBox(6);
+        checkList.setPadding(new Insets(8));
+        java.util.List<CheckBox> boxes = new java.util.ArrayList<>();
+        for (BrewJournalEntry e : entries) {
+            String label = e.getCoffeeBean() + "  \u00B7  " +
+                (e.getCreatedAt() != null ? e.getCreatedAt().substring(0, Math.min(10, e.getCreatedAt().length())) : "");
+            CheckBox cb = new CheckBox(label);
+            cb.setSelected(true);
+            cb.setUserData(e);
+            boxes.add(cb);
+            checkList.getChildren().add(cb);
+        }
+        Button selectAll  = new Button("Select All");
+        Button selectNone = new Button("Select None");
+        selectAll.setOnAction(e2 -> boxes.forEach(b -> b.setSelected(true)));
+        selectNone.setOnAction(e2 -> boxes.forEach(b -> b.setSelected(false)));
+        HBox selRow = new HBox(8, selectAll, selectNone);
+        selRow.setPadding(new Insets(0, 0, 8, 0));
+
+        ScrollPane scroll = new ScrollPane(checkList);
+        scroll.setFitToWidth(true);
+        scroll.setPrefHeight(280);
+        VBox content = new VBox(8, selRow, scroll);
+        content.setPadding(new Insets(8));
+        dlg.getDialogPane().setContent(content);
+
+        dlg.showAndWait().ifPresent(bt -> {
+            java.util.List<BrewJournalEntry> selected = boxes.stream()
+                .filter(CheckBox::isSelected)
+                .map(b -> (BrewJournalEntry) b.getUserData())
+                .toList();
+            if (selected.isEmpty()) {
+                MainWindow.info("Nothing selected", "Select at least one entry.");
+                return;
+            }
+            if (bt == csvBtn) exportCsvSelected(selected);
+            else if (bt == pdfBtn) exportPdfSelected(selected);
+        });
+    }
+
+    private void exportCsvSelected(java.util.List<BrewJournalEntry> selected) {
+        javafx.stage.FileChooser fc = new javafx.stage.FileChooser();
+        fc.setTitle("Save CSV");
+        fc.setInitialFileName("journal.csv");
+        fc.getExtensionFilters().add(
+            new javafx.stage.FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+        java.io.File file = fc.showSaveDialog(null);
         if (file == null) return;
 
-        String header = "id,coffeeBean,origin,roastLevel,brewMethod,grindSize," +
-            "waterTempC,doseGrams,yieldGrams,brewTimeSec," +
-            "ratingAroma,ratingFlavor,ratingAcidity,ratingBody,ratingSweetness,ratingFinish," +
-            "notes,createdAt";
-        try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(
-                new FileOutputStream(file), StandardCharsets.UTF_8))) {
-            pw.println(header);
-            for (BrewJournalEntry e : entries) {
-                pw.printf("%d,%s,%s,%s,%s,%s,%d,%.1f,%.1f,%d,%d,%d,%d,%d,%d,%d,%s,%s%n",
-                    e.getId(), csvQ(e.getCoffeeBean()), csvQ(e.getOrigin()),
-                    csvQ(e.getRoastLevel()), csvQ(e.getBrewMethod()), csvQ(e.getGrindSize()),
-                    e.getWaterTempC(), e.getDoseGrams(), e.getYieldGrams(), e.getBrewTimeSec(),
+        try (java.io.PrintWriter pw = new java.io.PrintWriter(file,
+                 java.nio.charset.StandardCharsets.UTF_8)) {
+            pw.println("Date,Bean,Origin,Roast,Method,Grind,Temp(\u00B0C),Dose(g)," +
+                       "Yield(g),BrewTime(s),Aroma,Flavor,Acidity,Body,Sweetness,Finish,Notes");
+            for (BrewJournalEntry e : selected) {
+                pw.printf("%s,%s,%s,%s,%s,%s,%d,%.1f,%.1f,%d,%d,%d,%d,%d,%d,%d,%s%n",
+                    e.getCreatedAt(), e.getCoffeeBean(), e.getOrigin(), e.getRoastLevel(),
+                    e.getBrewMethod(), e.getGrindSize(), e.getWaterTempC(),
+                    e.getDoseGrams(), e.getYieldGrams(), e.getBrewTimeSec(),
                     e.getRatingAroma(), e.getRatingFlavor(), e.getRatingAcidity(),
                     e.getRatingBody(), e.getRatingSweetness(), e.getRatingFinish(),
-                    csvQ(e.getNotes()), csvQ(e.getCreatedAt()));
+                    e.getNotes() != null ? e.getNotes().replace(",", ";") : "");
             }
-            MainWindow.info("Exported", "Saved " + entries.size() + " entries to:\n" + file.getPath());
-        } catch (IOException ex) {
+            UiUtils.showToast("CSV exported: " + file.getName());
+        } catch (Exception ex) {
             MainWindow.alert("Export failed", ex.getMessage());
+        }
+    }
+
+    private void exportPdfSelected(java.util.List<BrewJournalEntry> selected) {
+        javafx.stage.FileChooser fc = new javafx.stage.FileChooser();
+        fc.setTitle("Save PDF");
+        fc.setInitialFileName("journal.pdf");
+        fc.getExtensionFilters().add(
+            new javafx.stage.FileChooser.ExtensionFilter("PDF Files", "*.pdf"));
+        java.io.File file = fc.showSaveDialog(null);
+        if (file == null) return;
+
+        try (org.apache.pdfbox.pdmodel.PDDocument doc =
+                 new org.apache.pdfbox.pdmodel.PDDocument()) {
+
+            org.apache.pdfbox.pdmodel.font.PDType1Font fontBold =
+                new org.apache.pdfbox.pdmodel.font.PDType1Font(
+                    org.apache.pdfbox.pdmodel.font.Standard14Fonts.FontName.HELVETICA_BOLD);
+            org.apache.pdfbox.pdmodel.font.PDType1Font fontReg =
+                new org.apache.pdfbox.pdmodel.font.PDType1Font(
+                    org.apache.pdfbox.pdmodel.font.Standard14Fonts.FontName.HELVETICA);
+
+            for (BrewJournalEntry e : selected) {
+                org.apache.pdfbox.pdmodel.PDPage page =
+                    new org.apache.pdfbox.pdmodel.PDPage(
+                        org.apache.pdfbox.pdmodel.common.PDRectangle.A4);
+                doc.addPage(page);
+
+                try (org.apache.pdfbox.pdmodel.PDPageContentStream cs =
+                         new org.apache.pdfbox.pdmodel.PDPageContentStream(doc, page)) {
+
+                    float margin = 50, y = page.getMediaBox().getHeight() - margin;
+                    float lineH = 16;
+
+                    // Title
+                    cs.beginText();
+                    cs.setFont(fontBold, 16);
+                    cs.newLineAtOffset(margin, y);
+                    String bean = e.getCoffeeBean() != null ? e.getCoffeeBean() : "Unnamed";
+                    cs.showText(bean);
+                    cs.endText();
+                    y -= 24;
+
+                    // Date
+                    if (e.getCreatedAt() != null) {
+                        cs.beginText();
+                        cs.setFont(fontReg, 10);
+                        cs.newLineAtOffset(margin, y);
+                        cs.showText(e.getCreatedAt().substring(0, Math.min(16, e.getCreatedAt().length())));
+                        cs.endText();
+                        y -= 20;
+                    }
+
+                    // Separator
+                    cs.setLineWidth(0.5f);
+                    cs.moveTo(margin, y); cs.lineTo(page.getMediaBox().getWidth() - margin, y);
+                    cs.stroke();
+                    y -= 14;
+
+                    // Parameters
+                    String[][] params = {
+                        {"Origin",     e.getOrigin()},
+                        {"Roast",      e.getRoastLevel()},
+                        {"Method",     e.getBrewMethod()},
+                        {"Grind",      e.getGrindSize()},
+                        {"Temp",       e.getWaterTempC() + " \u00B0C"},
+                        {"Dose",       e.getDoseGrams() + " g"},
+                        {"Yield",      e.getYieldGrams() + " g"},
+                        {"Brew Time",  e.getBrewTimeSec() + " s"},
+                    };
+                    for (String[] row : params) {
+                        cs.beginText();
+                        cs.setFont(fontBold, 10);
+                        cs.newLineAtOffset(margin, y);
+                        cs.showText(row[0] + ": ");
+                        cs.endText();
+                        cs.beginText();
+                        cs.setFont(fontReg, 10);
+                        cs.newLineAtOffset(margin + 80, y);
+                        cs.showText(row[1] != null ? row[1] : "-");
+                        cs.endText();
+                        y -= lineH;
+                    }
+
+                    // Ratings
+                    y -= 6;
+                    cs.beginText();
+                    cs.setFont(fontBold, 11);
+                    cs.newLineAtOffset(margin, y); cs.showText("Ratings");
+                    cs.endText();
+                    y -= lineH;
+                    String[] ratingNames  = {"Aroma","Flavor","Acidity","Body","Sweetness","Finish"};
+                    int[]    ratingValues = {e.getRatingAroma(), e.getRatingFlavor(),
+                        e.getRatingAcidity(), e.getRatingBody(),
+                        e.getRatingSweetness(), e.getRatingFinish()};
+                    for (int i = 0; i < ratingNames.length; i++) {
+                        cs.beginText();
+                        cs.setFont(fontReg, 10);
+                        cs.newLineAtOffset(margin, y);
+                        cs.showText(ratingNames[i] + ": " + ratingValues[i] + "/10");
+                        cs.endText();
+                        y -= lineH;
+                    }
+
+                    // Notes
+                    if (e.getNotes() != null && !e.getNotes().isBlank()) {
+                        y -= 6;
+                        cs.beginText();
+                        cs.setFont(fontBold, 11);
+                        cs.newLineAtOffset(margin, y); cs.showText("Notes");
+                        cs.endText();
+                        y -= lineH;
+                        cs.beginText();
+                        cs.setFont(fontReg, 10);
+                        cs.newLineAtOffset(margin, y);
+                        String notes = e.getNotes();
+                        for (int start = 0; start < notes.length(); start += 80) {
+                            String chunk = notes.substring(start, Math.min(start + 80, notes.length()));
+                            cs.showText(chunk);
+                            if (start + 80 < notes.length()) {
+                                cs.newLineAtOffset(0, -lineH);
+                                y -= lineH;
+                            }
+                        }
+                        cs.endText();
+                    }
+                }
+            }
+
+            doc.save(file);
+            UiUtils.showToast("PDF exported: " + file.getName());
+        } catch (Exception ex) {
+            MainWindow.alert("PDF export failed", ex.getMessage());
         }
     }
 
