@@ -33,6 +33,11 @@ public class MainWindow {
     private VBox   chatPanel;
     private boolean chatOpen = false;
 
+    // Notification panel state
+    private VBox    notifPanel;
+    private boolean notifOpen = false;
+    private Label   notifBadge;
+
     public MainWindow(BorgolService service, Stage stage) {
         this.service = service;
         this.stage   = stage;
@@ -92,6 +97,13 @@ public class MainWindow {
         chatPanel.setVisible(false);
         center.getChildren().add(chatPanel);
         StackPane.setAlignment(chatPanel, Pos.CENTER_RIGHT);
+
+        // Notification panel overlay
+        notifPanel = buildNotifPanel();
+        notifPanel.setTranslateX(340);
+        notifPanel.setVisible(false);
+        center.getChildren().add(notifPanel);
+        StackPane.setAlignment(notifPanel, Pos.TOP_RIGHT);
     }
 
     // ── Top Navbar ────────────────────────────────────────────────────────────
@@ -170,10 +182,26 @@ public class MainWindow {
         // Dark mode toggle
         Button darkBtn = darkBtn();
 
+        // Notification bell button
+        Button bellBtn = new Button("\uD83D\uDD14");
+        bellBtn.setStyle("-fx-background-color:rgba(255,255,255,0.1);-fx-text-fill:rgba(255,255,255,0.85);" +
+            "-fx-font-size:16px;-fx-padding:5 10 5 10;-fx-background-radius:8;" +
+            "-fx-border-width:0;-fx-cursor:hand;");
+        bellBtn.setOnAction(e -> toggleNotif());
+        bellBtn.setVisible(AppSession.loggedIn());
+
+        notifBadge = new Label("");
+        notifBadge.setStyle("-fx-background-color:#B5321E;-fx-text-fill:white;-fx-font-size:9px;" +
+            "-fx-font-weight:800;-fx-background-radius:8;-fx-padding:1 4 1 4;");
+        notifBadge.setVisible(false);
+        StackPane.setAlignment(notifBadge, Pos.TOP_RIGHT);
+        StackPane bellStack = new StackPane(bellBtn, notifBadge);
+
         // Right section: auth or user pill
-        HBox rightSection = buildNavRight(darkBtn, beanBtn);
+        HBox rightSection = buildNavRight(darkBtn, beanBtn, bellStack);
 
         bar.getChildren().addAll(brand, navLinks, spacer, search, rightSection);
+        refreshNotifBadge();
         return bar;
     }
 
@@ -212,10 +240,10 @@ public class MainWindow {
         };
     }
 
-    private HBox buildNavRight(Button darkBtn, Button beanBtn) {
+    private HBox buildNavRight(Button darkBtn, Button beanBtn, StackPane bellStack) {
         HBox box = new HBox(8);
         box.setAlignment(Pos.CENTER_RIGHT);
-        box.getChildren().addAll(beanBtn, darkBtn);
+        box.getChildren().addAll(beanBtn, bellStack, darkBtn);
 
         if (AppSession.loggedIn()) {
             // User pill
@@ -406,6 +434,120 @@ public class MainWindow {
         tt.play();
     }
 
+    // ── Notification Panel ────────────────────────────────────────────────────
+
+    private VBox buildNotifPanel() {
+        VBox panel = new VBox(0);
+        panel.setPrefWidth(340);
+        panel.setMaxHeight(480);
+        panel.setStyle(
+            "-fx-background-color:" + UiUtils.card() + ";" +
+            "-fx-background-radius:0 0 0 16;" +
+            "-fx-effect:dropshadow(gaussian,rgba(12,4,0,0.25),24,0,0,0);" +
+            "-fx-border-color:" + UiUtils.border() + " transparent " +
+                UiUtils.border() + " " + UiUtils.border() + ";" +
+            "-fx-border-width:0 0 1 1;-fx-border-radius:0 0 0 16;");
+
+        HBox header = new HBox(10);
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.setPadding(new Insets(14, 16, 14, 16));
+        header.setStyle("-fx-background-color:#0C0400;-fx-background-radius:0;");
+        Label title = new Label("\uD83D\uDD14 Notifications");
+        title.setStyle("-fx-font-size:14px;-fx-font-weight:bold;-fx-text-fill:#F5C060;");
+        Region hSpacer = new Region(); HBox.setHgrow(hSpacer, Priority.ALWAYS);
+        Button markRead = new Button("Mark all read");
+        markRead.setStyle("-fx-background-color:rgba(255,255,255,0.1);-fx-text-fill:rgba(255,255,255,0.8);" +
+            "-fx-font-size:11px;-fx-padding:4 10 4 10;-fx-background-radius:6;-fx-border-width:0;-fx-cursor:hand;");
+        header.getChildren().addAll(title, hSpacer, markRead);
+
+        VBox msgBox = new VBox(0);
+        ScrollPane scroll = new ScrollPane(msgBox);
+        scroll.setFitToWidth(true);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scroll.setStyle("-fx-background:" + UiUtils.card() + ";-fx-background-color:" + UiUtils.card() + ";");
+        VBox.setVgrow(scroll, Priority.ALWAYS);
+
+        panel.getChildren().addAll(header, scroll);
+
+        markRead.setOnAction(e -> {
+            if (AppSession.loggedIn()) {
+                service.markNotificationsRead(AppSession.userId());
+                notifBadge.setVisible(false);
+                loadNotifications(msgBox);
+            }
+        });
+
+        loadNotifications(msgBox);
+        return panel;
+    }
+
+    private void loadNotifications(VBox msgBox) {
+        msgBox.getChildren().clear();
+        if (!AppSession.loggedIn()) {
+            Label empty = new Label("Log in to see notifications.");
+            empty.setStyle("-fx-font-size:13px;-fx-text-fill:" + UiUtils.sub() + ";-fx-padding:20;");
+            msgBox.getChildren().add(empty);
+            return;
+        }
+        try {
+            var notifs = service.getNotifications(AppSession.userId());
+            if (notifs.isEmpty()) {
+                Label empty = new Label("No notifications yet.");
+                empty.setStyle("-fx-font-size:13px;-fx-text-fill:" + UiUtils.sub() + ";-fx-padding:20;");
+                msgBox.getChildren().add(empty);
+                return;
+            }
+            for (var n : notifs) {
+                boolean unread = Boolean.TRUE.equals(n.get("read")) == false;
+                HBox row = new HBox(10);
+                row.setPadding(new Insets(12, 14, 12, 14));
+                row.setAlignment(Pos.CENTER_LEFT);
+                row.setStyle(
+                    "-fx-background-color:" + (unread ? "rgba(168,98,30,0.06)" : UiUtils.card()) + ";" +
+                    "-fx-border-color:transparent transparent " + UiUtils.border() + " transparent;" +
+                    "-fx-border-width:0 0 1 0;");
+                if (unread) {
+                    javafx.scene.shape.Rectangle bar = new javafx.scene.shape.Rectangle(3, 36);
+                    bar.setFill(javafx.scene.paint.Color.web("#A8621E"));
+                    row.getChildren().add(bar);
+                }
+                String actor = n.getOrDefault("actorUsername", "Someone").toString();
+                javafx.scene.Node av = UiUtils.createAvatar(actor, 30);
+                VBox info = new VBox(2);
+                Label msg = new Label(actor + " " + n.getOrDefault("message", ""));
+                msg.setWrapText(true);
+                msg.setStyle("-fx-font-size:13px;-fx-text-fill:" + UiUtils.text() + ";");
+                String ts = n.getOrDefault("createdAt", "").toString();
+                Label time = new Label(ts.length() > 10 ? ts.substring(0, 10) : ts);
+                time.setStyle("-fx-font-size:11px;-fx-text-fill:" + UiUtils.sub() + ";");
+                info.getChildren().addAll(msg, time);
+                HBox.setHgrow(info, Priority.ALWAYS);
+                row.getChildren().addAll(av, info);
+                msgBox.getChildren().add(row);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void toggleNotif() {
+        notifOpen = !notifOpen;
+        notifPanel.setVisible(true);
+        javafx.animation.TranslateTransition tt =
+            new javafx.animation.TranslateTransition(javafx.util.Duration.millis(220), notifPanel);
+        tt.setToX(notifOpen ? 0 : 340);
+        tt.setOnFinished(e -> { if (!notifOpen) notifPanel.setVisible(false); });
+        tt.play();
+    }
+
+    private void refreshNotifBadge() {
+        if (!AppSession.loggedIn() || notifBadge == null) return;
+        try {
+            var countMap = service.getNotificationCount(AppSession.userId());
+            int unread = ((Number) countMap.getOrDefault("unread", 0)).intValue();
+            notifBadge.setText(unread > 9 ? "9+" : String.valueOf(unread));
+            notifBadge.setVisible(unread > 0);
+        } catch (Exception ignored) {}
+    }
+
     private String callBeanApi(String question) {
         String apiKey = System.getenv("GEMINI_API_KEY");
         if (apiKey == null || apiKey.isBlank()) {
@@ -483,12 +625,12 @@ public class MainWindow {
 
     private void refreshAll() {
         buildPanes();
-        HBox rightSection = buildNavRight(darkBtn(), findBeanBtn());
         // Rebuild navbar completely
         navbar = buildNavbar();
         root.setTop(navbar);
         center.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
         showPane("Feed");
+        refreshNotifBadge();
     }
 
     private Button findBeanBtn() {
