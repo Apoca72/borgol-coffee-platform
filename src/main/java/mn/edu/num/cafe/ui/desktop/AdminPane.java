@@ -98,15 +98,21 @@ class AdminPane {
     }
 
     private void loadData() {
-        try {
-            Map<String, Object> stats = service.getAdminStats();
-            int pending = ((Number) stats.getOrDefault("pendingReports", 0)).intValue();
-            statsLabel.setText(pending + " pending report" + (pending == 1 ? "" : "s"));
-            List<Map<String, Object>> reports = service.getReports("pending");
-            table.setItems(FXCollections.observableArrayList(reports));
-        } catch (Exception e) {
-            statsLabel.setText("Error loading stats");
-        }
+        Thread.ofVirtual().start(() -> {
+            try {
+                Map<String, Object> stats = service.getAdminStats();
+                int pending = ((Number) stats.getOrDefault("pendingReports", 0)).intValue();
+                List<Map<String, Object>> reports = service.getReports("pending");
+                javafx.application.Platform.runLater(() -> {
+                    statsLabel.setText(pending + " pending report" + (pending == 1 ? "" : "s"));
+                    table.setItems(FXCollections.observableArrayList(reports));
+                });
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() ->
+                    statsLabel.setText("Error loading stats")
+                );
+            }
+        });
     }
 
     BorderPane getRoot() { return root; }

@@ -113,44 +113,54 @@ class MapPane {
 
     private void refreshMap() {
         int uid = AppSession.loggedIn() ? AppSession.userId() : 0;
-        List<CafeListing> cafes;
-        try {
-            cafes = service.getCafesNearby(uid, currentLat, currentLng, currentRadius);
-        } catch (Exception e) { cafes = List.of(); }
+        double lat = currentLat;
+        double lng = currentLng;
+        double radius = currentRadius;
+        Thread.ofVirtual().start(() -> {
+            List<CafeListing> cafes;
+            try {
+                cafes = service.getCafesNearby(uid, lat, lng, radius);
+            } catch (Exception e) { cafes = List.of(); }
 
-        StringBuilder js = new StringBuilder("clearMarkers();setView(")
-            .append(currentLat).append(",").append(currentLng).append(");");
-        for (CafeListing c : cafes) {
-            Double lat = c.getLat();
-            Double lng = c.getLng();
-            if (lat == null || lng == null || (lat == 0 && lng == 0)) continue;
-            String name = c.getName().replace("'", "\\'");
-            String addr = (c.getAddress() != null ? c.getAddress() : "").replace("'", "\\'");
-            js.append("addMarker(").append(lat).append(",")
-              .append(lng).append(",'").append(name)
-              .append("','").append(addr).append("');");
-        }
-        engine.executeScript(js.toString());
-
-        cafeList.getChildren().clear();
-        if (cafes.isEmpty()) {
-            cafeList.getChildren().add(UiUtils.emptyState(
-                "\uD83D\uDDFA\uFE0F", "No cafes found nearby",
-                "Try increasing the radius or adjusting your location."));
-        } else {
-            for (CafeListing c : cafes) {
-                Label name = new Label(c.getName());
-                name.setStyle("-fx-font-size:14px;-fx-font-weight:700;-fx-text-fill:" + UiUtils.text() + ";");
-                String addrStr = c.getAddress() != null ? c.getAddress() : "";
-                Label addr = new Label(addrStr);
-                addr.setStyle("-fx-font-size:12px;-fx-text-fill:" + UiUtils.sub() + ";");
-                VBox card = new VBox(3, name, addr);
-                card.setStyle("-fx-background-color:" + UiUtils.card() + ";-fx-padding:10 14 10 14;" +
-                    "-fx-background-radius:10;-fx-border-color:" + UiUtils.border() + ";" +
-                    "-fx-border-radius:10;-fx-border-width:1;");
-                cafeList.getChildren().add(card);
+            final List<CafeListing> finalCafes = cafes;
+            StringBuilder js = new StringBuilder("clearMarkers();setView(")
+                .append(lat).append(",").append(lng).append(");");
+            for (CafeListing c : finalCafes) {
+                Double cLat = c.getLat();
+                Double cLng = c.getLng();
+                if (cLat == null || cLng == null || (cLat == 0 && cLng == 0)) continue;
+                String name = c.getName().replace("'", "\\'");
+                String addr = (c.getAddress() != null ? c.getAddress() : "").replace("'", "\\'");
+                js.append("addMarker(").append(cLat).append(",")
+                  .append(cLng).append(",'").append(name)
+                  .append("','").append(addr).append("');");
             }
-        }
+            final String jsStr = js.toString();
+
+            javafx.application.Platform.runLater(() -> {
+                engine.executeScript(jsStr);
+
+                cafeList.getChildren().clear();
+                if (finalCafes.isEmpty()) {
+                    cafeList.getChildren().add(UiUtils.emptyState(
+                        "\uD83D\uDDFA\uFE0F", "No cafes found nearby",
+                        "Try increasing the radius or adjusting your location."));
+                } else {
+                    for (CafeListing c : finalCafes) {
+                        Label name = new Label(c.getName());
+                        name.setStyle("-fx-font-size:14px;-fx-font-weight:700;-fx-text-fill:" + UiUtils.text() + ";");
+                        String addrStr = c.getAddress() != null ? c.getAddress() : "";
+                        Label addr = new Label(addrStr);
+                        addr.setStyle("-fx-font-size:12px;-fx-text-fill:" + UiUtils.sub() + ";");
+                        VBox card = new VBox(3, name, addr);
+                        card.setStyle("-fx-background-color:" + UiUtils.card() + ";-fx-padding:10 14 10 14;" +
+                            "-fx-background-radius:10;-fx-border-color:" + UiUtils.border() + ";" +
+                            "-fx-border-radius:10;-fx-border-width:1;");
+                        cafeList.getChildren().add(card);
+                    }
+                }
+            });
+        });
     }
 
     private static String buildLeafletHtml() {

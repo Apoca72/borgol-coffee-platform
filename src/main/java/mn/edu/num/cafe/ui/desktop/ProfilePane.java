@@ -63,14 +63,23 @@ public class ProfilePane {
         box.setPadding(new Insets(24));
         scroll.setContent(box);
 
-        UserView profile;
-        try {
-            profile = service.getMe(AppSession.userId());
-        } catch (Exception e) {
-            box.getChildren().add(new Label("Failed to load profile: " + e.getMessage()));
-            return scroll;
-        }
+        Thread.ofVirtual().start(() -> {
+            UserView profile;
+            try {
+                profile = service.getMe(AppSession.userId());
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() ->
+                    box.getChildren().add(new Label("Failed to load profile: " + e.getMessage()))
+                );
+                return;
+            }
+            javafx.application.Platform.runLater(() -> populateProfileBox(box, profile));
+        });
 
+        return scroll;
+    }
+
+    private void populateProfileBox(VBox box, UserView profile) {
         // ── Header card ──────────────────────────────────────────────────────
         javafx.scene.Node avatar = UiUtils.createAvatar(profile.username(), 64);
 
@@ -129,7 +138,6 @@ public class ProfilePane {
         btnEdit.setOnAction(e -> showEditProfileDialog());
 
         box.getChildren().addAll(header, bioCard, btnEdit);
-        return scroll;
     }
 
     private Label clickableStat(String text, Runnable onClick) {
@@ -210,25 +218,32 @@ public class ProfilePane {
         box.setPadding(new Insets(20, 24, 24, 24));
         box.setStyle("-fx-background-color:#F0F2F5;");
 
-        try {
-            int uid = AppSession.userId();
-            List<Recipe> recipes = service.getUserRecipes(uid, uid);
-            if (recipes.isEmpty()) {
-                box.getChildren().add(UiUtils.emptyState(
-                    "\uD83D\uDCD6", "No recipes yet",
-                    "Share your first coffee recipe!"));
-            } else {
-                for (Recipe r : recipes)
-                    box.getChildren().add(UiUtils.buildMiniCard(service, r));
-            }
-        } catch (Exception e) {
-            box.getChildren().add(new Label("Failed to load: " + e.getMessage()));
-        }
-
         ScrollPane scroll = new ScrollPane(box);
         scroll.setFitToWidth(true);
         scroll.setStyle("-fx-background-color:#F0F2F5;-fx-background:#F0F2F5;");
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+
+        Thread.ofVirtual().start(() -> {
+            try {
+                int uid = AppSession.userId();
+                List<Recipe> recipes = service.getUserRecipes(uid, uid);
+                javafx.application.Platform.runLater(() -> {
+                    if (recipes.isEmpty()) {
+                        box.getChildren().add(UiUtils.emptyState(
+                            "\uD83D\uDCD6", "No recipes yet",
+                            "Share your first coffee recipe!"));
+                    } else {
+                        for (Recipe r : recipes)
+                            box.getChildren().add(UiUtils.buildMiniCard(service, r));
+                    }
+                });
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() ->
+                    box.getChildren().add(new Label("Failed to load: " + e.getMessage()))
+                );
+            }
+        });
+
         return scroll;
     }
 
@@ -239,25 +254,32 @@ public class ProfilePane {
         box.setPadding(new Insets(20, 24, 24, 24));
         box.setStyle("-fx-background-color:#F0F2F5;");
 
-        try {
-            int uid = AppSession.userId();
-            List<Recipe> liked = service.getLikedRecipes(uid, uid);
-            if (liked.isEmpty()) {
-                box.getChildren().add(UiUtils.emptyState(
-                    "\u2661", "Nothing liked yet",
-                    "Like recipes in the feed to save them here."));
-            } else {
-                for (Recipe r : liked)
-                    box.getChildren().add(UiUtils.buildMiniCard(service, r));
-            }
-        } catch (Exception e) {
-            box.getChildren().add(new Label("Failed to load: " + e.getMessage()));
-        }
-
         ScrollPane scroll = new ScrollPane(box);
         scroll.setFitToWidth(true);
         scroll.setStyle("-fx-background-color:#F0F2F5;-fx-background:#F0F2F5;");
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+
+        Thread.ofVirtual().start(() -> {
+            try {
+                int uid = AppSession.userId();
+                List<Recipe> liked = service.getLikedRecipes(uid, uid);
+                javafx.application.Platform.runLater(() -> {
+                    if (liked.isEmpty()) {
+                        box.getChildren().add(UiUtils.emptyState(
+                            "\u2661", "Nothing liked yet",
+                            "Like recipes in the feed to save them here."));
+                    } else {
+                        for (Recipe r : liked)
+                            box.getChildren().add(UiUtils.buildMiniCard(service, r));
+                    }
+                });
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() ->
+                    box.getChildren().add(new Label("Failed to load: " + e.getMessage()))
+                );
+            }
+        });
+
         return scroll;
     }
 
@@ -315,8 +337,12 @@ public class ProfilePane {
     }
 
     private void loadEquipment(ListView<Equipment> list) {
-        try { list.getItems().setAll(service.getEquipment(AppSession.userId())); }
-        catch (Exception ignored) {}
+        Thread.ofVirtual().start(() -> {
+            try {
+                List<Equipment> equipment = service.getEquipment(AppSession.userId());
+                javafx.application.Platform.runLater(() -> list.getItems().setAll(equipment));
+            } catch (Exception ignored) {}
+        });
     }
 
     private void showAddEquipmentDialog(ListView<Equipment> list) {

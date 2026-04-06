@@ -108,87 +108,98 @@ public class FeedPane {
             return;
         }
 
-        try {
-            items.setAll(service.getFeed(AppSession.userId()));
-        } catch (Exception e) {
-            MainWindow.alert("Error", e.getMessage());
-        }
-
-        if (items.isEmpty()) {
-            // Discover fallback — show popular recipes from everyone
-            HBox discoverHeader = new HBox(8);
-            discoverHeader.setAlignment(Pos.CENTER_LEFT);
-            discoverHeader.setPadding(new Insets(0, 0, 4, 4));
-            Label star = new Label("\u2728");
-            star.setStyle("-fx-font-size:18px;");
-            Label discoverLbl = new Label("Discover Popular Recipes");
-            discoverLbl.setStyle("-fx-font-size:16px;-fx-font-weight:700;-fx-text-fill:#1C1E21;");
-            Label sub = new Label("  \u00B7  Follow people to personalise your feed");
-            sub.setStyle("-fx-font-size:13px;-fx-text-fill:#65676B;");
-            discoverHeader.getChildren().addAll(star, discoverLbl, sub);
-            feedBox.getChildren().add(discoverHeader);
-
+        Thread.ofVirtual().start(() -> {
             try {
+                List<Recipe> feed = service.getFeed(AppSession.userId());
                 int uid = AppSession.loggedIn() ? AppSession.userId() : 0;
-                List<Recipe> popular = service.getRecipes(uid, "", "ALL", "POPULAR");
-                if (popular.isEmpty()) {
-                    feedBox.getChildren().add(UiUtils.emptyState(
-                        "\uD83D\uDC64", "No posts yet",
-                        "Follow some coffee enthusiasts to see their recipes here."));
-                } else {
-                    for (Recipe r : popular) feedBox.getChildren().add(buildRecipeCard(r));
-                }
-            } catch (Exception ignored) {
-                feedBox.getChildren().add(UiUtils.emptyState(
-                    "\uD83D\uDC64", "No posts yet",
-                    "Follow some coffee enthusiasts to see their recipes here."));
-            }
-        } else {
-            for (Recipe r : items) feedBox.getChildren().add(buildRecipeCard(r));
-        }
+                List<Recipe> popular = feed.isEmpty() ? service.getRecipes(uid, "", "ALL", "POPULAR") : List.of();
+                List<mn.edu.num.cafe.core.application.BorgolService.UserView> users = service.getAllUsers(uid);
+                List<Recipe> trending = service.getRecipes(uid, "", "ALL", "POPULAR");
 
-        buildRightPanel();
+                javafx.application.Platform.runLater(() -> {
+                    items.setAll(feed);
+
+                    if (items.isEmpty()) {
+                        // Discover fallback — show popular recipes from everyone
+                        HBox discoverHeader = new HBox(8);
+                        discoverHeader.setAlignment(Pos.CENTER_LEFT);
+                        discoverHeader.setPadding(new Insets(0, 0, 4, 4));
+                        Label star = new Label("\u2728");
+                        star.setStyle("-fx-font-size:18px;");
+                        Label discoverLbl = new Label("Discover Popular Recipes");
+                        discoverLbl.setStyle("-fx-font-size:16px;-fx-font-weight:700;-fx-text-fill:#1C1E21;");
+                        Label sub = new Label("  \u00B7  Follow people to personalise your feed");
+                        sub.setStyle("-fx-font-size:13px;-fx-text-fill:#65676B;");
+                        discoverHeader.getChildren().addAll(star, discoverLbl, sub);
+                        feedBox.getChildren().add(discoverHeader);
+
+                        if (popular.isEmpty()) {
+                            feedBox.getChildren().add(UiUtils.emptyState(
+                                "\uD83D\uDC64", "No posts yet",
+                                "Follow some coffee enthusiasts to see their recipes here."));
+                        } else {
+                            for (Recipe r : popular) feedBox.getChildren().add(buildRecipeCard(r));
+                        }
+                    } else {
+                        for (Recipe r : items) feedBox.getChildren().add(buildRecipeCard(r));
+                    }
+
+                    buildRightPanelWithData(users, trending);
+                });
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() ->
+                    MainWindow.alert("Error", e.getMessage())
+                );
+            }
+        });
     }
 
     // ── Right suggestions panel ───────────────────────────────────────────────
 
     private void buildRightPanel() {
+        // Called only when not logged in — no service calls needed
+        VBox suggestCard = UiUtils.rightCard("PEOPLE YOU MAY KNOW");
+        Label none = new Label("Log in to see suggestions.");
+        none.setStyle("-fx-font-size:12px;-fx-text-fill:#65676B;");
+        suggestCard.getChildren().add(none);
+        rightPanel.getChildren().add(suggestCard);
+
+        VBox trendCard = UiUtils.rightCard("TRENDING RECIPES");
+        Label none2 = new Label("No recipes yet.");
+        none2.setStyle("-fx-font-size:12px;-fx-text-fill:#65676B;");
+        trendCard.getChildren().add(none2);
+        rightPanel.getChildren().add(trendCard);
+    }
+
+    private void buildRightPanelWithData(List<UserView> users, List<Recipe> trending) {
         // Suggested users
         VBox suggestCard = UiUtils.rightCard("PEOPLE YOU MAY KNOW");
-        try {
-            int uid = AppSession.loggedIn() ? AppSession.userId() : 0;
-            List<UserView> users = service.getAllUsers(uid);
-            int shown = 0;
-            for (UserView u : users) {
-                if (AppSession.loggedIn() && u.id() == AppSession.userId()) continue;
-                if (u.isFollowing()) continue;
-                suggestCard.getChildren().add(buildSuggestRow(u));
-                if (++shown >= 5) break;
-            }
-            if (shown == 0) {
-                Label none = new Label("You\u2019re following everyone \uD83C\uDF89");
-                none.setStyle("-fx-font-size:12px;-fx-text-fill:#65676B;");
-                suggestCard.getChildren().add(none);
-            }
-        } catch (Exception ignored) {}
+        int shown = 0;
+        for (UserView u : users) {
+            if (AppSession.loggedIn() && u.id() == AppSession.userId()) continue;
+            if (u.isFollowing()) continue;
+            suggestCard.getChildren().add(buildSuggestRow(u));
+            if (++shown >= 5) break;
+        }
+        if (shown == 0) {
+            Label none = new Label("You\u2019re following everyone \uD83C\uDF89");
+            none.setStyle("-fx-font-size:12px;-fx-text-fill:#65676B;");
+            suggestCard.getChildren().add(none);
+        }
         rightPanel.getChildren().add(suggestCard);
 
         // Trending recipes
         VBox trendCard = UiUtils.rightCard("TRENDING RECIPES");
-        try {
-            int uid = AppSession.loggedIn() ? AppSession.userId() : 0;
-            List<Recipe> all = service.getRecipes(uid, "", "ALL", "POPULAR");
-            int shown = 0;
-            for (Recipe r : all) {
-                trendCard.getChildren().add(buildTrendRow(r));
-                if (++shown >= 5) break;
-            }
-            if (shown == 0) {
-                Label none = new Label("No recipes yet.");
-                none.setStyle("-fx-font-size:12px;-fx-text-fill:#65676B;");
-                trendCard.getChildren().add(none);
-            }
-        } catch (Exception ignored) {}
+        shown = 0;
+        for (Recipe r : trending) {
+            trendCard.getChildren().add(buildTrendRow(r));
+            if (++shown >= 5) break;
+        }
+        if (shown == 0) {
+            Label none = new Label("No recipes yet.");
+            none.setStyle("-fx-font-size:12px;-fx-text-fill:#65676B;");
+            trendCard.getChildren().add(none);
+        }
         rightPanel.getChildren().add(trendCard);
     }
 
