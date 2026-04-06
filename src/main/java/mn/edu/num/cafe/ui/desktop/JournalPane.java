@@ -383,7 +383,8 @@ public class JournalPane {
         if (existing != null) {
             bean.setText(existing.getCoffeeBean());
             origin.setText(existing.getOrigin());
-            roast.setValue(existing.getRoastLevel().isBlank() ? "MEDIUM" : existing.getRoastLevel());
+            roast.setValue(existing.getRoastLevel() == null || existing.getRoastLevel().isBlank()
+                ? "MEDIUM" : existing.getRoastLevel());
             method.setText(existing.getBrewMethod());
             grind.setText(existing.getGrindSize());
             temp.setText(String.valueOf(existing.getWaterTempC()));
@@ -462,8 +463,10 @@ public class JournalPane {
             "Delete this brew entry?", ButtonType.YES, ButtonType.NO);
         confirm.showAndWait().ifPresent(bt -> {
             if (bt == ButtonType.YES) {
-                service.deleteJournalEntry(e.getId(), AppSession.userId());
-                loadData();
+                try {
+                    service.deleteJournalEntry(e.getId(), AppSession.userId());
+                    loadData();
+                } catch (Exception ex) { MainWindow.alert("Error", ex.getMessage()); }
             }
         });
     }

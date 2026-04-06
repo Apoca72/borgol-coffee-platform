@@ -91,14 +91,14 @@ class UiUtils {
     /** Bookmark toggle button wired to service.toggleSave(). Calls onToggle after each toggle. */
     static Button saveButton(BorgolService service, Recipe r, Runnable onToggle) {
         boolean saved = r.isSavedByCurrentUser();
-        Button btn = new Button(saved ? "\uD83D\uDD16" : "\uD83D\uDD16");
+        Button btn = new Button(saved ? "\uD83D\uDD16" : "\u2606");
         btn.setStyle(
             "-fx-background-color:transparent;-fx-border-width:0;-fx-cursor:hand;-fx-font-size:15px;" +
             "-fx-text-fill:" + (saved ? "#E8A030" : "#8A7054") + ";-fx-padding:5 8 5 8;");
         btn.setOnAction(e -> {
             if (!AppSession.loggedIn()) { MainWindow.alert("Login required", "Please log in first."); return; }
             service.toggleSave(AppSession.userId(), r.getId());
-            UiUtils.showToast(r.isSavedByCurrentUser() ? "Removed from saved" : "\uD83D\uDD16 Saved!");
+            UiUtils.showToast(!r.isSavedByCurrentUser() ? "\uD83D\uDD16 Saved!" : "Removed from saved");
             onToggle.run();
         });
         return btn;

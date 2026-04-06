@@ -195,7 +195,7 @@ public class RecipesPane {
         if (AppSession.loggedIn()) {
             VBox savedCard = UiUtils.rightCard("\u2665 MY SAVED");
             try {
-                List<Recipe> liked = service.getLikedRecipes(AppSession.userId(), AppSession.userId());
+                List<Recipe> liked = service.getSavedRecipes(AppSession.userId(), AppSession.userId());
                 int shown = 0;
                 for (Recipe r : liked) {
                     Label lbl = new Label("\u2764 " + r.getTitle());

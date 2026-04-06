@@ -697,8 +697,7 @@ public class MainWindow {
         dlg.setHeaderText(null);
         ButtonType saveBtn = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
         dlg.getDialogPane().getButtonTypes().addAll(saveBtn, ButtonType.CANCEL);
-        dlg.getDialogPane().getStylesheets().add(
-            getClass().getResource("/style.css").toExternalForm());
+        UiUtils.addStylesheet(dlg, MainWindow.class);
         dlg.getDialogPane().setPrefWidth(400);
 
         VBox box = new VBox(20);
@@ -761,8 +760,7 @@ public class MainWindow {
         dlg.setHeaderText(null);
         ButtonType loginBtn = new ButtonType("Log In", ButtonBar.ButtonData.OK_DONE);
         dlg.getDialogPane().getButtonTypes().addAll(loginBtn, ButtonType.CANCEL);
-        dlg.getDialogPane().getStylesheets().add(
-            getClass().getResource("/style.css").toExternalForm());
+        UiUtils.addStylesheet(dlg, MainWindow.class);
 
         GridPane grid = formGrid();
         TextField emailFld    = styledField("email@borgol.mn");
@@ -790,8 +788,7 @@ public class MainWindow {
         dlg.setHeaderText(null);
         ButtonType regBtn = new ButtonType("Sign Up", ButtonBar.ButtonData.OK_DONE);
         dlg.getDialogPane().getButtonTypes().addAll(regBtn, ButtonType.CANCEL);
-        dlg.getDialogPane().getStylesheets().add(
-            getClass().getResource("/style.css").toExternalForm());
+        UiUtils.addStylesheet(dlg, MainWindow.class);
 
         GridPane grid = formGrid();
         TextField userFld  = styledField("username");
