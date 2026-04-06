@@ -200,10 +200,17 @@ public class MainWindow {
         StackPane.setAlignment(notifBadge, Pos.TOP_RIGHT);
         StackPane bellStack = new StackPane(bellBtn, notifBadge);
 
+        // Settings button
+        Button settingsBtn = new Button("\u2699\uFE0F");
+        settingsBtn.setStyle("-fx-background-color:rgba(255,255,255,0.1);-fx-text-fill:rgba(255,255,255,0.85);" +
+            "-fx-font-size:16px;-fx-padding:5 10 5 10;-fx-background-radius:8;" +
+            "-fx-border-width:0;-fx-cursor:hand;");
+        settingsBtn.setOnAction(e -> showSettingsDialog());
+
         // Right section: auth or user pill
         HBox rightSection = buildNavRight(darkBtn, beanBtn, bellStack);
 
-        bar.getChildren().addAll(brand, navLinks, spacer, search, rightSection);
+        bar.getChildren().addAll(brand, navLinks, spacer, search, settingsBtn, rightSection);
         refreshNotifBadge();
         return bar;
     }
@@ -670,6 +677,51 @@ public class MainWindow {
         root.setTop(navbar);
         center.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
         showPane("Feed");
+    }
+
+    private void showSettingsDialog() {
+        Dialog<ButtonType> dlg = new Dialog<>();
+        dlg.setTitle("Settings");
+        dlg.setHeaderText(null);
+        ButtonType saveBtn = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dlg.getDialogPane().getButtonTypes().addAll(saveBtn, ButtonType.CANCEL);
+        dlg.getDialogPane().getStylesheets().add(
+            getClass().getResource("/style.css").toExternalForm());
+        dlg.getDialogPane().setPrefWidth(400);
+
+        VBox box = new VBox(20);
+        box.setPadding(new Insets(20));
+
+        // Appearance
+        Label appearLbl = new Label("APPEARANCE");
+        appearLbl.setStyle("-fx-font-size:11px;-fx-font-weight:700;-fx-text-fill:" + UiUtils.sub() + ";");
+        ToggleButton lightBtn = new ToggleButton("\u2600\uFE0F  Light");
+        ToggleButton darkBtn2 = new ToggleButton("\uD83C\uDF19  Dark");
+        ToggleGroup tg = new ToggleGroup();
+        lightBtn.setToggleGroup(tg); darkBtn2.setToggleGroup(tg);
+        if (UiUtils.dark) darkBtn2.setSelected(true); else lightBtn.setSelected(true);
+        HBox themeRow = new HBox(0, lightBtn, darkBtn2);
+
+        // Default Timer Method
+        Label timerLbl = new Label("DEFAULT TIMER METHOD");
+        timerLbl.setStyle("-fx-font-size:11px;-fx-font-weight:700;-fx-text-fill:" + UiUtils.sub() + ";");
+        ComboBox<String> methodBox = new ComboBox<>();
+        methodBox.getItems().addAll(
+            "Espresso", "Pour Over", "French Press", "Cold Brew", "Aeropress", "Moka Pot");
+        java.util.prefs.Preferences prefs =
+            java.util.prefs.Preferences.userRoot().node("borgol/desktop");
+        methodBox.setValue(prefs.get("defaultTimerMethod", "Pour Over"));
+
+        box.getChildren().addAll(appearLbl, themeRow, timerLbl, methodBox);
+        dlg.getDialogPane().setContent(box);
+
+        dlg.showAndWait().ifPresent(bt -> {
+            if (bt == saveBtn) {
+                boolean wantDark = darkBtn2.isSelected();
+                if (wantDark != UiUtils.dark) toggleDarkMode();
+                prefs.put("defaultTimerMethod", methodBox.getValue());
+            }
+        });
     }
 
     private void showPane(String name) {
