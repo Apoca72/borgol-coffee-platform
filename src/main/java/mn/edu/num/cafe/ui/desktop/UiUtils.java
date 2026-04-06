@@ -206,6 +206,13 @@ class UiUtils {
         authorRow.setAlignment(Pos.CENTER_LEFT);
 
         dlgHeader.getChildren().addAll(titleLbl, chips, authorRow);
+        Button quickCardBtn = new Button("\uD83D\uDCCB Quick Card");
+        quickCardBtn.setStyle("-fx-background-color:rgba(168,98,30,0.1);-fx-text-fill:#A8621E;" +
+            "-fx-font-size:12px;-fx-font-weight:700;-fx-padding:6 14 6 14;" +
+            "-fx-background-radius:20;-fx-border-color:rgba(168,98,30,0.4);" +
+            "-fx-border-radius:20;-fx-border-width:1;-fx-cursor:hand;");
+        quickCardBtn.setOnAction(e -> QuickBrewOverlay.show(r, null));
+        dlgHeader.getChildren().add(quickCardBtn);
 
         // ── Body ─────────────────────────────────────────────────────────────
         VBox dlgBody = new VBox(14);
@@ -352,6 +359,13 @@ class UiUtils {
         authorRow.setAlignment(Pos.CENTER_LEFT);
 
         dlgHeader.getChildren().addAll(titleLbl, chips, authorRow);
+        Button quickCardBtn = new Button("\uD83D\uDCCB Quick Card");
+        quickCardBtn.setStyle("-fx-background-color:rgba(168,98,30,0.1);-fx-text-fill:#A8621E;" +
+            "-fx-font-size:12px;-fx-font-weight:700;-fx-padding:6 14 6 14;" +
+            "-fx-background-radius:20;-fx-border-color:rgba(168,98,30,0.4);" +
+            "-fx-border-radius:20;-fx-border-width:1;-fx-cursor:hand;");
+        quickCardBtn.setOnAction(e -> QuickBrewOverlay.show(r, onUseInTimer));
+        dlgHeader.getChildren().add(quickCardBtn);
 
         // ── Body ─────────────────────────────────────────────────────────────
         VBox dlgBody = new VBox(14);
