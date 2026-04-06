@@ -47,7 +47,9 @@ public class ProfilePane {
             new Tab("\uD83D\uDC64 Profile",    buildProfileTab()),
             new Tab("\uD83D\uDCD6 My Recipes", buildMyRecipesTab()),
             new Tab("\u2764 Liked",             buildLikedTab()),
-            new Tab("\uD83D\uDD27 Equipment",   buildEquipmentTab())
+            new Tab("\uD83D\uDD27 Equipment",   buildEquipmentTab()),
+            new Tab("\uD83D\uDC65 Following",   buildFollowingTab()),
+            new Tab("\uD83D\uDC64 Followers",   buildFollowersTab())
         );
         root.setCenter(tabs);
     }
@@ -380,6 +382,70 @@ public class ProfilePane {
                 } catch (Exception ex) { MainWindow.alert("Error", ex.getMessage()); }
             }
         });
+    }
+
+    // ── Following tab ─────────────────────────────────────────────────────────
+
+    private ScrollPane buildFollowingTab() {
+        VBox list = new VBox(8);
+        list.setPadding(new Insets(16));
+        list.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
+        try {
+            int uid = AppSession.userId();
+            var users = service.getFollowingUsers(uid, uid);
+            if (users.isEmpty()) {
+                list.getChildren().add(UiUtils.emptyState("\uD83D\uDC65", "Not following anyone", "Find people in the People tab."));
+            } else {
+                for (var u : users) {
+                    list.getChildren().add(buildUserRow(u));
+                }
+            }
+        } catch (Exception e) {
+            list.getChildren().add(new Label("Could not load."));
+        }
+        ScrollPane sp = new ScrollPane(list);
+        sp.setFitToWidth(true);
+        sp.setStyle("-fx-background:" + UiUtils.bg() + ";-fx-background-color:" + UiUtils.bg() + ";");
+        return sp;
+    }
+
+    // ── Followers tab ─────────────────────────────────────────────────────────
+
+    private ScrollPane buildFollowersTab() {
+        VBox list = new VBox(8);
+        list.setPadding(new Insets(16));
+        list.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
+        try {
+            int uid = AppSession.userId();
+            var users = service.getFollowerUsers(uid, uid);
+            if (users.isEmpty()) {
+                list.getChildren().add(UiUtils.emptyState("\uD83D\uDC65", "No followers yet", "Share your recipes to gain followers."));
+            } else {
+                for (var u : users) {
+                    list.getChildren().add(buildUserRow(u));
+                }
+            }
+        } catch (Exception e) {
+            list.getChildren().add(new Label("Could not load."));
+        }
+        ScrollPane sp = new ScrollPane(list);
+        sp.setFitToWidth(true);
+        sp.setStyle("-fx-background:" + UiUtils.bg() + ";-fx-background-color:" + UiUtils.bg() + ";");
+        return sp;
+    }
+
+    private HBox buildUserRow(UserView u) {
+        javafx.scene.Node av = UiUtils.createAvatar(u.username(), 36);
+        Label name = new Label(u.username());
+        name.setStyle("-fx-font-size:14px;-fx-font-weight:700;-fx-text-fill:" + UiUtils.text() + ";");
+        Label bio = new Label(u.bio() != null ? u.bio() : "");
+        bio.setStyle("-fx-font-size:12px;-fx-text-fill:" + UiUtils.sub() + ";");
+        VBox info = new VBox(2, name, bio);
+        HBox row = new HBox(10, av, info);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.setPadding(new Insets(8, 12, 8, 12));
+        row.setStyle("-fx-background-color:" + UiUtils.card() + ";-fx-background-radius:10;");
+        return row;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

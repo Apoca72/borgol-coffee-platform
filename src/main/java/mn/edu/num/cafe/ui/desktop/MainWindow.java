@@ -28,6 +28,7 @@ public class MainWindow {
     private final Stage stage;
     private HBox navbar;
     private boolean darkMode = false;
+    private String currentPane = "Feed";
 
     // Bean AI chat panel state
     private VBox   chatPanel;
@@ -193,9 +194,6 @@ public class MainWindow {
             "-fx-background-radius:20;-fx-padding:6 14 6 14;" +
             "-fx-font-size:13px;-fx-font-weight:700;-fx-cursor:hand;"));
 
-        // Dark mode toggle
-        Button darkBtn = darkBtn();
-
         // Notification bell button
         Button bellBtn = new Button("\uD83D\uDD14");
         bellBtn.setStyle("-fx-background-color:rgba(255,255,255,0.1);-fx-text-fill:rgba(255,255,255,0.85);" +
@@ -219,7 +217,7 @@ public class MainWindow {
         settingsBtn.setOnAction(e -> showSettingsDialog());
 
         // Right section: auth or user pill
-        HBox rightSection = buildNavRight(darkBtn, beanBtn, bellStack);
+        HBox rightSection = buildNavRight(beanBtn, bellStack);
 
         bar.getChildren().addAll(brand, navLinks, spacer, search, settingsBtn, rightSection);
         refreshNotifBadge();
@@ -263,10 +261,10 @@ public class MainWindow {
         };
     }
 
-    private HBox buildNavRight(Button darkBtn, Button beanBtn, StackPane bellStack) {
+    private HBox buildNavRight(Button beanBtn, StackPane bellStack) {
         HBox box = new HBox(8);
         box.setAlignment(Pos.CENTER_RIGHT);
-        box.getChildren().addAll(beanBtn, bellStack, darkBtn);
+        box.getChildren().addAll(beanBtn, bellStack);
 
         if (AppSession.loggedIn()) {
             // User pill
@@ -647,12 +645,15 @@ public class MainWindow {
     // ── Refresh / Reload ──────────────────────────────────────────────────────
 
     private void refreshAll() {
+        String savedPane = currentPane;
         buildPanes();
         // Rebuild navbar completely
         navbar = buildNavbar();
         root.setTop(navbar);
         center.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
         showPane("Feed");
+        // Restore the previously active pane if it still exists
+        if (panes.containsKey(savedPane)) showPane(savedPane);
         refreshNotifBadge();
     }
 
@@ -670,6 +671,7 @@ public class MainWindow {
     private void refreshNavUser() {
         navbar = buildNavbar();
         root.setTop(navbar);
+        refreshNotifBadge();
     }
 
     private void toggleDarkMode() {
@@ -736,6 +738,7 @@ public class MainWindow {
     }
 
     private void showPane(String name) {
+        currentPane = name;
         panes.values().forEach(p -> p.setVisible(false));
         Node target = panes.get(name);
         if (target != null) target.setVisible(true);

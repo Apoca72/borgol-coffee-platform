@@ -39,6 +39,9 @@ class BrewTimerPane {
     // Selected method
     private BrewMethod current;
 
+    // Param chip value labels — updated on method change
+    private Label ratioVal, grindVal, tempVal;
+
     // ── Brew method data ──────────────────────────────────────────────────────
 
     record BrewStep(int atSecond, String label) {}
@@ -181,10 +184,13 @@ class BrewTimerPane {
         HBox params = new HBox(10);
         params.setAlignment(Pos.CENTER);
         params.setPadding(new Insets(8, 0, 0, 0));
+        ratioVal = new Label(current.ratio());
+        grindVal = new Label(current.grind());
+        tempVal  = new Label(current.temp());
         params.getChildren().addAll(
-            paramChip("Ratio", current.ratio()),
-            paramChip("Grind", current.grind()),
-            paramChip("Temp", current.temp())
+            paramChipWithRef("Ratio", ratioVal),
+            paramChipWithRef("Grind", grindVal),
+            paramChipWithRef("Temp",  tempVal)
         );
 
         VBox timerCenter = new VBox(12, ringStack, controls, params);
@@ -259,7 +265,7 @@ class BrewTimerPane {
 
     private void tick() {
         elapsed++;
-        drawRing((double) elapsed / totalSeconds);
+        drawRing(totalSeconds > 0 ? (double) elapsed / totalSeconds : 0);
         timeDisplay.setText(formatTime(totalSeconds - elapsed));
         updateCurrentStep();
         rebuildSteps(elapsed);
@@ -326,8 +332,10 @@ class BrewTimerPane {
     private void selectMethod(BrewMethod m) {
         current = m;
         totalSeconds = m.durationSeconds();
+        if (ratioVal != null) ratioVal.setText(m.ratio());
+        if (grindVal != null) grindVal.setText(m.grind());
+        if (tempVal  != null) tempVal.setText(m.temp());
         resetTimer();
-        // Update params (they're rebuilt on next reset already via rebuildSteps)
     }
 
     // ── Drawing ───────────────────────────────────────────────────────────────
@@ -382,6 +390,21 @@ class BrewTimerPane {
             "-fx-border-radius:20;-fx-border-width:1.5;-fx-cursor:hand;";
     }
 
+    private static HBox paramChipWithRef(String key, Label v) {
+        Label k = new Label(key.toUpperCase());
+        k.setStyle("-fx-font-size:10px;-fx-font-weight:800;-fx-text-fill:" + UiUtils.sub() + ";");
+        v.setStyle("-fx-font-size:13px;-fx-font-weight:700;-fx-text-fill:" + UiUtils.text() + ";");
+        VBox box = new VBox(2, k, v);
+        box.setAlignment(Pos.CENTER);
+        box.setPadding(new Insets(8, 16, 8, 16));
+        box.setStyle(
+            "-fx-background-color:" + UiUtils.cardAlt() + ";" +
+            "-fx-background-radius:10;-fx-border-color:" + UiUtils.border() + ";" +
+            "-fx-border-radius:10;-fx-border-width:1;");
+        HBox wrap = new HBox(box);
+        return wrap;
+    }
+
     private static HBox paramChip(String key, String val) {
         Label k = new Label(key.toUpperCase());
         k.setStyle("-fx-font-size:10px;-fx-font-weight:800;-fx-text-fill:" + UiUtils.sub() + ";");
@@ -413,7 +436,7 @@ class BrewTimerPane {
         for (String l : lines) { if (!l.isBlank()) stepTexts.add(l.trim()); }
         if (stepTexts.isEmpty()) stepTexts.add("Brew for " + recipe.getBrewTime() + " minutes");
 
-        int totalSecs = recipe.getBrewTime() * 60;
+        int totalSecs = Math.max(1, recipe.getBrewTime()) * 60;
         int stepGap   = totalSecs / stepTexts.size();
         BrewStep[] steps = new BrewStep[stepTexts.size()];
         for (int i = 0; i < stepTexts.size(); i++) {
