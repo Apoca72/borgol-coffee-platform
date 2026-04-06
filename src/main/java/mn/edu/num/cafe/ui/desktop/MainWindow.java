@@ -91,6 +91,11 @@ public class MainWindow {
         panes.put("Map",     mp.getRoot());
         panes.put("Profile", pr.getRoot());
 
+        if ("admin".equalsIgnoreCase(AppSession.username())) {
+            AdminPane ap = new AdminPane(service);
+            panes.put("Admin", ap.getRoot());
+        }
+
         center.getChildren().addAll(panes.values());
         panes.values().forEach(p -> p.setVisible(false));
 
@@ -130,7 +135,10 @@ public class MainWindow {
         // Nav link buttons
         HBox navLinks = new HBox(2);
         navLinks.setAlignment(Pos.CENTER_LEFT);
-        String[] pages = {"Feed", "Recipes", "Cafes", "Explore", "Journal", "Learn", "Timer", "Map"};
+        java.util.List<String> pageList = new java.util.ArrayList<>(
+            java.util.Arrays.asList("Feed", "Recipes", "Cafes", "Explore", "Journal", "Learn", "Timer", "Map"));
+        if ("admin".equalsIgnoreCase(AppSession.username())) pageList.add("Admin");
+        String[] pages = pageList.toArray(new String[0]);
         for (String name : pages) {
             Button btn = navLinkBtn(name);
             btn.setOnAction(e -> showPane(name));
@@ -247,6 +255,7 @@ public class MainWindow {
             case "Timer"   -> "\u23F1\uFE0F";
             case "Map"     -> "\uD83D\uDDFA\uFE0F";
             case "Profile" -> "\uD83D\uDC64";
+            case "Admin"   -> "\u2699\uFE0F";
             default        -> "";
         };
     }
