@@ -88,6 +88,12 @@ public class BorgolService {
         return toView(user, 0, false);
     }
 
+    public void deleteUser(int userId) {
+        repo.findUserById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        repo.deleteUser(userId);
+    }
+
     // ── Хэрэглэгчийн үйлдлүүд ────────────────────────────────────────────────
 
     public UserView getUserProfile(int targetId, int currentUserId) {

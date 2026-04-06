@@ -371,6 +371,14 @@ public class BorgolRepository {
         throw new RuntimeException("User creation failed");
     }
 
+    public void deleteUser(int id) {
+        String sql = "DELETE FROM borgol_users WHERE id = ?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
     public void updateUser(int id, String bio, String avatarUrl, String expertiseLevel) {
         // Only update avatar_url when a non-blank value is provided, to avoid clearing it
         if (avatarUrl != null && !avatarUrl.isBlank()) {

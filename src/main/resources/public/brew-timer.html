@@ -439,9 +439,10 @@ function updateRatioDisplay() {
 
 // ── Bidirectional ratio linking ───────────────────────────────────────────────
 document.getElementById('coffee-g').addEventListener('input', function() {
+  const prevCoffeeG = coffeeG || 1;
   coffeeG = parseFloat(this.value) || 1;
-  const ratio = waterMl / (parseFloat(document.getElementById('water-ml').defaultValue || 300));
-  waterMl = Math.round(coffeeG * (currentMethod.defaultRatio));
+  const currentRatio = waterMl / prevCoffeeG;
+  waterMl = Math.round(coffeeG * currentRatio);
   document.getElementById('water-ml').value = waterMl;
   updateRatioDisplay();
   buildRatioPresets();
@@ -469,7 +470,23 @@ function buildSteps() {
 }
 
 // ── Timer ─────────────────────────────────────────────────────────────────────
+function showLongBrewMessage() {
+  document.getElementById('timer-display').textContent = '—';
+  document.getElementById('timer-phase').textContent = 'Long Brew';
+  const hours = Math.round(totalSec / 3600);
+  // Show inline toast-style message in the done banner
+  const banner = document.getElementById('done-banner');
+  banner.classList.add('show');
+  document.getElementById('done-msg').textContent =
+    'This brew takes ' + hours + 'h. Follow the steps below.';
+}
+
 function startTimer() {
+  // Request notification permission on first user gesture
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+
   if (running) {
     // Pause
     clearInterval(timerInterval);
@@ -477,6 +494,13 @@ function startTimer() {
     document.getElementById('btn-start').textContent = '▶ Resume';
     return;
   }
+
+  // Guard: skip countdown for very long brews (> 60 min)
+  if (totalSec > 3600) {
+    showLongBrewMessage();
+    return;
+  }
+
   running = true;
   document.getElementById('btn-start').textContent = '⏸ Pause';
   document.getElementById('done-banner').classList.remove('show');
@@ -570,10 +594,7 @@ function init() {
   buildSteps();
   updateTimerDisplay();
 
-  // Request notification permission
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission();
-  }
+  // Notification permission is requested on first Start button click (user gesture required)
 }
 
 init();

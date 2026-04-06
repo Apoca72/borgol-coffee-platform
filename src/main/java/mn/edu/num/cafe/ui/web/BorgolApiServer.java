@@ -359,7 +359,22 @@ public class BorgolApiServer {
     private void getMe(Context ctx) {
         Integer userId = authRequired(ctx);
         if (userId == null) return;
-        ctx.json(borgol.getMe(userId));
+        var user = borgol.getMe(userId);
+        var resp = new java.util.HashMap<String, Object>();
+        resp.put("id",             user.id());
+        resp.put("username",       user.username());
+        resp.put("email",          user.email());
+        resp.put("bio",            user.bio());
+        resp.put("avatarUrl",      user.avatarUrl());
+        resp.put("expertiseLevel", user.expertiseLevel());
+        resp.put("flavorPrefs",    user.flavorPrefs());
+        resp.put("followerCount",  user.followerCount());
+        resp.put("followingCount", user.followingCount());
+        resp.put("recipeCount",    user.recipeCount());
+        resp.put("isFollowing",    user.isFollowing());
+        resp.put("createdAt",      user.createdAt());
+        resp.put("isAdmin",        borgol.isAdmin(userId));
+        ctx.json(resp);
     }
 
     // ── User handlers ─────────────────────────────────────────────────────────
@@ -393,18 +408,18 @@ public class BorgolApiServer {
      * A user may only delete their own account.
      */
     private void deleteUser(Context ctx) {
-        Integer userId = authRequired(ctx);
-        if (userId == null) return;
+        Integer requesterId = authRequired(ctx);
+        if (requesterId == null) return;
         try {
             int targetId = intParam(ctx, "id");
-            if (targetId != userId) {
-                ctx.status(403).json(err("You can only delete your own account"));
+            if (requesterId != targetId && !borgol.isAdmin(requesterId)) {
+                ctx.status(403).json(err("Not authorized"));
                 return;
             }
-            // Profile deletion acknowledged — auth credentials removed via SOAP service
+            borgol.deleteUser(targetId);
             ctx.status(204);
         } catch (Exception e) {
-            ctx.status(400).json(err(e.getMessage()));
+            ctx.status(500).json(err(e.getMessage()));
         }
     }
 
