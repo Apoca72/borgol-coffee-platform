@@ -22,6 +22,7 @@ public class Recipe {
     private int          likesCount;
     private int          commentCount;
     private boolean      likedByCurrentUser;
+    private boolean      savedByCurrentUser;
     private String       imageUrl;
     private String       createdAt;
 
@@ -52,6 +53,7 @@ public class Recipe {
     public int          getLikesCount()          { return likesCount; }
     public int          getCommentCount()        { return commentCount; }
     public boolean      isLikedByCurrentUser()   { return likedByCurrentUser; }
+    public boolean      isSavedByCurrentUser()   { return savedByCurrentUser; }
     public String       getImageUrl()            { return imageUrl; }
     public String       getCreatedAt()           { return createdAt; }
 
@@ -71,6 +73,7 @@ public class Recipe {
     public void setLikesCount(int count)                      { this.likesCount = count; }
     public void setCommentCount(int count)                    { this.commentCount = count; }
     public void setLikedByCurrentUser(boolean liked)          { this.likedByCurrentUser = liked; }
+    public void setSavedByCurrentUser(boolean saved)          { this.savedByCurrentUser = saved; }
     public void setImageUrl(String imageUrl)                  { this.imageUrl = imageUrl; }
     public void setCreatedAt(String createdAt)                { this.createdAt = createdAt; }
 }

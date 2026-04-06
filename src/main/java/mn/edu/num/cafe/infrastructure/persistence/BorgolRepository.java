@@ -284,35 +284,33 @@ public class BorgolRepository {
                     PRIMARY KEY (user_id, tag),
                     FOREIGN KEY (user_id) REFERENCES borgol_users(id) ON DELETE CASCADE
                 )""");
-            // ── Баганын миграциуд (startup болгонд аюулгүй ажиллана) ────────
-            // Зарчим: Идемпотент миграц — DO $$ BEGIN...EXCEPTION блок
-            // одоо байгаа хүснэгт байхгүй бол алдаагаа дарж үргэлжилнэ.
-            // VARCHAR(255) → TEXT: base64 зураг хадгалах зорилгоор өргөжүүлнэ
-            // ── Column migrations (safe to run every startup) ─────────────────
-            // Upgrade avatar_url from VARCHAR(255) to TEXT so compressed base64
-            // images (~20-50 KB) are stored without truncation.
-            s.execute("""
-                DO $$ BEGIN
-                  ALTER TABLE borgol_users ALTER COLUMN avatar_url TYPE TEXT;
-                EXCEPTION WHEN undefined_table THEN NULL;
-                END $$""");
-            // Expand bio to TEXT for longer coffee stories.
-            s.execute("""
-                DO $$ BEGIN
-                  ALTER TABLE borgol_users ALTER COLUMN bio TYPE TEXT;
-                EXCEPTION WHEN undefined_table THEN NULL;
-                END $$""");
-            // Expand recipe/cafe image_url to TEXT to support base64-encoded photos.
-            s.execute("""
-                DO $$ BEGIN
-                  ALTER TABLE recipes ALTER COLUMN image_url TYPE TEXT;
-                EXCEPTION WHEN undefined_table THEN NULL;
-                END $$""");
-            s.execute("""
-                DO $$ BEGIN
-                  ALTER TABLE cafes ALTER COLUMN image_url TYPE TEXT;
-                EXCEPTION WHEN undefined_table THEN NULL;
-                END $$""");
+            // ── Баганын миграциуд (PostgreSQL дээр л ажиллана) ──────────────
+            // DO $$ BEGIN...END $$ нь PostgreSQL-н syntax — H2 дэмждэггүй.
+            // H2 дээр CREATE TABLE-д TEXT ашигладаг тул migration шаардлагагүй.
+            boolean isPostgres = conn().getMetaData().getDatabaseProductName()
+                                       .toLowerCase().contains("postgresql");
+            if (isPostgres) {
+                s.execute("""
+                    DO $$ BEGIN
+                      ALTER TABLE borgol_users ALTER COLUMN avatar_url TYPE TEXT;
+                    EXCEPTION WHEN undefined_table THEN NULL;
+                    END $$""");
+                s.execute("""
+                    DO $$ BEGIN
+                      ALTER TABLE borgol_users ALTER COLUMN bio TYPE TEXT;
+                    EXCEPTION WHEN undefined_table THEN NULL;
+                    END $$""");
+                s.execute("""
+                    DO $$ BEGIN
+                      ALTER TABLE recipes ALTER COLUMN image_url TYPE TEXT;
+                    EXCEPTION WHEN undefined_table THEN NULL;
+                    END $$""");
+                s.execute("""
+                    DO $$ BEGIN
+                      ALTER TABLE cafes ALTER COLUMN image_url TYPE TEXT;
+                    EXCEPTION WHEN undefined_table THEN NULL;
+                    END $$""");
+            }
         } catch (SQLException e) {
             throw new RuntimeException("Schema initialization failed", e);
         }
@@ -924,6 +922,7 @@ public class BorgolRepository {
         // Check if liked by current user
         if (currentUserId > 0) {
             r.setLikedByCurrentUser(isRecipeLikedBy(currentUserId, r.getId()));
+            r.setSavedByCurrentUser(isRecipeSaved(currentUserId, r.getId()));
         }
         return r;
     }
