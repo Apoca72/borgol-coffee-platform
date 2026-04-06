@@ -156,7 +156,18 @@ public class JournalPane {
         ratingLabel.setStyle("-fx-font-size:12px;-fx-text-fill:#D4621A;");
 
         titleBox.getChildren().addAll(beanLabel, subRow, ratingLabel);
-        headerRow.getChildren().addAll(beanIcon, titleBox);
+
+        String rawDate = e.getCreatedAt();
+        String displayDate = "";
+        if (rawDate != null && rawDate.length() >= 10) {
+            displayDate = rawDate.substring(0, Math.min(16, rawDate.length())).replace("T", " ");
+        }
+        Label dateLbl = new Label(displayDate);
+        dateLbl.setStyle("-fx-font-size:11px;-fx-text-fill:" + UiUtils.sub() + ";");
+        Region headerSpacer = new Region();
+        HBox.setHgrow(headerSpacer, Priority.ALWAYS);
+
+        headerRow.getChildren().addAll(beanIcon, titleBox, headerSpacer, dateLbl);
 
         // Notes preview
         if (e.getNotes() != null && !e.getNotes().isBlank()) {
@@ -389,17 +400,30 @@ public class JournalPane {
             for (int i = 0; i < 6; i++) sliders[i].setValue(ratings[i]);
         }
 
-        grid.add(lbl("Coffee Bean"),   0, 0); grid.add(bean,      1, 0);
-        grid.add(lbl("Origin"),        2, 0); grid.add(origin,    3, 0);
-        grid.add(lbl("Roast Level"),   0, 1); grid.add(roast,     1, 1);
-        grid.add(lbl("Brew Method"),   2, 1); grid.add(method,    3, 1);
-        grid.add(lbl("Grind Size"),    0, 2); grid.add(grind,     1, 2);
-        grid.add(lbl("Temp (\u00B0C)"),2, 2); grid.add(temp,      3, 2);
-        grid.add(lbl("Dose (g)"),      0, 3); grid.add(dose,      1, 3);
-        grid.add(lbl("Yield (g)"),     2, 3); grid.add(yield,     3, 3);
-        grid.add(lbl("Brew Time (s)"), 0, 4); grid.add(time,      1, 4);
-        grid.add(lbl("Ratings"),       0, 5); grid.add(ratingBox, 1, 5, 3, 1);
-        grid.add(lbl("Notes"),         0, 6); grid.add(notes,     1, 6, 3, 1);
+        DatePicker datePicker = new DatePicker(java.time.LocalDate.now());
+        datePicker.getStyleClass().add("form-field");
+
+        Spinner<Integer> hourSpinner = new Spinner<>(0, 23, java.time.LocalTime.now().getHour());
+        hourSpinner.setEditable(true); hourSpinner.setPrefWidth(70);
+        Spinner<Integer> minSpinner  = new Spinner<>(0, 59, java.time.LocalTime.now().getMinute());
+        minSpinner.setEditable(true); minSpinner.setPrefWidth(70);
+        Label colonLbl = new Label(":");
+        HBox timeRow = new HBox(6, hourSpinner, colonLbl, minSpinner);
+        timeRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        grid.add(lbl("Date"),          0, 0); grid.add(datePicker, 1, 0);
+        grid.add(lbl("Time"),          0, 1); grid.add(timeRow,    1, 1);
+        grid.add(lbl("Coffee Bean"),   0, 2); grid.add(bean,      1, 2);
+        grid.add(lbl("Origin"),        2, 2); grid.add(origin,    3, 2);
+        grid.add(lbl("Roast Level"),   0, 3); grid.add(roast,     1, 3);
+        grid.add(lbl("Brew Method"),   2, 3); grid.add(method,    3, 3);
+        grid.add(lbl("Grind Size"),    0, 4); grid.add(grind,     1, 4);
+        grid.add(lbl("Temp (\u00B0C)"),2, 4); grid.add(temp,      3, 4);
+        grid.add(lbl("Dose (g)"),      0, 5); grid.add(dose,      1, 5);
+        grid.add(lbl("Yield (g)"),     2, 5); grid.add(yield,     3, 5);
+        grid.add(lbl("Brew Time (s)"), 0, 6); grid.add(time,      1, 6);
+        grid.add(lbl("Ratings"),       0, 7); grid.add(ratingBox, 1, 7, 3, 1);
+        grid.add(lbl("Notes"),         0, 8); grid.add(notes,     1, 8, 3, 1);
         dlg.getDialogPane().setContent(grid);
 
         dlg.showAndWait().ifPresent(bt -> {
@@ -409,12 +433,17 @@ public class JournalPane {
                     int[] r = new int[6];
                     for (int i = 0; i < 6; i++) r[i] = (int) Math.round(sliders[i].getValue());
                     if (existing == null) {
-                        service.createJournalEntry(uid,
+                        String createdAt = String.format("%s %02d:%02d:00",
+                            datePicker.getValue(), hourSpinner.getValue(), minSpinner.getValue());
+                        BrewJournalEntry created = service.createJournalEntry(uid,
                             bean.getText().trim(), origin.getText().trim(),
                             roast.getValue(), method.getText().trim(), grind.getText().trim(),
                             parseInt(temp.getText(), 93), parseDouble(dose.getText(), 18),
                             parseDouble(yield.getText(), 36), parseInt(time.getText(), 0),
                             r[0], r[1], r[2], r[3], r[4], r[5], notes.getText().trim());
+                        if (created != null && (created.getCreatedAt() == null || created.getCreatedAt().isBlank())) {
+                            created.setCreatedAt(createdAt);
+                        }
                         UiUtils.showToast("Brew logged!");
                     } else {
                         service.updateJournalEntry(existing.getId(), uid,
