@@ -310,7 +310,158 @@ class UiUtils {
     static void showRecipeDetailDialog(BorgolService service, Recipe r,
                                         Runnable onRefresh,
                                         java.util.function.Consumer<Recipe> onUseInTimer) {
-        showRecipeDetailDialog(service, r, onRefresh);
+        if (onUseInTimer == null) {
+            showRecipeDetailDialog(service, r, onRefresh);
+            return;
+        }
+        Dialog<ButtonType> dlg = new Dialog<>();
+        dlg.setTitle(r.getTitle());
+        dlg.setHeaderText(null);
+        ButtonType useInTimerBtn = new ButtonType("\u25B6 Use in Timer",
+            javafx.scene.control.ButtonBar.ButtonData.LEFT);
+        dlg.getDialogPane().getButtonTypes().addAll(useInTimerBtn, ButtonType.CLOSE);
+        addStylesheet(dlg, UiUtils.class);
+        dlg.getDialogPane().setPrefWidth(560);
+        dlg.getDialogPane().setPrefHeight(680);
+
+        VBox box = new VBox(0);
+
+        // ── Header ──────────────────────────────────────────────────────────
+        VBox dlgHeader = new VBox(8);
+        dlgHeader.setPadding(new Insets(20, 24, 16, 24));
+        dlgHeader.setStyle("-fx-background-color:" + card() + ";");
+
+        Label titleLbl = new Label(r.getTitle());
+        titleLbl.setStyle("-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:" + text() + ";");
+        titleLbl.setWrapText(true);
+
+        HBox chips = new HBox(8);
+        chips.setAlignment(Pos.CENTER_LEFT);
+        Label typeChip  = new Label(r.getDrinkType());  typeChip.getStyleClass().add("detail-chip");
+        Label diffChip  = new Label(r.getDifficulty()); diffChip.getStyleClass().add("detail-chip");
+        Label timeChip  = new Label("\u23F1 " + r.getBrewTime() + " min"); timeChip.getStyleClass().add("detail-chip");
+        Label likeChip  = new Label((r.isLikedByCurrentUser() ? "\u2764 " : "\u2661 ") + r.getLikesCount());
+        likeChip.getStyleClass().add(r.isLikedByCurrentUser() ? "detail-chip-liked" : "detail-chip");
+        chips.getChildren().addAll(typeChip, diffChip, timeChip, likeChip);
+
+        javafx.scene.Node av = createAvatar(r.getAuthorUsername(), 28);
+        Label authorLbl = new Label("@" + r.getAuthorUsername());
+        authorLbl.getStyleClass().add("username-link");
+        authorLbl.setOnMouseClicked(e -> showUserProfileDialog(service, r.getAuthorId()));
+        HBox authorRow = new HBox(8, av, authorLbl);
+        authorRow.setAlignment(Pos.CENTER_LEFT);
+
+        dlgHeader.getChildren().addAll(titleLbl, chips, authorRow);
+
+        // ── Body ─────────────────────────────────────────────────────────────
+        VBox dlgBody = new VBox(14);
+        dlgBody.setPadding(new Insets(16, 24, 24, 24));
+        dlgBody.setStyle("-fx-background-color:" + cardAlt() + ";");
+
+        if (r.getDescription() != null && !r.getDescription().isBlank()) {
+            Label desc = new Label(r.getDescription());
+            desc.setStyle("-fx-font-size:14px;-fx-text-fill:" + text() + ";-fx-line-spacing:3;");
+            desc.setWrapText(true);
+            dlgBody.getChildren().add(desc);
+        }
+
+        if (r.getIngredients() != null && !r.getIngredients().isBlank()) {
+            VBox section = sectionCard("INGREDIENTS");
+            for (String line : r.getIngredients().split("\\n")) {
+                String t = line.trim();
+                if (!t.isEmpty()) {
+                    Label item = new Label("\u2022  " + t);
+                    item.setStyle("-fx-font-size:14px;-fx-text-fill:" + text() + ";");
+                    item.setWrapText(true);
+                    section.getChildren().add(item);
+                }
+            }
+            dlgBody.getChildren().add(section);
+        }
+
+        if (r.getInstructions() != null && !r.getInstructions().isBlank()) {
+            VBox section = sectionCard("INSTRUCTIONS");
+            int step = 1;
+            for (String line : r.getInstructions().split("\\n")) {
+                String t = line.trim();
+                if (!t.isEmpty()) {
+                    Label item = new Label(step++ + ".  " + t);
+                    item.setStyle("-fx-font-size:14px;-fx-text-fill:" + text() + ";-fx-line-spacing:2;");
+                    item.setWrapText(true);
+                    section.getChildren().add(item);
+                }
+            }
+            dlgBody.getChildren().add(section);
+        }
+
+        // ── Comments ─────────────────────────────────────────────────────────
+        VBox commSection = sectionCard("COMMENTS");
+        ListView<RecipeComment> commentList = new ListView<>();
+        commentList.setPrefHeight(140);
+        commentList.getStyleClass().add("list-view");
+        commentList.setCellFactory(lv -> new ListCell<>() {
+            @Override protected void updateItem(RecipeComment c, boolean empty) {
+                super.updateItem(c, empty);
+                if (empty || c == null) { setText(null); setGraphic(null); return; }
+                HBox row = new HBox(10);
+                row.setAlignment(Pos.TOP_LEFT);
+                javafx.scene.Node av2 = createAvatar(c.getAuthorUsername(), 24);
+                VBox info = new VBox(2);
+                Label name = new Label("@" + c.getAuthorUsername());
+                name.setStyle("-fx-font-weight:700;-fx-font-size:12px;-fx-text-fill:" + text() + ";");
+                Label content = new Label(c.getContent());
+                content.setStyle("-fx-font-size:13px;-fx-text-fill:" + sub() + ";");
+                content.setWrapText(true);
+                info.getChildren().addAll(name, content);
+                row.getChildren().addAll(av2, info);
+                setGraphic(row); setText(null);
+            }
+        });
+        refreshComments(r.getId(), commentList, service);
+        commSection.getChildren().add(commentList);
+
+        if (AppSession.loggedIn()) {
+            TextField commentField = new TextField();
+            commentField.setPromptText("Write a comment\u2026");
+            commentField.getStyleClass().add("form-field");
+            Button postBtn = new Button("Post");
+            postBtn.getStyleClass().add("btn-primary");
+            HBox addRow = new HBox(8, commentField, postBtn);
+            HBox.setHgrow(commentField, Priority.ALWAYS);
+            postBtn.setOnAction(ev -> {
+                String txt = commentField.getText().trim();
+                if (!txt.isEmpty()) {
+                    try {
+                        service.addComment(r.getId(), AppSession.userId(), txt);
+                        commentField.clear();
+                        refreshComments(r.getId(), commentList, service);
+                    } catch (Exception ex) { MainWindow.alert("Error", ex.getMessage()); }
+                }
+            });
+            commSection.getChildren().add(addRow);
+        }
+        dlgBody.getChildren().add(commSection);
+
+        ScrollPane scroll = new ScrollPane(dlgBody);
+        scroll.setFitToWidth(true);
+        scroll.getStyleClass().add("detail-scroll");
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+
+        box.getChildren().addAll(dlgHeader, scroll);
+        dlg.getDialogPane().setContent(box);
+
+        // Style the "Use in Timer" button
+        dlg.getDialogPane().lookupButton(useInTimerBtn).setStyle(
+            "-fx-background-color:#D4621A;-fx-text-fill:white;" +
+            "-fx-font-weight:700;-fx-font-size:13px;-fx-padding:6 14 6 14;" +
+            "-fx-background-radius:8;-fx-border-width:0;-fx-cursor:hand;");
+
+        dlg.showAndWait().ifPresent(result -> {
+            if (result == useInTimerBtn) {
+                onUseInTimer.accept(r);
+            }
+        });
+        if (onRefresh != null) onRefresh.run();
     }
 
     private static void refreshComments(int recipeId, ListView<RecipeComment> list,

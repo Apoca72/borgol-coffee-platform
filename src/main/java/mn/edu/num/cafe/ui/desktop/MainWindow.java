@@ -67,10 +67,13 @@ public class MainWindow {
         CafesPane      cp = new CafesPane(service);
         JournalPane    jp = new JournalPane(service);
         LearnPane      lp = new LearnPane(service);
-        FeedPane       fp = new FeedPane(service);
+        BrewTimerPane  tp = new BrewTimerPane();
+        FeedPane       fp = new FeedPane(service, recipe -> {
+            tp.loadRecipe(recipe);
+            showPane("Timer");
+        });
         PeoplePane     pp = new PeoplePane(service);
         ProfilePane    pr = new ProfilePane(service, this::refreshNavUser);
-        BrewTimerPane  tp = new BrewTimerPane();
 
         // Wire recipe → timer: clicking "Use in Timer" opens the Timer pane
         // loaded with that recipe's steps

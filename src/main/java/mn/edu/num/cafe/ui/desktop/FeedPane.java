@@ -23,12 +23,14 @@ public class FeedPane {
 
     private final BorderPane root;
     private final BorgolService service;
+    private final java.util.function.Consumer<Recipe> onUseInTimer;
     private final ObservableList<Recipe> items = FXCollections.observableArrayList();
     private VBox feedBox;
     private VBox rightPanel;
 
-    public FeedPane(BorgolService service) {
+    public FeedPane(BorgolService service, java.util.function.Consumer<Recipe> onUseInTimer) {
         this.service = service;
+        this.onUseInTimer = onUseInTimer;
         root = new BorderPane();
         root.getStyleClass().add("content-pane");
         root.setStyle("-fx-background-color:" + UiUtils.bg() + ";");
@@ -346,7 +348,15 @@ public class FeedPane {
         viewBtn.setOnAction(e -> UiUtils.showRecipeDetailDialog(service, r, this::loadData));
 
         Button saveBtn = UiUtils.saveButton(service, r, this::loadData);
-        footer.getChildren().addAll(likeBtn, commentLbl, timeInfo, btnSpacer, saveBtn, viewBtn);
+
+        Button timerBtn = new Button("\u25B6 Timer");
+        timerBtn.setStyle(
+            "-fx-background-color:transparent;-fx-text-fill:#A8621E;" +
+            "-fx-font-size:12px;-fx-font-weight:700;-fx-padding:5 8 5 8;" +
+            "-fx-border-width:0;-fx-cursor:hand;");
+        timerBtn.setOnAction(e -> { if (onUseInTimer != null) onUseInTimer.accept(r); });
+
+        footer.getChildren().addAll(likeBtn, commentLbl, timeInfo, btnSpacer, saveBtn, timerBtn, viewBtn);
         card.getChildren().addAll(header, body, sep, footer);
         return card;
     }
