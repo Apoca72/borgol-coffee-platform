@@ -79,6 +79,8 @@ public class MainWindow {
             showPane("Timer");
         });
 
+        MapPane    mp = new MapPane(service);
+
         panes.put("Feed",    fp.getRoot());
         panes.put("Recipes", rp.getRoot());
         panes.put("Cafes",   cp.getRoot());
@@ -86,6 +88,7 @@ public class MainWindow {
         panes.put("Journal", jp.getRoot());
         panes.put("Learn",   lp.getRoot());
         panes.put("Timer",   tp.getRoot());
+        panes.put("Map",     mp.getRoot());
         panes.put("Profile", pr.getRoot());
 
         center.getChildren().addAll(panes.values());
@@ -127,7 +130,7 @@ public class MainWindow {
         // Nav link buttons
         HBox navLinks = new HBox(2);
         navLinks.setAlignment(Pos.CENTER_LEFT);
-        String[] pages = {"Feed", "Recipes", "Cafes", "Explore", "Journal", "Learn", "Timer"};
+        String[] pages = {"Feed", "Recipes", "Cafes", "Explore", "Journal", "Learn", "Timer", "Map"};
         for (String name : pages) {
             Button btn = navLinkBtn(name);
             btn.setOnAction(e -> showPane(name));
@@ -235,6 +238,7 @@ public class MainWindow {
             case "Journal" -> "\uD83D\uDCD3";
             case "Learn"   -> "\uD83C\uDF93";
             case "Timer"   -> "\u23F1\uFE0F";
+            case "Map"     -> "\uD83D\uDDFA\uFE0F";
             case "Profile" -> "\uD83D\uDC64";
             default        -> "";
         };
