@@ -1297,11 +1297,12 @@ function updateNavUser() {
     mobileUser.style.display = 'block';
     document.getElementById('notif-wrap').style.display = 'block';
     document.getElementById('nav-username').textContent = ME.username;
-    // Show admin link only for the first registered user (id=1)
+    // Show admin link based on isAdmin flag (fallback to id===1 if isAdmin not yet in API response)
+    const isAdmin = ME.isAdmin ?? (ME.id === 1);
     const adminLink = document.getElementById('nav-admin-link');
-    if (adminLink) adminLink.style.display = ME.id === 1 ? 'inline-flex' : 'none';
+    if (adminLink) adminLink.style.display = isAdmin ? 'inline-flex' : 'none';
     const mobileAdminLink = document.getElementById('mobile-admin-link');
-    if (mobileAdminLink) mobileAdminLink.style.display = ME.id === 1 ? 'block' : 'none';
+    if (mobileAdminLink) mobileAdminLink.style.display = isAdmin ? 'block' : 'none';
     const avatarEl = document.getElementById('nav-avatar');
     if (ME.avatarUrl) {
       avatarEl.innerHTML = `<img src="${esc(ME.avatarUrl)}" alt="${ME.username[0].toUpperCase()}" onerror="this.parentElement.textContent='${ME.username[0].toUpperCase()}'"/>`;
@@ -1353,8 +1354,12 @@ async function loadFeed() {
       </div>
       <div class="section-title">🔥 Trending Now</div>
     `;
-    const trending = await api('/api/recipes?sort=TRENDING');
-    document.getElementById('feed-content').innerHTML += trending.map(r => renderRecipeCard(r)).join('');
+    try {
+      const trending = await api('/api/recipes?sort=TRENDING');
+      if (Array.isArray(trending)) {
+        document.getElementById('feed-content').innerHTML += trending.map(r => renderRecipeCard(r)).join('');
+      }
+    } catch (err) { console.error('Trending load failed:', err); }
     loadTrending();
     loadSuggestPeople();
     return;
@@ -2736,63 +2741,71 @@ async function fetchNearbyCafes(lat, lng) {
   _mapMarkers = [];
   document.getElementById('map-cafe-list').innerHTML = '<div class="loading"><div class="spinner"></div> Searching…</div>';
 
-  const res = await fetch(`/api/cafes/nearby?lat=${lat}&lng=${lng}&radius=${radius}`);
-  const cafes = await res.json();
+  try {
+    const res = await fetch(`/api/cafes/nearby?lat=${lat}&lng=${lng}&radius=${radius}`);
+    if (!res.ok) throw new Error(await res.text());
+    const cafes = await res.json();
+    if (!Array.isArray(cafes)) throw new Error('Invalid response');
 
-  if (!cafes.length) {
-    status.textContent = `No cafes found within ${radius} km. Try increasing the radius.`;
-    document.getElementById('map-cafe-list').innerHTML = '';
-    return;
-  }
-  status.textContent = `Found ${cafes.length} cafe${cafes.length>1?'s':''} within ${radius} km`;
+    if (!cafes.length) {
+      status.textContent = `No cafes found within ${radius} km. Try increasing the radius.`;
+      document.getElementById('map-cafe-list').innerHTML = '';
+      return;
+    }
+    status.textContent = `Found ${cafes.length} cafe${cafes.length>1?'s':''} within ${radius} km`;
 
-  // Custom coffee-cup icon
-  const coffeeIcon = L.divIcon({
-    html: '<div style="font-size:28px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))">☕</div>',
-    className: '', iconSize: [32, 32], iconAnchor: [16, 28], popupAnchor: [0, -30]
-  });
+    // Custom coffee-cup icon
+    const coffeeIcon = L.divIcon({
+      html: '<div style="font-size:28px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))">☕</div>',
+      className: '', iconSize: [32, 32], iconAnchor: [16, 28], popupAnchor: [0, -30]
+    });
 
-  cafes.forEach(c => {
-    const stars = '★'.repeat(Math.round(c.avgRating)) + '☆'.repeat(5 - Math.round(c.avgRating));
-    const popup = L.popup({ maxWidth: 260 }).setContent(`
-      <div style="font-family:system-ui,sans-serif">
-        <div style="font-size:16px;font-weight:700;margin-bottom:4px">${esc(c.name)}</div>
-        <div style="color:#795548;font-size:13px;margin-bottom:6px">${esc(c.address)}</div>
-        <div style="color:#F57F17;font-size:15px;margin-bottom:2px">${stars}</div>
-        <div style="font-size:12px;color:#666;margin-bottom:8px">${c.avgRating.toFixed(1)} / 5 &bull; ${c.ratingCount} review${c.ratingCount!==1?'s':''}</div>
-        ${c.hours ? `<div style="font-size:12px;color:#555;margin-bottom:8px">🕐 ${esc(c.hours)}</div>` : ''}
-        <button onclick="closeMapPopup();showPage('cafes')" style="width:100%;padding:7px;background:#5D4037;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
-          View Details & Menu →
-        </button>
-      </div>`);
-    const marker = L.marker([c.lat, c.lng], { icon: coffeeIcon }).addTo(_map).bindPopup(popup);
-    _mapMarkers.push(marker);
-  });
+    cafes.forEach(c => {
+      const stars = '★'.repeat(Math.round(c.avgRating)) + '☆'.repeat(5 - Math.round(c.avgRating));
+      const popup = L.popup({ maxWidth: 260 }).setContent(`
+        <div style="font-family:system-ui,sans-serif">
+          <div style="font-size:16px;font-weight:700;margin-bottom:4px">${esc(c.name)}</div>
+          <div style="color:#795548;font-size:13px;margin-bottom:6px">${esc(c.address)}</div>
+          <div style="color:#F57F17;font-size:15px;margin-bottom:2px">${stars}</div>
+          <div style="font-size:12px;color:#666;margin-bottom:8px">${c.avgRating.toFixed(1)} / 5 &bull; ${c.ratingCount} review${c.ratingCount!==1?'s':''}</div>
+          ${c.hours ? `<div style="font-size:12px;color:#555;margin-bottom:8px">🕐 ${esc(c.hours)}</div>` : ''}
+          <button onclick="closeMapPopup();openCafeDetail(${c.id})" style="width:100%;padding:7px;background:#5D4037;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+            View Details & Menu →
+          </button>
+        </div>`);
+      const marker = L.marker([c.lat, c.lng], { icon: coffeeIcon }).addTo(_map).bindPopup(popup);
+      _mapMarkers.push(marker);
+    });
 
-  // Fit map to all markers + user location
-  const bounds = L.latLngBounds(_mapMarkers.map(m => m.getLatLng()));
-  bounds.extend([lat, lng]);
-  _map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+    // Fit map to all markers + user location
+    const bounds = L.latLngBounds(_mapMarkers.map(m => m.getLatLng()));
+    bounds.extend([lat, lng]);
+    _map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
 
-  // List below map
-  document.getElementById('map-cafe-list').innerHTML = `
-    <div class="section-title" style="margin-bottom:12px">Nearby Cafes</div>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      ${cafes.map(c => `
-        <div class="card" style="display:flex;gap:14px;align-items:center;padding:14px 16px;cursor:pointer"
-             onclick="if(_map&&${c.lat})_map.setView([${c.lat},${c.lng}],16)">
-          <div style="font-size:32px">☕</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:700;font-size:15px">${esc(c.name)}</div>
-            <div style="font-size:12px;color:var(--muted)">${esc(c.address)}</div>
-            <div style="color:#F57F17;font-size:13px;margin-top:3px">
-              ${'★'.repeat(Math.round(c.avgRating))}${'☆'.repeat(5-Math.round(c.avgRating))}
-              <span style="color:var(--muted);font-size:12px"> ${c.avgRating.toFixed(1)} (${c.ratingCount})</span>
+    // List below map
+    document.getElementById('map-cafe-list').innerHTML = `
+      <div class="section-title" style="margin-bottom:12px">Nearby Cafes</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${cafes.map(c => `
+          <div class="card" style="display:flex;gap:14px;align-items:center;padding:14px 16px;cursor:pointer"
+               onclick="if(_map&&${c.lat})_map.setView([${c.lat},${c.lng}],16)">
+            <div style="font-size:32px">☕</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:15px">${esc(c.name)}</div>
+              <div style="font-size:12px;color:var(--muted)">${esc(c.address)}</div>
+              <div style="color:#F57F17;font-size:13px;margin-top:3px">
+                ${'★'.repeat(Math.round(c.avgRating))}${'☆'.repeat(5-Math.round(c.avgRating))}
+                <span style="color:var(--muted);font-size:12px"> ${c.avgRating.toFixed(1)} (${c.ratingCount})</span>
+              </div>
             </div>
-          </div>
-          <div style="font-size:20px;color:var(--muted)">›</div>
-        </div>`).join('')}
-    </div>`;
+            <div style="font-size:20px;color:var(--muted)">›</div>
+          </div>`).join('')}
+      </div>`;
+  } catch (err) {
+    console.error('Map fetch failed:', err);
+    status.textContent = 'Failed to load nearby cafes.';
+    document.getElementById('map-cafe-list').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-msg">Could not load nearby cafes. Please try again.</div></div>';
+  }
 }
 
 function refreshMap() {
@@ -2852,7 +2865,7 @@ async function loadEquipment() {
 
 async function saveEquipment() {
   const name = document.getElementById('eq-name').value.trim();
-  if (!name) { showToast('Name is required','error'); return; }
+  if (!name) { toast('Name is required','err'); return; }
   const body = {
     category: document.getElementById('eq-category').value,
     name,
@@ -2860,32 +2873,32 @@ async function saveEquipment() {
     notes: document.getElementById('eq-notes').value.trim(),
   };
   try {
-    await api('/api/equipment', 'POST', body);
+    await api('/api/equipment', {method:'POST', body:JSON.stringify(body), headers:{'Content-Type':'application/json'}});
     closeModal('add-equipment-modal');
-    showToast('Equipment added!');
+    toast('Equipment added!');
     // Refresh equipment tab if active
     if (currentProfileTab === 'equipment') {
       const content = document.getElementById('profile-tab-content');
       content.innerHTML = await loadEquipment();
     }
-  } catch(e) { showToast(e.message,'error'); }
+  } catch(e) { toast(e.message,'err'); }
 }
 
 async function deleteEquipment(id) {
   if (!confirm('Remove this equipment?')) return;
   try {
-    await api(`/api/equipment/${id}`, 'DELETE');
-    showToast('Removed');
+    await api(`/api/equipment/${id}`, {method:'DELETE'});
+    toast('Removed');
     if (currentProfileTab === 'equipment') {
       const content = document.getElementById('profile-tab-content');
       content.innerHTML = await loadEquipment();
     }
-  } catch(e) { showToast(e.message,'error'); }
+  } catch(e) { toast(e.message,'err'); }
 }
 
 // ── Journal CSV Export ────────────────────────────────────────────────────────
 function exportJournalCSV() {
-  if (!JOURNAL_ENTRIES.length) { showToast('No entries to export','error'); return; }
+  if (!JOURNAL_ENTRIES.length) { toast('No entries to export','err'); return; }
   const cols = ['id','coffeeBean','origin','roastLevel','brewMethod','grindSize',
     'waterTempC','doseGrams','yieldGrams','brewTimeSec',
     'ratingAroma','ratingFlavor','ratingAcidity','ratingBody','ratingSweetness','ratingFinish','notes','createdAt'];
@@ -2904,7 +2917,7 @@ function exportJournalCSV() {
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
-  showToast('CSV downloaded!');
+  toast('CSV downloaded!');
 }
 
 // ── Save (Bookmark) ────────────────────────────────────────────────────────────
@@ -2921,8 +2934,8 @@ async function toggleSave(recipeId, btn) {
           : `🔖<span style="font-size:11px">${result.saved?'Saved':''}</span>`;
       }
     });
-    showToast(result.saved ? '🔖 Recipe saved' : 'Removed from saved', result.saved ? 'ok' : 'info');
-  } catch(e) { showToast('✗ ' + e.message, 'err'); }
+    toast(result.saved ? '🔖 Recipe saved' : 'Removed from saved', result.saved ? 'ok' : 'info');
+  } catch(e) { toast('✗ ' + e.message, 'err'); }
 }
 
 // ── Report modal ───────────────────────────────────────────────────────────────
@@ -2937,15 +2950,15 @@ function openReportModal(type, id) {
 async function submitReport() {
   const reason = document.getElementById('report-reason').value;
   const desc   = document.getElementById('report-desc').value;
-  if (!reason) { showToast('Please select a reason', 'err'); return; }
+  if (!reason) { toast('Please select a reason', 'err'); return; }
   try {
     await api('/api/report', {method:'POST', body: JSON.stringify({
       contentType: _reportType, contentId: _reportId,
       reason, description: desc
     })});
     closeModal('report-modal');
-    showToast('✓ Report submitted. Thank you.', 'ok');
-  } catch(e) { showToast('✗ ' + e.message, 'err'); }
+    toast('✓ Report submitted. Thank you.', 'ok');
+  } catch(e) { toast('✗ ' + e.message, 'err'); }
 }
 
 // ── Notifications ──────────────────────────────────────────────────────────────
@@ -3012,8 +3025,7 @@ async function openHashtagPage(tag) {
     const followed = ME ? (await api('/api/users/me/hashtags').catch(()=>[])) : [];
     const isFollowing = followed.includes(tag);
     const container = document.getElementById('recipe-detail-content');
-    document.getElementById('recipe-detail-modal').style.display = '';
-    document.querySelector('#recipe-detail-modal').classList.add('open');
+    openModal('recipe-detail-modal');
     container.innerHTML = `<div class="modal-header">
       <div class="modal-title">#${esc(tag)}</div>
       <div style="display:flex;gap:8px;align-items:center">
@@ -3023,10 +3035,10 @@ async function openHashtagPage(tag) {
       </div></div>
       <div class="modal-body">
         <div style="color:var(--muted);font-size:13px;margin-bottom:16px">${recipes.length} recipe${recipes.length!==1?'s':''} tagged #${esc(tag)}</div>
-        ${recipes.length ? `<div class="recipe-grid">${recipes.map(r=>buildRecipeCard(r)).join('')}</div>`
+        ${recipes.length ? `<div class="recipe-grid">${recipes.map(r=>renderRecipeCard(r)).join('')}</div>`
           : `<div class="empty-state"><div class="empty-icon">🏷️</div><div class="empty-msg">No recipes with #${esc(tag)} yet</div></div>`}
       </div>`;
-  } catch(e) { showToast('✗ ' + e.message, 'err'); }
+  } catch(e) { toast('✗ ' + e.message, 'err'); }
 }
 async function toggleHashtag(tag, btn) {
   if (!ME) { openModal('login-modal'); return; }
@@ -3041,8 +3053,8 @@ async function toggleHashtag(tag, btn) {
       btn.className = 'btn btn-sm btn-secondary';
       btn.textContent = '✓ Following';
     }
-    showToast(following ? `Unfollowed #${tag}` : `Following #${tag}!`, following ? 'info' : 'ok');
-  } catch(e) { showToast('✗ ' + e.message, 'err'); }
+    toast(following ? `Unfollowed #${tag}` : `Following #${tag}!`, following ? 'info' : 'ok');
+  } catch(e) { toast('✗ ' + e.message, 'err'); }
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
