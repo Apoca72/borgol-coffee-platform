@@ -345,7 +345,8 @@ public class FeedPane {
             "-fx-background-radius:8;-fx-border-width:0;-fx-cursor:hand;");
         viewBtn.setOnAction(e -> UiUtils.showRecipeDetailDialog(service, r, this::loadData));
 
-        footer.getChildren().addAll(likeBtn, commentLbl, timeInfo, btnSpacer, viewBtn);
+        Button saveBtn = UiUtils.saveButton(service, r, this::loadData);
+        footer.getChildren().addAll(likeBtn, commentLbl, timeInfo, btnSpacer, saveBtn, viewBtn);
         card.getChildren().addAll(header, body, sep, footer);
         return card;
     }

@@ -36,19 +36,19 @@ class UiUtils {
     static boolean dark = false;
 
     /** Main page / feed background */
-    static String bg()     { return dark ? "#18191A" : "#F0F2F5"; }
+    static String bg()     { return dark ? "#0C0400" : "#FDFAF3"; }
     /** Card / panel background */
-    static String card()   { return dark ? "#242526" : "white";   }
+    static String card()   { return dark ? "#180E06" : "#FFFEF8"; }
     /** Slightly-offset card background (dialog body, section bg) */
-    static String cardAlt(){ return dark ? "#1E1F20" : "#F8F9FA"; }
+    static String cardAlt(){ return dark ? "#1A0800" : "#FDF5E6"; }
     /** Primary text */
-    static String text()   { return dark ? "#E4E6EB" : "#1C1E21"; }
+    static String text()   { return dark ? "#F6E8CC" : "#180F08"; }
     /** Secondary / muted text */
-    static String sub()    { return dark ? "#B0B3B8" : "#65676B"; }
+    static String sub()    { return dark ? "#8A7054" : "#8A7054"; }
     /** Divider / border */
-    static String border() { return dark ? "#3E4042" : "#E4E6EA"; }
+    static String border() { return dark ? "#3D2010" : "#EDDBBA"; }
     /** Neutral button / chip background */
-    static String btn()    { return dark ? "#3A3B3C" : "#F0F2F5"; }
+    static String btn()    { return dark ? "#2B1005" : "#F6E8CC"; }
 
     // ── Avatar ────────────────────────────────────────────────────────────────
 
@@ -66,6 +66,24 @@ class UiUtils {
             "-fx-max-width:" + size + "px;-fx-max-height:" + size + "px;" +
             "-fx-background-radius:" + radius + "px;-fx-alignment:center;");
         return av;
+    }
+
+    // ── Save / bookmark button ────────────────────────────────────────────────
+
+    /** Bookmark toggle button wired to service.toggleSave(). Calls onToggle after each toggle. */
+    static Button saveButton(BorgolService service, Recipe r, Runnable onToggle) {
+        boolean saved = r.isSavedByCurrentUser();
+        Button btn = new Button(saved ? "\uD83D\uDD16" : "\uD83D\uDD16");
+        btn.setStyle(
+            "-fx-background-color:transparent;-fx-border-width:0;-fx-cursor:hand;-fx-font-size:15px;" +
+            "-fx-text-fill:" + (saved ? "#E8A030" : "#8A7054") + ";-fx-padding:5 8 5 8;");
+        btn.setOnAction(e -> {
+            if (!AppSession.loggedIn()) { MainWindow.alert("Login required", "Please log in first."); return; }
+            service.toggleSave(AppSession.userId(), r.getId());
+            UiUtils.showToast(r.isSavedByCurrentUser() ? "Removed from saved" : "\uD83D\uDD16 Saved!");
+            onToggle.run();
+        });
+        return btn;
     }
 
     // ── Empty state ───────────────────────────────────────────────────────────
@@ -269,6 +287,12 @@ class UiUtils {
         dlg.getDialogPane().setContent(box);
         dlg.showAndWait();
         if (onRefresh != null) onRefresh.run();
+    }
+
+    static void showRecipeDetailDialog(BorgolService service, Recipe r,
+                                        Runnable onRefresh,
+                                        java.util.function.Consumer<Recipe> onUseInTimer) {
+        showRecipeDetailDialog(service, r, onRefresh);
     }
 
     private static void refreshComments(int recipeId, ListView<RecipeComment> list,
