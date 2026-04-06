@@ -82,18 +82,24 @@ public class JournalPane {
                 "Log in and start logging your brews!"));
             return;
         }
-        try {
-            entries = service.getJournalEntries(AppSession.userId());
-            if (entries.isEmpty()) {
-                listBox.getChildren().add(UiUtils.emptyState(
-                    "\uD83D\uDCD3", "No entries yet",
-                    "Start logging your coffee brews to track flavors over time."));
-            } else {
-                for (BrewJournalEntry e : entries) listBox.getChildren().add(buildEntryCard(e));
+        int uid = AppSession.userId();
+        Thread.ofVirtual().start(() -> {
+            try {
+                List<BrewJournalEntry> loaded = service.getJournalEntries(uid);
+                javafx.application.Platform.runLater(() -> {
+                    entries = loaded;
+                    if (entries.isEmpty()) {
+                        listBox.getChildren().add(UiUtils.emptyState(
+                            "\uD83D\uDCD3", "No entries yet",
+                            "Start logging your coffee brews to track flavors over time."));
+                    } else {
+                        for (BrewJournalEntry e : entries) listBox.getChildren().add(buildEntryCard(e));
+                    }
+                });
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() -> MainWindow.alert("Error", e.getMessage()));
             }
-        } catch (Exception e) {
-            MainWindow.alert("Error", e.getMessage());
-        }
+        });
     }
 
     // ── Journal entry card ────────────────────────────────────────────────────

@@ -1,170 +1,181 @@
-/* ── Borgol Desktop — Dark Mode Overrides ─────────────────────────────────── */
+/* ── Borgol Desktop — Dark Espresso Mode ──────────────────────────────────── */
 
 /* ── Root ─────────────────────────────────────────────────────────────────── */
 .root {
-    -fx-background-color: #18191A;
-    -fx-text-fill: #E4E6EB;
+    -fx-background-color: #0C0400;
+    -fx-text-fill: #F6E8CC;
 }
 
 /* ── Sidebar ──────────────────────────────────────────────────────────────── */
 .sidebar {
-    -fx-background-color: #242526;
-    -fx-border-color: transparent #3E4042 transparent transparent;
+    -fx-background-color: #1A0800;
+    -fx-border-color: transparent #3D2010 transparent transparent;
 }
 
-.sidebar-brand { -fx-text-fill: #FF8C55; }
+.sidebar-brand { -fx-text-fill: #E8A030; }
 
 .nav-item {
     -fx-background-color: transparent;
-    -fx-text-fill: #E4E6EB;
+    -fx-text-fill: rgba(246,232,204,0.65);
 }
-.nav-item:hover { -fx-background-color: #3A3B3C; }
+.nav-item:hover {
+    -fx-background-color: rgba(255,255,255,0.06);
+    -fx-text-fill: #F6E8CC;
+}
 
 .nav-item-active {
-    -fx-background-color: #3A2010;
-    -fx-text-fill: #FF8C55;
+    -fx-background-color: rgba(232,160,48,0.2);
+    -fx-text-fill: #E8A030;
 }
 
-.nav-item .ikonli-font-icon { -fx-icon-color: #B0B3B8; }
-.nav-item:hover .ikonli-font-icon { -fx-icon-color: #E4E6EB; }
-.nav-item-active .ikonli-font-icon { -fx-icon-color: #FF8C55; }
+.nav-item .ikonli-font-icon { -fx-icon-color: rgba(246,232,204,0.5); }
+.nav-item:hover .ikonli-font-icon { -fx-icon-color: #F6E8CC; }
+.nav-item-active .ikonli-font-icon { -fx-icon-color: #E8A030; }
 
 /* ── Toolbar & Content ───────────────────────────────────────────────────── */
 .toolbar {
-    -fx-background-color: #242526;
-    -fx-border-color: transparent transparent #3E4042 transparent;
+    -fx-background-color: #180E06;
+    -fx-border-color: transparent transparent #3D2010 transparent;
 }
 
-.pane-title { -fx-text-fill: #E4E6EB; }
+.pane-title { -fx-text-fill: #F6E8CC; }
 
-.content-pane { -fx-background-color: #18191A; }
-.content-area { -fx-background-color: #18191A; }
+.content-pane { -fx-background-color: #0C0400; }
+.content-area { -fx-background-color: #0C0400; }
 
 /* ── Search field ────────────────────────────────────────────────────────── */
 .search-field {
-    -fx-background-color: #3A3B3C;
-    -fx-text-fill: #E4E6EB;
+    -fx-background-color: #2B1005;
+    -fx-text-fill: #F6E8CC;
 }
 .search-field:focused {
-    -fx-background-color: #4A4B4C;
-    -fx-border-color: #D4621A;
+    -fx-background-color: #3D1A08;
+    -fx-border-color: #CB8840;
 }
 
 /* ── Buttons ─────────────────────────────────────────────────────────────── */
-.btn-secondary {
-    -fx-background-color: #3A3B3C;
-    -fx-text-fill: #E4E6EB;
+.btn-primary {
+    -fx-background-color: #CB8840;
 }
-.btn-secondary:hover { -fx-background-color: #4A4B4C; }
+.btn-primary:hover { -fx-background-color: #E8A030; }
+
+.btn-secondary {
+    -fx-background-color: #2B1005;
+    -fx-text-fill: #F6E8CC;
+}
+.btn-secondary:hover { -fx-background-color: #3D1A08; }
 
 /* ── Recipe / User cards ─────────────────────────────────────────────────── */
 .recipe-card {
-    -fx-background-color: #242526;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 10, 0, 0, 2);
+    -fx-background-color: #180E06;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 2);
 }
 .recipe-card:hover {
-    -fx-background-color: #2D2E2F;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 18, 0, 0, 4);
+    -fx-background-color: #1F1208;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.65), 18, 0, 0, 4);
 }
 .user-card {
-    -fx-background-color: #242526;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0, 0, 1);
+    -fx-background-color: #180E06;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 8, 0, 0, 1);
 }
-.user-card:hover { -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 14, 0, 0, 3); }
+.user-card:hover { -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 14, 0, 0, 3); }
 
 /* ── Feed ────────────────────────────────────────────────────────────────── */
 .feed-scroll {
-    -fx-background-color: #18191A;
-    -fx-background: #18191A;
+    -fx-background-color: #0C0400;
+    -fx-background: #0C0400;
 }
 
 /* ── Table ───────────────────────────────────────────────────────────────── */
-.data-table { -fx-background-color: #242526; }
-.data-table .column-header-background { -fx-background-color: #1A1A1B; }
-.data-table .column-header .label { -fx-text-fill: #B0B3B8; }
+.data-table { -fx-background-color: #180E06; }
+.data-table .column-header-background { -fx-background-color: #0C0400; }
+.data-table .column-header .label { -fx-text-fill: #8A7054; }
 .data-table .table-row-cell {
-    -fx-background-color: #242526;
-    -fx-border-color: transparent transparent #3E4042 transparent;
+    -fx-background-color: #180E06;
+    -fx-border-color: transparent transparent #3D2010 transparent;
 }
-.data-table .table-row-cell:odd { -fx-background-color: #242526; }
-.data-table .table-row-cell:hover { -fx-background-color: #3A3B3C; }
-.data-table .table-row-cell:selected { -fx-background-color: #3A2010; }
-.data-table .table-cell { -fx-text-fill: #E4E6EB; }
+.data-table .table-row-cell:odd { -fx-background-color: #180E06; }
+.data-table .table-row-cell:hover { -fx-background-color: #2B1005; }
+.data-table .table-row-cell:selected { -fx-background-color: #3D1A08; }
+.data-table .table-cell { -fx-text-fill: #F6E8CC; }
 
 /* ── Forms ───────────────────────────────────────────────────────────────── */
 .form-field {
-    -fx-background-color: #3A3B3C;
-    -fx-text-fill: #E4E6EB;
+    -fx-background-color: #2B1005;
+    -fx-text-fill: #F6E8CC;
 }
 .form-field:focused {
-    -fx-background-color: #4A4B4C;
-    -fx-border-color: #D4621A;
+    -fx-background-color: #3D1A08;
+    -fx-border-color: #CB8840;
 }
-.form-label { -fx-text-fill: #B0B3B8; }
-.form-grid  { -fx-background-color: #242526; }
+.form-label { -fx-text-fill: #8A7054; }
+.form-grid  { -fx-background-color: #180E06; }
 
 /* ── List view ───────────────────────────────────────────────────────────── */
-.list-view { -fx-background-color: #242526; }
+.list-view { -fx-background-color: #180E06; }
 .list-cell {
-    -fx-background-color: #242526;
-    -fx-text-fill: #E4E6EB;
-    -fx-border-color: transparent transparent #3E4042 transparent;
+    -fx-background-color: #180E06;
+    -fx-text-fill: #F6E8CC;
+    -fx-border-color: transparent transparent #3D2010 transparent;
 }
-.list-cell:selected { -fx-background-color: #3A2010; }
-.list-cell:hover:!selected { -fx-background-color: #3A3B3C; }
+.list-cell:selected { -fx-background-color: #3D1A08; }
+.list-cell:hover:!selected { -fx-background-color: #2B1005; }
 
 /* ── Tab pane ────────────────────────────────────────────────────────────── */
 .tab-pane .tab-header-area .tab-header-background {
-    -fx-background-color: #242526;
-    -fx-border-color: transparent transparent #3E4042 transparent;
+    -fx-background-color: #180E06;
+    -fx-border-color: transparent transparent #3D2010 transparent;
 }
 .tab-pane .tab { -fx-background-color: transparent; }
-.tab-pane .tab .tab-label { -fx-text-fill: #B0B3B8; }
-.tab-pane .tab:selected .tab-label { -fx-text-fill: #FF8C55; }
-.tab-pane .tab:hover .tab-label { -fx-text-fill: #E4E6EB; }
+.tab-pane .tab .tab-label { -fx-text-fill: #8A7054; }
+.tab-pane .tab:selected .tab-label { -fx-text-fill: #E8A030; }
+.tab-pane .tab:hover .tab-label { -fx-text-fill: #F6E8CC; }
 
 /* ── Detail scroll ───────────────────────────────────────────────────────── */
 .detail-scroll {
-    -fx-background-color: #242526;
-    -fx-background: #242526;
+    -fx-background-color: #180E06;
+    -fx-background: #180E06;
 }
-.detail-title  { -fx-text-fill: #E4E6EB; }
-.detail-body   { -fx-text-fill: #E4E6EB; }
-.detail-heading { -fx-text-fill: #B0B3B8; }
+.detail-title  { -fx-text-fill: #F6E8CC; }
+.detail-body   { -fx-text-fill: #F6E8CC; }
+.detail-heading { -fx-text-fill: #8A7054; }
 .detail-chip {
-    -fx-background-color: #3A2010;
-    -fx-text-fill: #FF8C55;
+    -fx-background-color: #3D1A08;
+    -fx-text-fill: #E8A030;
 }
 .detail-chip-liked {
-    -fx-background-color: #3A1010;
-    -fx-text-fill: #FF8C55;
+    -fx-background-color: #3D1A08;
+    -fx-text-fill: #E8A030;
 }
 
 /* ── Sidebar user section ────────────────────────────────────────────────── */
 .sidebar-user-section {
-    -fx-border-color: #3E4042 transparent transparent transparent;
+    -fx-border-color: #3D2010 transparent transparent transparent;
 }
-.sidebar-username { -fx-text-fill: #E4E6EB; }
+.sidebar-username { -fx-text-fill: #F6E8CC; }
 
 /* ── Scrollbar ───────────────────────────────────────────────────────────── */
-.scroll-bar:vertical .thumb   { -fx-background-color: #4A4B4C; }
-.scroll-bar:horizontal .thumb { -fx-background-color: #4A4B4C; }
+.scroll-bar:vertical .thumb   { -fx-background-color: #3D2010; }
+.scroll-bar:horizontal .thumb { -fx-background-color: #3D2010; }
 
 /* ── Dialog ──────────────────────────────────────────────────────────────── */
 .dialog-pane {
-    -fx-background-color: #242526;
-    -fx-border-color: #3E4042;
+    -fx-background-color: #180E06;
+    -fx-border-color: #3D2010;
 }
-.dialog-pane .header-panel { -fx-background-color: #242526; }
+.dialog-pane .header-panel { -fx-background-color: #180E06; }
 
 /* ── Spinner ─────────────────────────────────────────────────────────────── */
-.spinner { -fx-background-color: #3A3B3C; }
-.spinner .text-field { -fx-text-fill: #E4E6EB; }
+.spinner { -fx-background-color: #2B1005; }
+.spinner .text-field { -fx-text-fill: #F6E8CC; }
 
-/* ── Username link (dark) ────────────────────────────────────────────────── */
-.username-link { -fx-text-fill: #E4E6EB; }
-.username-link:hover { -fx-text-fill: #FF8C55; }
+/* ── Username link ───────────────────────────────────────────────────────── */
+.username-link { -fx-text-fill: #F6E8CC; }
+.username-link:hover { -fx-text-fill: #E8A030; }
 
-/* ── Like button (dark) ──────────────────────────────────────────────────── */
-.liked-heart { -fx-text-fill: #FF8C55; }
-.liked-heart:hover { -fx-text-fill: #D4621A; }
+/* ── Like button ─────────────────────────────────────────────────────────── */
+.liked-heart { -fx-text-fill: #E8A030; }
+.liked-heart:hover { -fx-text-fill: #CB8840; }
+
+/* ── Search field dark ───────────────────────────────────────────────────── */
+.search-field { -fx-text-fill: #F6E8CC; }

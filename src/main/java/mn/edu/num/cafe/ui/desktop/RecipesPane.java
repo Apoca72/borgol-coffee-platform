@@ -139,25 +139,37 @@ public class RecipesPane {
     private void loadData() {
         feedBox.getChildren().clear();
         rightPanel.getChildren().clear();
-        try {
-            int uid = AppSession.loggedIn() ? AppSession.userId() : 0;
-            List<Recipe> recipes = service.getRecipes(uid, lastSearch, filterType, sortOrder);
-            if (recipes.isEmpty()) {
-                feedBox.getChildren().add(UiUtils.emptyState(
-                    "\uD83D\uDCD6", "No recipes yet",
-                    "Be the first to share a coffee recipe!"));
-            } else {
-                for (Recipe r : recipes) feedBox.getChildren().add(buildRecipeCard(r));
+        int uid = AppSession.loggedIn() ? AppSession.userId() : 0;
+        String search = lastSearch; String fType = filterType; String sort = sortOrder;
+        Thread.ofVirtual().start(() -> {
+            try {
+                List<Recipe> recipes = service.getRecipes(uid, search, fType, sort);
+                // fetch right-panel data in same thread
+                List<Recipe> top = service.getRecipes(uid, "", "ALL", "POPULAR");
+                List<Recipe> saved = AppSession.loggedIn()
+                    ? service.getSavedRecipes(uid, uid)
+                    : List.of();
+                javafx.application.Platform.runLater(() -> {
+                    if (recipes.isEmpty()) {
+                        feedBox.getChildren().add(UiUtils.emptyState(
+                            "\uD83D\uDCD6", "No recipes yet",
+                            "Be the first to share a coffee recipe!"));
+                    } else {
+                        for (Recipe r : recipes) feedBox.getChildren().add(buildRecipeCard(r));
+                    }
+                    buildRightPanelWithData(top, saved);
+                });
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() ->
+                    MainWindow.alert("Error", e.getMessage()));
             }
-        } catch (Exception e) {
-            MainWindow.alert("Error", e.getMessage());
-        }
-        buildRightPanel();
+        });
     }
 
     // ── Right panel ───────────────────────────────────────────────────────────
 
-    private void buildRightPanel() {
+    /** Called from FX thread with pre-fetched data (no service calls here). */
+    private void buildRightPanelWithData(List<Recipe> top, List<Recipe> saved) {
         // Filter chips
         VBox filterCard = UiUtils.rightCard("FILTER BY TYPE");
         String[] types = {"ALL","ESPRESSO","LATTE","POUR_OVER","COLD_BREW","CAPPUCCINO","FRENCH_PRESS","TEA","SMOOTHIE"};
@@ -180,37 +192,30 @@ public class RecipesPane {
 
         // Top liked
         VBox trendCard = UiUtils.rightCard("TOP LIKED");
-        try {
-            int uid = AppSession.loggedIn() ? AppSession.userId() : 0;
-            List<Recipe> top = service.getRecipes(uid, "", "ALL", "POPULAR");
-            int shown = 0;
-            for (Recipe r : top) {
-                trendCard.getChildren().add(buildTrendRow(r));
-                if (++shown >= 5) break;
-            }
-        } catch (Exception ignored) {}
+        int shown = 0;
+        for (Recipe r : top) {
+            trendCard.getChildren().add(buildTrendRow(r));
+            if (++shown >= 5) break;
+        }
         rightPanel.getChildren().add(trendCard);
 
         // Saved by me
         if (AppSession.loggedIn()) {
             VBox savedCard = UiUtils.rightCard("\u2665 MY SAVED");
-            try {
-                List<Recipe> liked = service.getSavedRecipes(AppSession.userId(), AppSession.userId());
-                int shown = 0;
-                for (Recipe r : liked) {
-                    Label lbl = new Label("\u2764 " + r.getTitle());
-                    lbl.setStyle("-fx-font-size:12px;-fx-text-fill:" + UiUtils.text() + ";-fx-cursor:hand;");
-                    lbl.setWrapText(true);
-                    lbl.setOnMouseClicked(e -> UiUtils.showRecipeDetailDialog(service, r, this::loadData));
-                    savedCard.getChildren().add(lbl);
-                    if (++shown >= 4) break;
-                }
-                if (shown == 0) {
-                    Label none = new Label("No liked recipes yet.");
-                    none.setStyle("-fx-font-size:12px;-fx-text-fill:" + UiUtils.sub() + ";");
-                    savedCard.getChildren().add(none);
-                }
-            } catch (Exception ignored) {}
+            int shownSaved = 0;
+            for (Recipe r : saved) {
+                Label lbl = new Label("\uD83D\uDD16 " + r.getTitle());
+                lbl.setStyle("-fx-font-size:12px;-fx-text-fill:" + UiUtils.text() + ";-fx-cursor:hand;");
+                lbl.setWrapText(true);
+                lbl.setOnMouseClicked(e -> UiUtils.showRecipeDetailDialog(service, r, this::loadData));
+                savedCard.getChildren().add(lbl);
+                if (++shownSaved >= 4) break;
+            }
+            if (shownSaved == 0) {
+                Label none = new Label("No saved recipes yet.");
+                none.setStyle("-fx-font-size:12px;-fx-text-fill:" + UiUtils.sub() + ";");
+                savedCard.getChildren().add(none);
+            }
             rightPanel.getChildren().add(savedCard);
         }
     }
