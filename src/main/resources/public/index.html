@@ -1279,6 +1279,27 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
   </div>
 </div>
 
+<!-- QuickBrew Overlay -->
+<div class="modal-overlay" id="quick-brew-modal" onclick="if(event.target===this)closeModal('quick-brew-modal')">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">⚡ Quick Brew</div>
+      <button class="modal-close" onclick="closeModal('quick-brew-modal')">✕</button>
+    </div>
+    <div class="qb-progress"><div class="qb-progress-bar" id="qb-bar"></div></div>
+    <div class="qb-recipe-title" id="qb-title"></div>
+    <div class="qb-step-num" id="qb-step-num"></div>
+    <div class="qb-step-text" id="qb-step-text"></div>
+    <div class="qb-nav">
+      <button class="btn btn-secondary" id="qb-prev" onclick="qb_prev()">← Prev</button>
+      <button class="btn btn-secondary" id="qb-next" onclick="qb_next()">Next →</button>
+    </div>
+    <div style="margin-top:16px;text-align:center">
+      <button class="btn btn-primary" onclick="qb_openInTimer()">⏱️ Start Full Timer</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -1552,6 +1573,7 @@ function renderFeedCard(r) {
         <span class="comment-count" onclick="openRecipeDetail(${r.id})">💬 ${r.commentCount||0}</span>
         <button class="save-btn${r.savedByCurrentUser?' saved':''}" onclick="toggleSave(${r.id},this)" title="Save">🔖</button>
         <button class="report-btn" onclick="openReportModal('recipe',${r.id})" title="Report">⚑</button>
+        <button onclick="openQuickBrew({id:${r.id},title:${JSON.stringify(r.title||'')},instructions:${JSON.stringify(r.instructions||'')},brewTime:${r.brewTime||5}})" title="Step-by-step guide" style="border:none;background:none;cursor:pointer;font-size:13px;color:var(--caramel,#A8621E);padding:5px 8px;border-radius:8px;transition:.15s" onmouseover="this.style.background='rgba(168,98,30,.1)'" onmouseout="this.style.background='none'">⚡ Easy Make</button>
         <button class="btn btn-sm btn-secondary" onclick="openRecipeDetail(${r.id})" style="margin-left:auto">View Recipe</button>
       </div>
     </div>`;
@@ -1727,6 +1749,7 @@ function renderRecipeCard(r) {
           ${r.savedByCurrentUser?'🔖':'🔖'}<span style="font-size:11px">${r.savedByCurrentUser?'Saved':''}</span>
         </button>
         <button class="report-btn" onclick="openReportModal('recipe',${r.id})" title="Report">⚑</button>
+        <button onclick="openQuickBrew({id:${r.id},title:${JSON.stringify(r.title||'')},instructions:${JSON.stringify(r.instructions||'')},brewTime:${r.brewTime||5}})" title="Step-by-step guide" style="border:none;background:none;cursor:pointer;font-size:13px;color:var(--caramel,#A8621E);padding:5px 8px;border-radius:8px;transition:.15s" onmouseover="this.style.background='rgba(168,98,30,.1)'" onmouseout="this.style.background='none'">⚡ Easy Make</button>
       </div>
     </div>`;
 }
@@ -3537,6 +3560,43 @@ let _tmr_initialized = false;
     };
   }
 })();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// QUICKBREW OVERLAY MODULE
+// ═══════════════════════════════════════════════════════════════════════════
+let _qb_recipe = null;
+let _qb_steps  = [];
+let _qb_idx    = 0;
+
+function openQuickBrew(recipe) {
+  _qb_recipe = recipe;
+  const instructions = recipe.instructions || recipe.steps || '';
+  _qb_steps = instructions.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (_qb_steps.length === 0) _qb_steps = ['Brew for ' + (recipe.brewTime || 5) + ' minutes.'];
+  _qb_idx = 0;
+  document.getElementById('qb-title').textContent = recipe.title || 'Recipe';
+  qb_render();
+  openModal('quick-brew-modal');
+}
+
+function qb_render() {
+  const total = _qb_steps.length;
+  const pct   = total > 1 ? (_qb_idx / (total - 1)) * 100 : 100;
+  document.getElementById('qb-bar').style.width = pct + '%';
+  document.getElementById('qb-step-num').textContent = `Step ${_qb_idx + 1} of ${total}`;
+  document.getElementById('qb-step-text').textContent =
+    _qb_steps[_qb_idx].replace(/^\d+[\.\)]\s*/, '');
+  document.getElementById('qb-prev').disabled = _qb_idx === 0;
+  document.getElementById('qb-next').disabled = _qb_idx === total - 1;
+}
+
+function qb_prev() { if (_qb_idx > 0) { _qb_idx--; qb_render(); } }
+function qb_next() { if (_qb_idx < _qb_steps.length - 1) { _qb_idx++; qb_render(); } }
+
+function qb_openInTimer() {
+  closeModal('quick-brew-modal');
+  if (_qb_recipe) { loadRecipeIntoTimer(_qb_recipe); showPage('timer'); }
+}
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════
