@@ -712,6 +712,42 @@ public class BorgolService {
                 "Cozy neighborhood café in the Zaisan hills. Specialty roasts, homemade cakes, and a stunning view of the city.",
                 "09:00–21:00", 47.8912, 106.9063);
         }
+
+        // ── Coffee Drink Guide Article ────────────────────────────────────────
+        if (!repo.isDrinkArticlesSeeded()) {
+            seedArticle("Coffee Drink Guide", "☕", "Drinks",
+                "## Espresso\n" +
+                "A 25–30 ml concentrated shot extracted at 9 bar in 25–30 seconds. The foundation of most " +
+                "café drinks. Intense, syrupy, with a golden-red crema. **Best bean:** Medium-dark or dark " +
+                "roast (Brazilian, Guatemalan, or Italian blend).\n\n" +
+                "## Americano\n" +
+                "Espresso diluted with hot water (1:2–1:4). Maintains espresso flavor without the " +
+                "concentration. **Milk ratio:** None. Often ordered black. Larger serving for those who " +
+                "want espresso flavor in a longer drink.\n\n" +
+                "## Latte\n" +
+                "Espresso + steamed milk (150–200 ml) + thin microfoam layer. Ratio ~1:4 coffee to milk. " +
+                "Creamy, mild, crowd-pleasing. **Best bean:** Medium roast (Colombian, Brazilian). " +
+                "Canvas for latte art.\n\n" +
+                "## Cappuccino\n" +
+                "Equal thirds: espresso + steamed milk + thick milk foam. 150–180 ml total. " +
+                "More intense than a latte, less sweet. Traditionally dry (more foam) or wet (more milk). " +
+                "**Best bean:** Dark or medium-dark.\n\n" +
+                "## Flat White\n" +
+                "Double ristretto (short espresso) + 120 ml velvety microfoam — smaller and stronger than a latte. " +
+                "Australian origin. **Best bean:** A blend or single origin with chocolate/nut notes.\n\n" +
+                "## Cold Brew\n" +
+                "Coffee steeped in cold water for 12–24 hours, then filtered. Smooth, naturally sweet, " +
+                "low acidity. Serve over ice diluted 1:1. **Best bean:** Medium or dark roast with " +
+                "chocolate and nut character (Brazilian Cerrado, Colombian).\n\n" +
+                "## Pour Over\n" +
+                "Manual filter brew using gravity. Produces a clean, bright, tea-like cup that highlights " +
+                "delicate origin flavors. Methods: V60, Chemex, Kalita Wave. " +
+                "**Best bean:** Light roast with floral/fruity notes (Ethiopian, Kenyan).\n\n" +
+                "## French Press\n" +
+                "Full-immersion brew with a metal mesh filter. Rich body, heavy mouthfeel, " +
+                "more oils and texture than filter. 4-minute steep. **Best bean:** Medium-dark to dark " +
+                "roast (Guatemalan, Indonesian Mandheling).", 6);
+        }
     }
 
     private void seedGuide(String name, String icon, String desc, String diff, int time,

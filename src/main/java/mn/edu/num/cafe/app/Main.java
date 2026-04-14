@@ -67,6 +67,7 @@ public class Main {
 
         // ── 6. Seed static content (brew guides + learn articles) ─────────────
         borgolService.seedStaticContent();
+        borgolService.seedEnrichedContent();
 
         // ── 6b. Seed GPS coordinates for demo cafes (idempotent) ─────────────
         seedCafeCoordinates(borgolService);
