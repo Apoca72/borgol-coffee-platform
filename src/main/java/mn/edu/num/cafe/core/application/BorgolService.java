@@ -619,6 +619,73 @@ public class BorgolService {
             "For specialty coffee, a quality burr grinder is the single best investment.", 5);
     }
 
+    public void seedEnrichedContent() {
+        // ── Specialty Bean Articles ───────────────────────────────────────────
+        if (!repo.isBeanArticlesSeeded()) {
+            seedArticle("Ethiopian Yirgacheffe", "🌸", "Beans",
+                "## Origin\nYirgacheffe is a town in the Gedeo Zone of southern Ethiopia, widely " +
+                "regarded as the birthplace of coffee. Grown at 1,700–2,200 m altitude.\n\n" +
+                "## Flavor Profile\nLight roast reveals **jasmine, blueberry, lemon zest, and bergamot**. " +
+                "Bright, tea-like acidity with a delicate, clean finish.\n\n" +
+                "## Roast\nBest enjoyed as a **light roast** (180–195°C) to preserve floral aromatics. " +
+                "Medium roast brings out more caramel sweetness. Avoid dark — it destroys the character.\n\n" +
+                "## Brew Pairings\nPour Over (V60), AeroPress, or filter drip. " +
+                "High-temperature water (93–96°C) works well with light roasts.", 4);
+
+            seedArticle("Colombian Huila", "🏔️", "Beans",
+                "## Origin\nHuila is a mountainous department in southwest Colombia at 1,500–2,000 m. " +
+                "Known for its volcanic soil, consistent rainfall, and family-run farms.\n\n" +
+                "## Flavor Profile\n**Caramel sweetness, red apple, citrus, and milk chocolate** " +
+                "with a smooth medium body and balanced acidity.\n\n" +
+                "## Roast\nExcels as a **medium roast** (210–220°C). Retains sweetness without " +
+                "becoming bitter. One of the most versatile origins for any brew method.\n\n" +
+                "## Brew Pairings\nWorks beautifully for espresso, pour over, and French press. " +
+                "An excellent daily driver for home baristas.", 4);
+
+            seedArticle("Kenyan AA", "🦁", "Beans",
+                "## Origin\nKenya's central highlands around Mt. Kenya and the Aberdare Range " +
+                "(1,400–2,000 m). 'AA' is the largest screen size grade, indicating large, dense beans.\n\n" +
+                "## Flavor Profile\n**Blackcurrant, tomato, grapefruit, and wine-like brightness**. " +
+                "Complex, juicy acidity with a full body and lingering finish.\n\n" +
+                "## Roast\n**Light to medium** (190–215°C). The SL28 and SL34 varietals express " +
+                "maximum complexity when not over-roasted. A challenging but rewarding origin.\n\n" +
+                "## Brew Pairings\nPour over showcases the brightness. French press enhances body. " +
+                "Not ideal for espresso — acidity becomes sharp under pressure.", 4);
+
+            seedArticle("Guatemalan Antigua", "🌋", "Beans",
+                "## Origin\nGrown in the Antigua valley surrounded by three volcanoes — Agua, Fuego, " +
+                "and Acatenango — at 1,500–1,700 m. Volcanic ash provides exceptional mineral richness.\n\n" +
+                "## Flavor Profile\n**Dark chocolate, brown sugar, almond, and mild spice** with a " +
+                "medium-heavy body and low, soft acidity.\n\n" +
+                "## Roast\nShines at **medium-dark roast** (220–230°C). The chocolate notes deepen " +
+                "without crossing into bitterness. One of the most consistent Central American origins.\n\n" +
+                "## Brew Pairings\nExcellent for espresso and Moka Pot. Also exceptional as a " +
+                "French press — the body holds up well to the metal filter.", 4);
+
+            seedArticle("Indonesian Mandheling", "🌿", "Beans",
+                "## Origin\nFrom the Batak highlands of North Sumatra, Indonesia, around Lake Toba " +
+                "at 1,100–1,600 m. Processed using the unique 'wet-hulling' (Giling Basah) method.\n\n" +
+                "## Flavor Profile\n**Earthy, cedar, dark chocolate, tobacco, and mushroom** with a " +
+                "very full body and low acidity. Syrupy mouthfeel.\n\n" +
+                "## Roast\nTraditionally roasted **dark** (230–245°C). The wet-hulling process " +
+                "creates the characteristic earthy funk and heavy body. Not for the light-roast enthusiast.\n\n" +
+                "## Brew Pairings\nFrench press and Moka Pot maximize the body. Also well-suited " +
+                "to cold brew — the earthiness mellows beautifully over 18 hours.", 4);
+
+            seedArticle("Brazilian Cerrado Mineiro", "🌾", "Beans",
+                "## Origin\nThe Cerrado Mineiro region in Minas Gerais state, Brazil, at 800–1,300 m. " +
+                "A designated Geographic Indication zone with dry climate and flat terrain — " +
+                "suited to mechanized harvesting and consistent naturals.\n\n" +
+                "## Flavor Profile\n**Milk chocolate, hazelnut, caramel, and soft sweetness** " +
+                "with very low acidity and a smooth, round body.\n\n" +
+                "## Roast\n**Medium roast** (210–220°C) highlights sweetness. The low acidity makes " +
+                "it forgiving at medium-dark too. Brazil is the world's largest coffee producer " +
+                "and Cerrado is its flagship specialty region.\n\n" +
+                "## Brew Pairings\nThe go-to espresso base for blends. Excellent for cold brew " +
+                "due to natural sweetness. Great entry-point origin for new specialty drinkers.", 4);
+        }
+    }
+
     private void seedGuide(String name, String icon, String desc, String diff, int time,
                             String params, String steps) {
         BrewGuide g = new BrewGuide();
