@@ -1287,7 +1287,7 @@ public class BorgolRepository {
         return countNoParam("SELECT COUNT(*) FROM cafes") > 0;
     }
 
-    public boolean isDrinkArticleSeeded() {
+    public boolean isDrinkArticlesSeeded() {
         return countNoParam("SELECT COUNT(*) FROM learn_articles WHERE category = 'Drinks'") > 0;
     }
 
