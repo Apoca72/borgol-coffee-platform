@@ -1279,6 +1279,18 @@ public class BorgolRepository {
         } catch (SQLException e) { throw new RuntimeException(e); }
     }
 
+    public boolean isBeanArticlesSeeded() {
+        return countNoParam("SELECT COUNT(*) FROM learn_articles WHERE category = 'Beans'") > 0;
+    }
+
+    public boolean isCafesSeeded() {
+        return countNoParam("SELECT COUNT(*) FROM cafes") > 0;
+    }
+
+    public boolean isDrinkArticleSeeded() {
+        return countNoParam("SELECT COUNT(*) FROM learn_articles WHERE category = 'Drinks'") > 0;
+    }
+
     // ── Mapping helpers (new) ─────────────────────────────────────────────────
 
     private BrewJournalEntry mapJournal(ResultSet rs) throws SQLException {
