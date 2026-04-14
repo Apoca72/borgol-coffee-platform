@@ -3472,6 +3472,335 @@ async function toggleHashtag(tag, btn) {
     document.getElementById('bean-input').focus();
   };
 })();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BREW TIMER MODULE
+// ═══════════════════════════════════════════════════════════════════════════
+
+const TMR_METHODS = [
+  {
+    id: 'v60', name: 'V60', icon: '🔺', time: '3–4 min',
+    defaultRatio: 15, ratioPresets: [{label:'1:15',r:15},{label:'1:16',r:16},{label:'1:17',r:17}],
+    steps: [
+      { t: 0,   label: 'Rinse & preheat', note: 'Rinse filter with hot water, discard' },
+      { t: 15,  label: 'Bloom', note: '2× coffee weight of water (e.g. 40 ml), wait 30 s' },
+      { t: 45,  label: '1st Pour', note: 'Pour to 120 ml in slow spirals' },
+      { t: 90,  label: '2nd Pour', note: 'Pour to total water weight in spirals' },
+      { t: 150, label: 'Drain', note: 'Let coffee drain fully' },
+      { t: 220, label: 'Done ☕', note: 'Remove dripper, enjoy!' }
+    ]
+  },
+  {
+    id: 'espresso', name: 'Espresso', icon: '☕', time: '25–30 s',
+    defaultRatio: 2.5, ratioPresets: [{label:'1:2',r:2},{label:'1:2.5',r:2.5},{label:'1:3',r:3}],
+    steps: [
+      { t: 0,  label: 'Dose & tamp', note: 'Grind fine, tamp level at 30 lbs' },
+      { t: 5,  label: 'Pre-infusion', note: '3–4 s low-pressure pre-infuse' },
+      { t: 10, label: 'Extract', note: 'Full pressure — target golden-brown crema' },
+      { t: 35, label: 'Done ☕', note: 'Pull shot, taste for balance' }
+    ]
+  },
+  {
+    id: 'frenchpress', name: 'French Press', icon: '🫖', time: '4 min',
+    defaultRatio: 12, ratioPresets: [{label:'1:10',r:10},{label:'1:12',r:12},{label:'1:15',r:15}],
+    steps: [
+      { t: 0,   label: 'Add grounds', note: 'Coarse grind — like raw sugar' },
+      { t: 15,  label: 'Bloom pour', note: 'Add 2× coffee weight water, stir gently' },
+      { t: 45,  label: 'Full pour', note: 'Add remaining water' },
+      { t: 60,  label: 'Place lid', note: 'Put lid on, do NOT press yet' },
+      { t: 240, label: 'Press & pour', note: 'Press slowly, pour immediately to stop brewing' },
+      { t: 280, label: 'Done ☕', note: 'Enjoy! Leave dregs in press.' }
+    ]
+  },
+  {
+    id: 'aeropress', name: 'AeroPress', icon: '🧪', time: '2 min',
+    defaultRatio: 13, ratioPresets: [{label:'1:10',r:10},{label:'1:13',r:13},{label:'1:16',r:16}],
+    steps: [
+      { t: 0,  label: 'Setup', note: 'Insert filter, rinse, place on cup (inverted)' },
+      { t: 15, label: 'Add coffee', note: 'Medium-fine grind, 15–20 g' },
+      { t: 25, label: 'Add water', note: 'Fully saturate grounds with hot water (~80°C)' },
+      { t: 35, label: 'Stir', note: 'Stir 10 seconds, attach plunger' },
+      { t: 55, label: 'Steep', note: 'Wait 45–60 seconds' },
+      { t: 100, label: 'Press', note: 'Flip onto cup, press in 20–30 seconds' },
+      { t: 120, label: 'Done ☕', note: 'Dilute to taste or enjoy as is!' }
+    ]
+  },
+  {
+    id: 'moka', name: 'Moka Pot', icon: '🏺', time: '5 min',
+    defaultRatio: 7, ratioPresets: [{label:'1:7',r:7},{label:'1:8',r:8},{label:'1:9',r:9}],
+    steps: [
+      { t: 0,   label: 'Fill bottom', note: 'Fill base with hot water to valve line' },
+      { t: 30,  label: 'Add coffee', note: 'Fine grind, fill basket level (don\'t tamp)' },
+      { t: 45,  label: 'Heat', note: 'Medium-low heat, lid open' },
+      { t: 180, label: 'Watch', note: 'Gurgling? Reduce heat — stop at blond stream' },
+      { t: 280, label: 'Cool base', note: 'Run cold water on base to stop extraction' },
+      { t: 300, label: 'Done ☕', note: 'Pour and enjoy concentrated coffee!' }
+    ]
+  },
+  {
+    id: 'coldbrew', name: 'Cold Brew', icon: '🧊', time: '12–18 h',
+    defaultRatio: 6, ratioPresets: [{label:'1:5',r:5},{label:'1:6',r:6},{label:'1:8',r:8}],
+    steps: [
+      { t: 0,     label: 'Coarse grind', note: 'Like very coarse sea salt' },
+      { t: 30,    label: 'Combine', note: 'Mix coffee + cold water in jar, stir' },
+      { t: 60,    label: 'Cover', note: 'Seal jar, refrigerate' },
+      { t: 43200, label: 'Strain', note: 'After 12 h, strain through filter into bottle' },
+      { t: 43260, label: 'Done ☕', note: 'Dilute 1:1 with water or milk. Keeps 2 weeks.' }
+    ]
+  }
+];
+
+let _tmr_currentMethod  = TMR_METHODS[0];
+let _tmr_coffeeG        = 20;
+let _tmr_waterMl        = 300;
+let _tmr_interval       = null;
+let _tmr_elapsed        = 0;
+let _tmr_totalSec       = 0;
+let _tmr_running        = false;
+let _tmr_recipeSteps    = null;
+const TMR_CIRCUM        = 515.2;
+
+function tmr_buildMethodGrid() {
+  const grid = document.getElementById('tmr-method-grid');
+  if (!grid) return;
+  grid.innerHTML = TMR_METHODS.map(m => `
+    <button class="method-btn${m.id === _tmr_currentMethod.id ? ' selected' : ''}"
+      onclick="tmr_selectMethod('${m.id}')">
+      <span class="method-icon">${m.icon}</span>
+      <span class="method-name">${m.name}</span>
+      <span class="method-time">${m.time}</span>
+    </button>`).join('');
+}
+
+function tmr_selectMethod(id) {
+  _tmr_currentMethod = TMR_METHODS.find(m => m.id === id);
+  _tmr_recipeSteps = null;
+  document.getElementById('tmr-recipe-banner').style.display = 'none';
+  tmr_resetTimer();
+  tmr_buildMethodGrid();
+  tmr_buildRatioPresets();
+  tmr_updateRatioDisplay();
+  tmr_buildSteps();
+  const preset = _tmr_currentMethod.defaultRatio;
+  _tmr_waterMl = Math.round(_tmr_coffeeG * preset);
+  document.getElementById('tmr-water-ml').value = _tmr_waterMl;
+  tmr_updateRatioDisplay();
+}
+
+function tmr_buildRatioPresets() {
+  const el = document.getElementById('tmr-ratio-presets');
+  if (!el) return;
+  el.innerHTML = _tmr_currentMethod.ratioPresets.map(p => `
+    <button class="ratio-preset${Math.abs(_tmr_waterMl/_tmr_coffeeG - p.r) < 0.1 ? ' active' : ''}"
+      onclick="tmr_applyPreset(${p.r})">${p.label}</button>`).join('');
+}
+
+function tmr_applyPreset(r) {
+  _tmr_waterMl = Math.round(_tmr_coffeeG * r);
+  document.getElementById('tmr-water-ml').value = _tmr_waterMl;
+  tmr_updateRatioDisplay();
+  tmr_buildRatioPresets();
+}
+
+function tmr_updateRatioDisplay() {
+  const c = parseFloat(document.getElementById('tmr-coffee-g')?.value) || _tmr_coffeeG;
+  const w = parseFloat(document.getElementById('tmr-water-ml')?.value) || _tmr_waterMl;
+  const el = document.getElementById('tmr-ratio-display');
+  if (el) el.textContent = `1 : ${(w/c).toFixed(1)}`;
+}
+
+function tmr_bindRatioInputs() {
+  const coffeeEl = document.getElementById('tmr-coffee-g');
+  const waterEl  = document.getElementById('tmr-water-ml');
+  if (!coffeeEl || !waterEl) return;
+  coffeeEl.addEventListener('input', function() {
+    const prev = _tmr_coffeeG || 1;
+    _tmr_coffeeG = parseFloat(this.value) || 1;
+    _tmr_waterMl = Math.round(_tmr_coffeeG * (_tmr_waterMl / prev));
+    waterEl.value = _tmr_waterMl;
+    tmr_updateRatioDisplay();
+    tmr_buildRatioPresets();
+  });
+  waterEl.addEventListener('input', function() {
+    _tmr_waterMl = parseFloat(this.value) || 1;
+    tmr_updateRatioDisplay();
+    tmr_buildRatioPresets();
+  });
+}
+
+function tmr_getSteps() {
+  return _tmr_recipeSteps || _tmr_currentMethod.steps;
+}
+
+function tmr_buildSteps() {
+  const steps = tmr_getSteps();
+  _tmr_totalSec = steps[steps.length - 1].t;
+  const ul = document.getElementById('tmr-steps-list');
+  if (!ul) return;
+  ul.innerHTML = steps.map((s, i) => `
+    <li class="step-item${i === 0 ? ' active' : ''}" id="tmr-step-${i}">
+      <div class="step-bullet">${i === 0 ? '▶' : i + 1}</div>
+      <div>
+        <div class="step-text"><strong>${s.label}</strong>${s.note ? ' — ' + s.note : ''}</div>
+      </div>
+      <div class="step-time-lbl">${tmr_formatTime(s.t)}</div>
+    </li>`).join('');
+}
+
+function tmr_startTimer() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+  if (_tmr_running) {
+    clearInterval(_tmr_interval);
+    _tmr_running = false;
+    document.getElementById('tmr-btn-start').textContent = '▶ Resume';
+    return;
+  }
+  if (_tmr_totalSec > 3600) {
+    const banner = document.getElementById('tmr-done-banner');
+    banner.classList.add('show');
+    document.getElementById('tmr-done-msg').textContent =
+      'This brew takes ~' + Math.round(_tmr_totalSec / 3600) + 'h. Follow the steps below.';
+    return;
+  }
+  _tmr_running = true;
+  document.getElementById('tmr-btn-start').textContent = '⏸ Pause';
+  document.getElementById('tmr-done-banner').classList.remove('show');
+  _tmr_interval = setInterval(() => {
+    _tmr_elapsed++;
+    tmr_updateTimerDisplay();
+    tmr_updateSteps();
+    if (_tmr_elapsed >= _tmr_totalSec) {
+      clearInterval(_tmr_interval);
+      _tmr_running = false;
+      document.getElementById('tmr-btn-start').disabled = true;
+      document.getElementById('tmr-btn-start').textContent = '✓ Done';
+      tmr_showDone();
+    }
+  }, 1000);
+}
+
+function tmr_resetTimer() {
+  clearInterval(_tmr_interval);
+  _tmr_running = false; _tmr_elapsed = 0;
+  const startBtn = document.getElementById('tmr-btn-start');
+  if (startBtn) { startBtn.textContent = '▶ Start'; startBtn.disabled = false; }
+  const banner = document.getElementById('tmr-done-banner');
+  if (banner) banner.classList.remove('show');
+  tmr_updateTimerDisplay();
+  tmr_buildSteps();
+}
+
+function tmr_updateTimerDisplay() {
+  const steps  = tmr_getSteps();
+  const last   = steps[steps.length - 1].t;
+  const prog   = last > 0 ? Math.min(_tmr_elapsed / last, 1) : 0;
+  const offset = TMR_CIRCUM * (1 - prog);
+  const arc    = document.getElementById('tmr-arc');
+  if (arc) { arc.style.strokeDashoffset = offset; arc.classList.toggle('done', prog >= 1); }
+  const dispEl = document.getElementById('tmr-display');
+  if (dispEl) dispEl.textContent = tmr_formatTime(_tmr_elapsed);
+  let phase = steps[0].label;
+  for (let i = steps.length - 1; i >= 0; i--) {
+    if (_tmr_elapsed >= steps[i].t) { phase = steps[i].label; break; }
+  }
+  const phaseEl = document.getElementById('tmr-phase');
+  if (phaseEl) phaseEl.textContent = phase;
+  const totalEl = document.getElementById('tmr-total-disp');
+  if (totalEl) totalEl.textContent = `${tmr_formatTime(_tmr_elapsed)} / ${tmr_formatTime(last)}`;
+}
+
+function tmr_updateSteps() {
+  const steps = tmr_getSteps();
+  steps.forEach((s, i) => {
+    const el   = document.getElementById(`tmr-step-${i}`);
+    if (!el) return;
+    const next = steps[i + 1];
+    const done   = next ? _tmr_elapsed > next.t : _tmr_elapsed >= s.t;
+    const active = _tmr_elapsed >= s.t && (next ? _tmr_elapsed < next.t : true);
+    el.classList.toggle('active', active);
+    el.classList.toggle('done',   done);
+    const bullet = el.querySelector('.step-bullet');
+    if (done)        bullet.textContent = '✓';
+    else if (active) bullet.textContent = '▶';
+    else             bullet.textContent = i + 1;
+    if (active) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+}
+
+function tmr_showDone() {
+  const banner = document.getElementById('tmr-done-banner');
+  if (banner) banner.classList.add('show');
+  const msg = document.getElementById('tmr-done-msg');
+  if (msg) msg.textContent =
+    `${_tmr_currentMethod.name} with ${_tmr_coffeeG}g coffee & ${_tmr_waterMl}ml water. Enjoy! ☕`;
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('Borgol ☕', { body: `Your ${_tmr_currentMethod.name} is ready!` });
+  }
+}
+
+function tmr_formatTime(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function tmr_init() {
+  tmr_buildMethodGrid();
+  tmr_buildRatioPresets();
+  tmr_updateRatioDisplay();
+  tmr_buildSteps();
+  tmr_updateTimerDisplay();
+  tmr_bindRatioInputs();
+}
+
+// ── Recipe → Timer handoff ───────────────────────────────────────────────────
+function loadRecipeIntoTimer(recipe) {
+  const instructions = recipe.instructions || recipe.steps || '';
+  const lines = instructions.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length === 0) {
+    _tmr_recipeSteps = null;
+  } else {
+    const durSec = (recipe.brewTime || 5) * 60;
+    const interval = Math.floor(durSec / Math.max(lines.length, 1));
+    _tmr_recipeSteps = lines.map((l, i) => ({
+      t: i * interval,
+      label: l.replace(/^\d+[\.\)]\s*/, ''),
+      note: ''
+    }));
+    _tmr_recipeSteps[_tmr_recipeSteps.length - 1].t = durSec;
+  }
+  const banner = document.getElementById('tmr-recipe-banner');
+  const title  = document.getElementById('tmr-recipe-title');
+  if (banner && title) {
+    title.textContent = recipe.title || 'Recipe';
+    banner.style.display = 'block';
+  }
+  tmr_resetTimer();
+}
+
+function tmr_clearRecipe() {
+  _tmr_recipeSteps = null;
+  const banner = document.getElementById('tmr-recipe-banner');
+  if (banner) banner.style.display = 'none';
+  tmr_resetTimer();
+}
+
+// Hook showPage to initialize timer on first visit
+let _tmr_initialized = false;
+(function() {
+  const _orig_showPage = window.showPage;
+  if (typeof _orig_showPage === 'function') {
+    window.showPage = function(name, ...args) {
+      _orig_showPage(name, ...args);
+      if (name === 'timer' && !_tmr_initialized) {
+        _tmr_initialized = true;
+        tmr_init();
+      }
+    };
+  }
+})();
 </script>
 </body>
 </html>
