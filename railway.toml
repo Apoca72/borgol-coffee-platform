@@ -10,3 +10,17 @@ healthcheckPath = "/health"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
+
+# ── Redis кэш тохиргоо (дотоод сүлжээ — гадна нээлттэй биш) ─────────────────
+# redis-cache-a нь Railway-н хувийн private сүлжээнд ажиллана
+[variables]
+REDIS_HOST     = "redis-cache-a.railway.internal"
+REDIS_PORT     = "6379"
+REDIS_PASSWORD = ""
+
+# ── SMTP имэйл тохиргоо ──────────────────────────────────────────────────────
+SMTP_HOST     = ""
+SMTP_PORT     = "587"
+SMTP_USER     = ""
+SMTP_PASSWORD = ""
+EMAIL_FROM    = ""

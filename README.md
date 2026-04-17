@@ -266,6 +266,26 @@ GEMINI_API_KEY=google-ai-studio-таас-авсан-түлхүүр
 | Build tool | Maven |
 | Програмчлалын хэл | Java 21 |
 | Deployment | Railway |
+| Кэш | Redis (Jedis 5.1 — railway.internal) |
+| Имэйл | Jakarta Mail 2.0 (SMTP) |
+
+---
+
+## Кэш давхарга (Redis)
+
+| Нөөц | Кэш түлхүүр | TTL |
+|---|---|---|
+| Жор | `borgol:recipe:{id}` | 300с |
+| Хэрэглэгч | `borgol:user:{id}` | 600с |
+| Feed | `borgol:feed:userId:{id}` | 60с |
+| Ойролцоо кафе | `borgol:cafes:nearby:{lat}:{lng}` | 120с |
+
+Redis `redis-cache-a` нь Railway-н хувийн дотоод сүлжээнд ажиллана — гадна сүлжээнд нээлттэй биш.
+
+## Имэйл үйлчилгээ
+
+Бүртгэл болон нууц үг сэргээх явцад имэйл автоматаар илгээгдэнэ.
+SMTP тохиргоо: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM` орчны хувьсагчаар тохируулна.
 
 ---
 

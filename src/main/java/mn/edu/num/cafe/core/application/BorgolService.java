@@ -1,10 +1,18 @@
 package mn.edu.num.cafe.core.application;
 
 import mn.edu.num.cafe.core.domain.*;
+import mn.edu.num.cafe.infrastructure.cache.CacheKeyBuilder;
+import mn.edu.num.cafe.infrastructure.cache.RedisClient;
+import mn.edu.num.cafe.infrastructure.email.EmailService;
 import mn.edu.num.cafe.infrastructure.persistence.BorgolRepository;
 import mn.edu.num.cafe.infrastructure.security.JwtUtil;
 import mn.edu.num.cafe.infrastructure.security.PasswordUtil;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Type;
 import java.util.*;
 
 /**
@@ -28,12 +36,77 @@ import java.util.*;
  */
 public class BorgolService {
 
+    private static final Logger log = LoggerFactory.getLogger(BorgolService.class);
+
     // Repository-г DI (Dependency Injection) аргаар хүлээн авна
     // → тест хийхэд mock оруулах боломжтой
     private final BorgolRepository repo;
 
+    /**
+     * Gson жишээ — кэш давхаргад JSON сериализаци/десериализацид ашиглана.
+     * Thread-safe: Gson нь immutable, хуваалцах боломжтой.
+     */
+    private final Gson gson = new Gson();
+
     public BorgolService(BorgolRepository repo) {
         this.repo = repo;
+    }
+
+    // ── Кэш туслах методууд ───────────────────────────────────────────────────
+    // Зарчим: DRY — кэш логикийг нэг газар тодорхойлж давтахгүй.
+    // Redis алдаа гарвал silent degradation — DB-с шууд унших горимд ордог.
+
+    /**
+     * Redis-ээс JSON утга уншиж заасан төрөл рүү хөрвүүлнэ.
+     * HIT/MISS-г DEBUG лог болгоно.
+     *
+     * @param key      кэшийн түлхүүр
+     * @param type     deserialize хийх Java төрөл (TypeToken.getType())
+     * @param <T>      буцаах объектын төрөл
+     * @return         кэшэд байвал объект, байхгүй/алдаа бол null (MISS)
+     */
+    private <T> T cacheGet(String key, Type type) {
+        try {
+            String json = RedisClient.get().get(key);
+            if (json != null) {
+                log.debug("[Cache HIT] {}", key);
+                return gson.fromJson(json, type);
+            }
+        } catch (Exception e) {
+            log.debug("[Cache] Redis уншихад алдаа: {} — {}", key, e.getMessage());
+        }
+        log.debug("[Cache MISS] {}", key);
+        return null;
+    }
+
+    /**
+     * Объектыг JSON болгон Redis-д TTL-тэй хадгална.
+     *
+     * @param key        кэшийн түлхүүр
+     * @param value      хадгалах объект
+     * @param ttlSeconds хугацаа (секундээр)
+     */
+    private void cachePut(String key, Object value, int ttlSeconds) {
+        try {
+            RedisClient.get().setex(key, ttlSeconds, gson.toJson(value));
+        } catch (Exception e) {
+            log.debug("[Cache] Redis бичихэд алдаа: {} — {}", key, e.getMessage());
+        }
+    }
+
+    /**
+     * Redis-ээс кэшийг устгана — бичих үйлдлийн дараа кэш invalidation.
+     * Cache-aside хэв маягийн чухал хэсэг: бичсний дараа устгана.
+     *
+     * @param key устгах кэшийн түлхүүр
+     */
+    private void cacheEvict(String key) {
+        try {
+            RedisClient.get().del(key);
+            log.debug("[Cache EVICT] {}", key);
+        } catch (Exception e) {
+            log.debug("[Cache] Redis устгахад алдаа: {} — {}", key, e.getMessage());
+        }
     }
 
     // ── Нэвтрэх / Бүртгэх ────────────────────────────────────────────────────
@@ -63,6 +136,11 @@ public class BorgolService {
         User user   = repo.createUser(username, email, hash);
         // JwtUtil → HMAC-SHA256 токен үүсгэнэ, 7 хоног хүчинтэй
         String token = JwtUtil.createToken(user.getId(), user.getUsername());
+
+        // ── Тавтай морилох имэйл илгээх (silent fail) ───────────────────────
+        // EmailService: SMTP тохируулагдаагүй бол аяндаа алгасна (log.debug)
+        EmailService.get().sendWelcomeEmail(email, username);
+
         return new AuthResult(token, toView(user, 0, false));
     }
 
@@ -83,9 +161,16 @@ public class BorgolService {
     }
 
     public UserView getMe(int userId) {
+        // ── Cache-aside: borgol:user:{userId}, TTL 600с ──────────────────────
+        String key = CacheKeyBuilder.forUser(userId);
+        UserView cached = cacheGet(key, UserView.class);
+        if (cached != null) return cached;
+
         User user = repo.findUserById(userId)
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return toView(user, 0, false);
+        UserView view = toView(user, 0, false);
+        cachePut(key, view, 600);
+        return view;
     }
 
     public void deleteUser(int userId) {
@@ -118,6 +203,9 @@ public class BorgolService {
             expertiseLevel != null ? expertiseLevel.toUpperCase() : "BEGINNER");
 
         if (flavorPrefs != null) repo.setUserFlavorPrefs(userId, flavorPrefs);
+
+        // Профайл шинэчлэгдсэн тул хэрэглэгчийн кэш хүчингүй болгоно
+        cacheEvict(CacheKeyBuilder.forUser(userId));
 
         return getMe(userId);
     }
@@ -153,7 +241,17 @@ public class BorgolService {
     }
 
     public List<Recipe> getFeed(int userId) {
-        return repo.getFeedRecipes(userId, 30);
+        // ── Cache-aside: borgol:feed:userId:{userId}, TTL 60с ────────────────
+        // Feed нь хэрэглэгч бүрт өөр тул userId кэш түлхүүрт орно.
+        // Богино TTL (60с) — feed хурдан хуучирдаг (шинэ жор орж ирдэг).
+        String key = CacheKeyBuilder.forFeed(userId);
+        Type listType = new TypeToken<List<Recipe>>(){}.getType();
+        List<Recipe> cached = cacheGet(key, listType);
+        if (cached != null) return cached;
+
+        List<Recipe> feed = repo.getFeedRecipes(userId, 30);
+        cachePut(key, feed, 60);
+        return feed;
     }
 
     public List<Recipe> getUserRecipes(int authorId, int currentUserId) {
@@ -161,8 +259,18 @@ public class BorgolService {
     }
 
     public Recipe getRecipe(int id, int currentUserId) {
-        return repo.findRecipeById(id, currentUserId)
+        // ── Cache-aside: borgol:recipe:{id}, TTL 300с ────────────────────────
+        // Анхааруулга: кэш нь хэрэглэгч-тусгаарлагдаагүй (shared by all users).
+        // likedByCurrentUser, savedByCurrentUser талбарууд кэшэд хадгалагдана.
+        // TTL 300с (5 мин) тул худал өгөгдлийн нөлөөлөл хязгаарлагдана.
+        String key = CacheKeyBuilder.forRecipe(id);
+        Recipe cached = cacheGet(key, Recipe.class);
+        if (cached != null) return cached;
+
+        Recipe recipe = repo.findRecipeById(id, currentUserId)
             .orElseThrow(() -> new IllegalArgumentException("Recipe not found: id=" + id));
+        cachePut(key, recipe, 300);
+        return recipe;
     }
 
     public Recipe createRecipe(int authorId, String title, String description, String drinkType,
@@ -202,12 +310,17 @@ public class BorgolService {
         r.setDifficulty(difficulty != null ? difficulty.toUpperCase() : "MEDIUM");
         r.setFlavorTags(flavorTags != null ? flavorTags : List.of());
         r.setImageUrl(imageUrl != null ? imageUrl : "");
-        return repo.updateRecipe(r);
+        Recipe updated = repo.updateRecipe(r);
+        // Жор шинэчлэгдсэн тул кэш хүчингүй болгоно
+        cacheEvict(CacheKeyBuilder.forRecipe(recipeId));
+        return updated;
     }
 
     public void deleteRecipe(int recipeId, int userId) {
         boolean deleted = repo.deleteRecipe(recipeId, userId);
         if (!deleted) throw new IllegalArgumentException("Recipe not found or not authorized");
+        // Жор устгагдсан тул кэш хүчингүй болгоно
+        cacheEvict(CacheKeyBuilder.forRecipe(recipeId));
     }
 
     public Map<String, Object> toggleLike(int userId, int recipeId) {
@@ -305,12 +418,22 @@ public class BorgolService {
      * (Haversine) хэрэггүй, тойргийн хайлт бус дөрвөлжин хайлт хийнэ.
      */
     public List<CafeListing> getCafesNearby(int currentUserId, double lat, double lng, double radiusKm) {
+        // ── Cache-aside: borgol:cafes:nearby:{lat}:{lng}, TTL 120с ───────────
+        // Координатаар кэш хийнэ (userId орохгүй — газрын мэдээлэл нийтийн).
+        // forCafesNearby нь 4 аравтын нарийвчлалтай форматлана (~11м).
+        String key = CacheKeyBuilder.forCafesNearby(lat, lng);
+        Type listType = new TypeToken<List<CafeListing>>(){}.getType();
+        List<CafeListing> cached = cacheGet(key, listType);
+        if (cached != null) return cached;
+
         double latDelta = radiusKm / 111.0;
         double lngDelta = radiusKm / (111.0 * Math.cos(Math.toRadians(lat)));
         // Дөрвөлжин bounding box → SQL-д BETWEEN ашиглаж шүүнэ
-        return repo.findCafesNearby(currentUserId,
+        List<CafeListing> result = repo.findCafesNearby(currentUserId,
             lat - latDelta, lat + latDelta,
             lng - lngDelta, lng + lngDelta);
+        cachePut(key, result, 120);
+        return result;
     }
 
     // ── Extra queries ─────────────────────────────────────────────────────────

@@ -105,6 +105,27 @@
       <version>5.10.1</version>
       <scope>test</scope>
     </dependency>
+
+    <!-- Jedis — Redis клиент, холболтын сан (connection pool) -->
+    <dependency>
+      <groupId>redis.clients</groupId>
+      <artifactId>jedis</artifactId>
+      <version>5.1.0</version>
+    </dependency>
+
+    <!-- Jakarta Mail — SMTP имэйл илгээх -->
+    <dependency>
+      <groupId>com.sun.mail</groupId>
+      <artifactId>jakarta.mail</artifactId>
+      <version>2.0.1</version>
+    </dependency>
+
+    <!-- Gson — JSON сериализаци (кэш давхаргад ашиглана) -->
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.10.1</version>
+    </dependency>
   </dependencies>
 
   <build>
