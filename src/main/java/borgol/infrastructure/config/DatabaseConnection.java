@@ -51,7 +51,7 @@ public class DatabaseConnection {
         } else {
             dbUrl    = System.getenv().getOrDefault("DB_URL",
                        props.getProperty("db.url",
-                       "jdbc:h2:mem:cafe_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"));
+                       "jdbc:h2:mem:cafe_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH"));
             dbUser   = System.getenv().getOrDefault("DB_USER",
                        props.getProperty("db.user", "sa"));
             dbPass   = System.getenv().getOrDefault("DB_PASSWORD",
