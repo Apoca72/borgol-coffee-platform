@@ -4,6 +4,7 @@ import mn.edu.num.cafe.core.domain.*;
 import mn.edu.num.cafe.infrastructure.cache.CacheKeyBuilder;
 import mn.edu.num.cafe.infrastructure.cache.RedisClient;
 import mn.edu.num.cafe.infrastructure.email.EmailService;
+import mn.edu.num.cafe.infrastructure.messaging.RedisEventBus;
 import mn.edu.num.cafe.infrastructure.persistence.BorgolRepository;
 import mn.edu.num.cafe.infrastructure.security.JwtUtil;
 import mn.edu.num.cafe.infrastructure.security.PasswordUtil;
@@ -11,6 +12,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import redis.clients.jedis.Jedis;
 
 import java.lang.reflect.Type;
 import java.util.*;
@@ -42,14 +44,21 @@ public class BorgolService {
     // → тест хийхэд mock оруулах боломжтой
     private final BorgolRepository repo;
 
+    // Redis Pub/Sub үйл явдлын шин — мэдэгдлийг бодит цагт SSE-р дамжуулна
+    private final RedisEventBus eventBus;
+
+    // Trending hashtag-уудын Redis Sorted Set-ийн түлхүүр
+    private static final String TRENDING_KEY = "borgol:trending";
+
     /**
      * Gson жишээ — кэш давхаргад JSON сериализаци/десериализацид ашиглана.
      * Thread-safe: Gson нь immutable, хуваалцах боломжтой.
      */
     private final Gson gson = new Gson();
 
-    public BorgolService(BorgolRepository repo) {
-        this.repo = repo;
+    public BorgolService(BorgolRepository repo, RedisEventBus eventBus) {
+        this.repo     = repo;
+        this.eventBus = eventBus;
     }
 
     // ── Кэш туслах методууд ───────────────────────────────────────────────────
@@ -106,6 +115,60 @@ public class BorgolService {
             log.debug("[Cache EVICT] {}", key);
         } catch (Exception e) {
             log.debug("[Cache] Redis устгахад алдаа: {} — {}", key, e.getMessage());
+        }
+    }
+
+    // ── Redis өгөгдлийн бүтцийн туслах методууд ──────────────────────────────
+    // Зарчим: Redis нь зөвхөн STRING биш — Hash, Sorted Set, List гэх мэт
+    // тусгай өгөгдлийн бүтцийг ашиглана. Энэ нь санах ойг хэмнэж,
+    // атомик үйлдлийг боломжтой болгоно.
+
+    /**
+     * Redis Sorted Set-д flavor tag-уудын оноог тохируулна.
+     * ZINCRBY: атомик инкремент — race condition-гүй.
+     *
+     * @param tags  flavor tag-уудын жагсаалт
+     * @param delta +1.0 (рецепт нэмэхэд) эсвэл -1.0 (рецепт устгахад)
+     */
+    private void adjustTagScores(List<String> tags, double delta) {
+        try (Jedis jedis = RedisClient.get().pool().getResource()) {
+            for (String tag : tags) {
+                if (tag != null && !tag.isBlank()) {
+                    double newScore = jedis.zincrby(TRENDING_KEY, delta, tag.toLowerCase());
+                    // Сөрөг оноотой tag-ийг арилгана (устгасан рецептийн)
+                    if (newScore <= 0) jedis.zrem(TRENDING_KEY, tag.toLowerCase());
+                }
+            }
+        } catch (Exception e) {
+            log.debug("[Trending] adjustTagScores алдаа: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Хэрэглэгчийн профайлыг Redis Hash-д хадгална.
+     * Hash давуу тал: нэг талбарыг дангаар шинэчлэх боломжтой —
+     * бүхэл объектыг serialize/deserialize хийхгүй.
+     *
+     * @param userId хэрэглэгчийн ID
+     * @param view   профайлын мэдээлэл
+     */
+    private void cacheUserHash(int userId, UserView view) {
+        try (Jedis jedis = RedisClient.get().pool().getResource()) {
+            String key = CacheKeyBuilder.forUser(userId);
+            jedis.hset(key, Map.of(
+                "id",            String.valueOf(view.id()),
+                "username",      view.username() != null ? view.username() : "",
+                "bio",           view.bio() != null ? view.bio() : "",
+                "avatarUrl",     view.avatarUrl() != null ? view.avatarUrl() : "",
+                "expertiseLevel",view.expertiseLevel() != null ? view.expertiseLevel() : "BEGINNER",
+                "followerCount", String.valueOf(view.followerCount()),
+                "followingCount",String.valueOf(view.followingCount()),
+                "recipeCount",   String.valueOf(view.recipeCount())
+            ));
+            jedis.expire(key, 600L);
+            log.debug("[Cache HASH SET] borgol:user:{}", userId);
+        } catch (Exception e) {
+            log.debug("[Cache] Hash бичихэд алдаа: {}", e.getMessage());
         }
     }
 
@@ -170,6 +233,7 @@ public class BorgolService {
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
         UserView view = toView(user, 0, false);
         cachePut(key, view, 600);
+        cacheUserHash(userId, view); // Redis Hash — хэсэгчлэн шинэчлэх боломжтой
         return view;
     }
 
@@ -217,6 +281,8 @@ public class BorgolService {
         // Дагасны дараа автоматаар мэдэгдэл үүсгэнэ — Observer хэв маягтай төстэй
         repo.createNotification(followingId, "follow", followerId, 0,
             "started following you");
+        // Redis Pub/Sub — SSE-р бодит цагт дамжуулна
+        eventBus.publish(followingId, "follow", "Someone started following you");
     }
 
     public void unfollowUser(int followerId, int followingId) {
@@ -290,7 +356,10 @@ public class BorgolService {
         r.setDifficulty(difficulty != null ? difficulty.toUpperCase() : "MEDIUM");
         r.setFlavorTags(flavorTags != null ? flavorTags : List.of());
         r.setImageUrl(imageUrl != null ? imageUrl : "");
-        return repo.createRecipe(r);
+        Recipe created = repo.createRecipe(r);
+        // Sorted Set-д flavor tag-уудын оноог нэмнэ — trending лидерборд
+        if (flavorTags != null) adjustTagScores(flavorTags, 1.0);
+        return created;
     }
 
     public Recipe updateRecipe(int recipeId, int authorId, String title, String description,
@@ -317,10 +386,15 @@ public class BorgolService {
     }
 
     public void deleteRecipe(int recipeId, int userId) {
+        // Delete-ийн өмнө flavor tag-уудыг уншина — устгасны дараа алга болно
+        List<String> tags = repo.findRecipeById(recipeId, userId)
+            .map(Recipe::getFlavorTags).orElse(List.of());
         boolean deleted = repo.deleteRecipe(recipeId, userId);
         if (!deleted) throw new IllegalArgumentException("Recipe not found or not authorized");
-        // Жор устгагдсан тул кэш хүчингүй болгоно
+        // Кэш хүчингүй болгоно
         cacheEvict(CacheKeyBuilder.forRecipe(recipeId));
+        // Sorted Set-д flavor tag-уудын оноог хасна
+        if (!tags.isEmpty()) adjustTagScores(tags, -1.0);
     }
 
     public Map<String, Object> toggleLike(int userId, int recipeId) {
@@ -338,6 +412,9 @@ public class BorgolService {
                 if (r.getAuthorId() != userId) {
                     repo.createNotification(r.getAuthorId(), "like", userId, recipeId,
                         "liked your recipe \"" + r.getTitle() + "\"");
+                    // Redis Pub/Sub — SSE-р бодит цагт дамжуулна
+                    eventBus.publish(r.getAuthorId(), "like",
+                        "Someone liked your recipe \"" + r.getTitle() + "\"");
                 }
             });
         }
@@ -362,6 +439,9 @@ public class BorgolService {
             if (r.getAuthorId() != authorId) {
                 repo.createNotification(r.getAuthorId(), "comment", authorId, recipeId,
                     "commented on your recipe \"" + r.getTitle() + "\"");
+                // Redis Pub/Sub — SSE-р бодит цагт дамжуулна
+                eventBus.publish(r.getAuthorId(), "comment",
+                    "Someone commented on your recipe \"" + r.getTitle() + "\"");
             }
         });
         return comment;
@@ -1027,7 +1107,30 @@ public class BorgolService {
         return repo.getRecipesByHashtag(currentUserId, tag);
     }
 
+    /**
+     * Trending hashtag-уудыг Redis Sorted Set-ээс унших.
+     * Sorted Set: ZREVRANGE → оноо ихийн дарааллаар (рецепт тоо).
+     * Fallback: Redis алдаатай бол SQL DB-с унших.
+     *
+     * Sorted Set-ийн давуу тал: DB query хийхгүйгээр O(log N)-д унших боломжтой.
+     * Sorted Set хоосон бол (анхны эхлүүлэлт) DB-с fallback хийнэ.
+     */
     public List<Map<String, Object>> getTrendingHashtags() {
+        try (Jedis jedis = RedisClient.get().pool().getResource()) {
+            List<String> tags = jedis.zrevrange(TRENDING_KEY, 0, 19);
+            if (!tags.isEmpty()) {
+                List<Map<String, Object>> result = new ArrayList<>();
+                for (String tag : tags) {
+                    Double score = jedis.zscore(TRENDING_KEY, tag);
+                    result.add(Map.of("tag", tag, "recipeCount", score != null ? score.longValue() : 0L));
+                }
+                log.debug("[Cache HIT] {}", TRENDING_KEY);
+                return result;
+            }
+        } catch (Exception e) {
+            log.debug("[Trending] Redis Sorted Set алдаа — DB fallback: {}", e.getMessage());
+        }
+        // DB fallback: өгөгдөл байхгүй эсвэл Redis унасан үед
         return repo.getTrendingHashtags(20);
     }
 

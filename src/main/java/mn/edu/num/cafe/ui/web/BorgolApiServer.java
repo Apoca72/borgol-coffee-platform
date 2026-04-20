@@ -10,11 +10,12 @@ import io.javalin.http.HttpStatus;
 import mn.edu.num.cafe.core.application.BorgolService;
 import mn.edu.num.cafe.core.application.MenuService;
 import mn.edu.num.cafe.core.domain.MenuCategory;
-import mn.edu.num.cafe.infrastructure.security.JwtUtil;
+import mn.edu.num.cafe.infrastructure.messaging.RedisEventBus;
 import mn.edu.num.cafe.infrastructure.security.SoapAuthClient;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -23,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Borgol платформын REST API сервер — Javalin дээр суурилсан.
@@ -76,33 +78,28 @@ import java.util.Map;
  */
 public class BorgolApiServer {
 
-    private final BorgolService  borgol;      // бизнесийн логик
+    private final BorgolService  borgol;       // бизнесийн логик
     private final MenuService    menuService;  // legacy цэсний сервис
     private final Javalin        app;          // Javalin/Jetty HTTP сервер
-    // SOAP клиент — SOA архитектурын дагуу auth-г тусдаа сервист шилжүүлнэ
-    // Загвар: Proxy / Delegate — JSON сервис нь SOAP-г ил гаргахгүйгээр ашиглана
+    private final ApiGateway     gateway;      // нэвтрэлт, хурд хязгаарлалт, CORS
+    private final RedisEventBus  eventBus;     // Pub/Sub SSE мэдэгдэл
+    // SOAP клиент — SOAP бүртгэл/нэвтрэх endpoint-уудад ашиглана
     private final SoapAuthClient soapClient = new SoapAuthClient();
 
-    public BorgolApiServer(BorgolService borgol, MenuService menuService) {
+    public BorgolApiServer(BorgolService borgol, MenuService menuService,
+                           ApiGateway gateway, RedisEventBus eventBus) {
         this.borgol      = borgol;
         this.menuService = menuService;
+        this.gateway     = gateway;
+        this.eventBus    = eventBus;
         this.app = Javalin.create(cfg -> {
-            cfg.staticFiles.add("/public");   // /public доторх HTML/CSS/JS файлуудыг шууд хүргэнэ
+            cfg.staticFiles.add("/public");
             cfg.showJavalinBanner = false;
-            // Jetty-ийн хүсэлтийн хэмжээний хязгаарыг 8 MB болгоно
-            // → base64 зураг (рецепт, профайл зураг) дэмжинэ
             cfg.jetty.modifyServletContextHandler(h ->
-                h.setMaxFormContentSize(8 * 1024 * 1024)); // 8 MB for base64 images
+                h.setMaxFormContentSize(8 * 1024 * 1024));
         });
-        // ── CORS header: ямар ч портын frontend хандах боломжтой ────────────
-        // Зарчим: Wildcard "*" — local dev болон Railway deployment хоёуланд ажиллана
-        app.before(ctx -> {
-            ctx.header("Access-Control-Allow-Origin",  "*");
-            ctx.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-            ctx.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-        });
-        // OPTIONS preflight хүсэлтэд 200 хариу өгнө — browser security protocol
-        app.options("/*", ctx -> ctx.status(200));
+        // CORS, rate limiting, audit log — ApiGateway дамжуулна (architectural boundary)
+        gateway.registerFilters(app);
         registerRoutes();
     }
 
@@ -197,6 +194,8 @@ public class BorgolApiServer {
         app.get ("/api/notifications",              this::getNotifications);
         app.get ("/api/notifications/count",        this::getNotificationCount);
         app.post("/api/notifications/read",         this::markNotificationsRead);
+        // SSE stream — Redis Pub/Sub-аар бодит цагт мэдэгдэл хүлээн авна
+        app.get ("/api/notifications/stream",       this::notificationStream);
 
         // Reports
         app.post("/api/report", this::submitReport);
@@ -783,6 +782,55 @@ public class BorgolApiServer {
         ctx.json(Map.of("ok", true));
     }
 
+    /**
+     * SSE endpoint — Redis Pub/Sub-аар бодит цагт мэдэгдэл дамжуулна.
+     *
+     * Загвар: Observer (push) — polling-г SSE-р солино.
+     * EventSource token query param fallback:
+     *   EventSource браузерын API custom header дэмждэггүй тул
+     *   ?token=xxx query param-аар JWT дамжуулна (ApiGateway дэмжинэ).
+     *
+     * Heartbeat (25с): proxy timeout-оос хамгаалах тулд хоосон comment
+     * илгээнэ — SSE протоколд ": ...\n\n" comment гэж тооцогдоно.
+     */
+    private void notificationStream(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+
+        ctx.contentType("text/event-stream");
+        ctx.header("Cache-Control",  "no-cache");
+        ctx.header("Connection",     "keep-alive");
+        ctx.header("X-Accel-Buffering", "no"); // Nginx buffering-г унтраана
+
+        try {
+            PrintWriter writer = ctx.res().getWriter();
+            final int uid = userId;
+
+            Consumer<String> handler = event -> {
+                try {
+                    writer.write("data: " + event + "\n\n");
+                    writer.flush();
+                } catch (Exception ignored) { /* client disconnected */ }
+            };
+
+            eventBus.subscribe(uid, handler);
+            try {
+                // 25 секунд тутам heartbeat — proxy timeout хамгаалалт
+                while (!writer.checkError()) {
+                    writer.write(": heartbeat\n\n");
+                    writer.flush();
+                    Thread.sleep(25_000);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                eventBus.unsubscribe(uid, handler);
+            }
+        } catch (Exception e) {
+            ctx.status(500).json(err("SSE stream error"));
+        }
+    }
+
     // ── Report handler ────────────────────────────────────────────────────────
 
     private void submitReport(Context ctx) {
@@ -1023,47 +1071,19 @@ public class BorgolApiServer {
      *   5. If both fail → return 401 Unauthorized
      *
      * Returns userId or sends 401 and returns null.
+     * Delegates to ApiGateway — auth logic is "inside the gateway subnet".
      */
     private Integer authRequired(Context ctx) {
-        String authHeader = ctx.header("Authorization");
-        if (authHeader == null || authHeader.isBlank()) {
-            ctx.status(401).json(err("Authentication required"));
-            return null;
-        }
-        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
-
-        // ── Step 1: Try SOAP ValidateToken ────────────────────────────────────
-        SoapAuthClient.ValidationResult soapResult = soapClient.validateToken(token);
-        if (soapResult.valid() && soapResult.userId() != null) {
-            return soapResult.userId();  // SOAP validated successfully
-        }
-
-        // ── Step 2: Fallback – local JWT (for desktop app / when SOAP is down) ─
-        Integer localUserId = JwtUtil.getUserId(authHeader);
-        if (localUserId != null) {
-            return localUserId;
-        }
-
-        ctx.status(401).json(err("Invalid or expired token"));
-        return null;
+        return gateway.authenticate(ctx, true);
     }
 
     /**
      * Returns userId or 0 if not authenticated (public endpoints).
-     * Tries SOAP first, falls back to local JWT.
+     * Delegates to ApiGateway.
      */
     private int authOptional(Context ctx) {
-        String authHeader = ctx.header("Authorization");
-        if (authHeader == null) return 0;
-        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
-
-        // Try SOAP first
-        SoapAuthClient.ValidationResult soapResult = soapClient.validateToken(token);
-        if (soapResult.valid() && soapResult.userId() != null) return soapResult.userId();
-
-        // Fall back to local JWT
-        Integer userId = JwtUtil.getUserId(authHeader);
-        return userId != null ? userId : 0;
+        Integer id = gateway.authenticate(ctx, false);
+        return id != null ? id : 0;
     }
 
     private int intParam(Context ctx, String name) {
