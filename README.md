@@ -294,7 +294,7 @@ borgol-coffee-platform/
 │
 │  ── SERVER 1: JAVALIN REST API (port 7000) ─────────────────────────────
 │
-├── src/main/java/mn/edu/num/cafe/
+├── src/main/java/borgol/
 │   │
 │   ├── app/
 │   │   ├── Main.java           ★ COMPOSITION ROOT
@@ -412,7 +412,7 @@ borgol-coffee-platform/
 │           └── UiUtils.java         Shared styling helpers
 │
 │  ── TEST ────────────────────────────────────────────────────────────────
-└── src/test/java/mn/edu/num/cafe/
+└── src/test/java/borgol/
     └── MenuServiceTest.java    JUnit 5: CRUD + Observer with InMemoryMenuRepository
 │
 │  ── SERVER 2: SOAP AUTH SERVICE (port 8081) ────────────────────────────
@@ -423,7 +423,7 @@ borgol-coffee-platform/
     ├── Dockerfile              Container image — SERVER 2
     ├── railway.toml            Railway deploy config — SERVER 2
     │
-    └── src/main/java/com/example/soapauth/
+    └── src/main/java/borgol/auth/
         ├── SoapAuthApplication.java  Spring Boot entry (port 8081)
         │
         ├── config/
@@ -630,6 +630,6 @@ SMTP тохиргоо: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `
 
 ---
 
-`feature/borgol-platform` — [github.com/Apoca72/borgol-coffee-platform](https://github.com/Apoca72/borgol-coffee-platform)
+`feat/redis-cache-email-service` — [github.com/Apoca72/borgol-coffee-platform](https://github.com/Apoca72/borgol-coffee-platform)
 
 GitLab-д академик илгээлтийн зорилгоор тусдаа хуулбарлагдана.

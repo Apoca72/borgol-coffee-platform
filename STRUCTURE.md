@@ -103,12 +103,12 @@ cafe-project/
 │
 │  ════════════════════════════════════════════════════════════════════════════
 │  SERVER 1 — Javalin REST API + JavaFX Desktop  (port 7000)
-│  src/main/java/mn/edu/num/cafe/
+│  src/main/java/borgol/
 │  ════════════════════════════════════════════════════════════════════════════
 │
 ├── src/
 │   ├── main/
-│   │   ├── java/mn/edu/num/cafe/
+│   │   ├── java/borgol/
 │   │   │   │
 │   │   │   ├── app/                          ── ENTRY POINT ──────────────────
 │   │   │   │   ├── Main.java                 ★ Composition Root
@@ -301,7 +301,7 @@ cafe-project/
 │   │           └── login.html    13 KB  → POST /api/soap/login (SOAP fallback local)
 │   │
 │   └── test/
-│       └── java/mn/edu/num/cafe/
+│       └── java/borgol/
 │           └── MenuServiceTest.java   JUnit 5: CRUD + Observer pattern
 │                                         uses InMemoryMenuRepository (no DB)
 │
@@ -323,7 +323,7 @@ cafe-project/
     ├── target/                  Compiled SOAP service artifacts
     │
     └── src/main/
-        ├── java/com/example/soapauth/
+        ├── java/borgol/auth/
         │   │
         │   ├── SoapAuthApplication.java   Spring Boot entry · port 8081
         │   │
@@ -387,7 +387,7 @@ eclipse-workspace/cafe-project/
 │
 ├── data/                        H2 database (116 KB — older/smaller dataset)
 │
-├── src/main/java/mn/edu/num/cafe/
+├── src/main/java/borgol/
 │   ├── app/
 │   │   ├── Main.java            Composition Root (simpler wiring — no Redis/Gateway)
 │   │   ├── MainWeb.java         Javalin-only entry (no JavaFX dependency)
