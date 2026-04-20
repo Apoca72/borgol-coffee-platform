@@ -15,7 +15,7 @@
     <groupId>com.example</groupId>
     <artifactId>soap-auth-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>soap-auth-service</name>
+    <name>borgol-auth</name>
     <description>Lab 06 – SOAP Authentication Service (RegisterUser / LoginUser / ValidateToken)</description>
 
     <properties>

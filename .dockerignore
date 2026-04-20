@@ -3,4 +3,4 @@
 target/
 data/
 *.md
-soap-auth-service/
+auth/
