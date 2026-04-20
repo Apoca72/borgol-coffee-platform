@@ -4,10 +4,14 @@ import mn.edu.num.cafe.core.application.BorgolService;
 import mn.edu.num.cafe.core.application.MenuService;
 import mn.edu.num.cafe.core.domain.MenuCategory;
 import mn.edu.num.cafe.core.ports.IMenuRepository;
+import mn.edu.num.cafe.infrastructure.cache.RedisClient;
 import mn.edu.num.cafe.infrastructure.config.DatabaseConnection;
+import mn.edu.num.cafe.infrastructure.messaging.RedisEventBus;
 import mn.edu.num.cafe.infrastructure.persistence.BorgolRepository;
 import mn.edu.num.cafe.infrastructure.persistence.RepositoryFactory;
+import mn.edu.num.cafe.infrastructure.security.SoapAuthClient;
 import mn.edu.num.cafe.ui.desktop.BorgolApp;
+import mn.edu.num.cafe.ui.web.ApiGateway;
 import mn.edu.num.cafe.ui.web.BorgolApiServer;
 
 /**
@@ -36,12 +40,18 @@ public class Main {
         // ── 1. DB холболт — Singleton загвар, програмын туршид нэг объект ────
         DatabaseConnection db = DatabaseConnection.getInstance();
 
-        // ── 2. Borgol платформ: Repository → Service (DI) ────────────────────
-        // BorgolRepository нь db-г хүлээн авна → өгөгдлийн сангаас тусгаарлагдана
-        BorgolRepository borgolRepo    = new BorgolRepository(db);
-        BorgolService    borgolService = new BorgolService(borgolRepo);
+        // ── 2. Redis Pub/Sub үйл явдлын шин + ApiGateway ─────────────────────
+        // RedisEventBus: JedisPool-г ашиглана — Pub/Sub нэг virtual thread
+        RedisEventBus eventBus = new RedisEventBus(RedisClient.get().pool());
+        eventBus.startSubscriber();
+        // ApiGateway: CORS, rate limiting, auth — "private subnet" зааг
+        ApiGateway    gateway   = new ApiGateway(new SoapAuthClient(), RedisClient.get().pool());
 
-        // ── 3. Legacy цэсний сервис — Observer загвар ─────────────────────────
+        // ── 3. Borgol платформ: Repository → Service (DI) ────────────────────
+        BorgolRepository borgolRepo    = new BorgolRepository(db);
+        BorgolService    borgolService = new BorgolService(borgolRepo, eventBus);
+
+        // ── 4. Legacy цэсний сервис — Observer загвар ─────────────────────────
         // RepositoryFactory → Strategy: H2 эсвэл JDBC repository сонгоно
         IMenuRepository menuRepo    = RepositoryFactory.createMenuRepository();
         MenuService     menuService = new MenuService(menuRepo);
@@ -86,7 +96,7 @@ public class Main {
             int port = Integer.parseInt(
                 System.getenv().getOrDefault("PORT", "7000"));
             System.out.println("  [MODE] Web server mode — port " + port);
-            BorgolApiServer server = new BorgolApiServer(borgolService, menuService);
+            BorgolApiServer server = new BorgolApiServer(borgolService, menuService, gateway, eventBus);
             server.start(port);
             // Javalin/Jetty нь ард (background thread)-д ажиллана
             // main thread-г унтраахгүйн тулд join() хийнэ

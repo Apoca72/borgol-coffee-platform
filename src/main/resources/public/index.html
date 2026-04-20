@@ -37,6 +37,44 @@
   --font-sans : 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+/* ── Dark theme overrides ────────────────────────────────────────────────── */
+body.dark {
+  --espresso  : #F6E8CC;
+  --roast     : #FDFAF3;
+  --caramel   : #CB8840;
+  --caramel-lt: #A8621E;
+  --gold      : #C88020;
+  --amber     : #A06010;
+  --cream     : #1C1007;
+  --milk      : #140C04;
+  --surface   : #100A02;
+  --border    : #3A2810;
+  --muted     : #A89070;
+  --text      : #F6E8CC;
+  --success   : #52B288;
+  --danger    : #E05040;
+  --blue      : #6090D8;
+}
+@media (prefers-color-scheme: dark) {
+  body:not(.light) {
+    --espresso  : #F6E8CC;
+    --roast     : #FDFAF3;
+    --caramel   : #CB8840;
+    --caramel-lt: #A8621E;
+    --gold      : #C88020;
+    --amber     : #A06010;
+    --cream     : #1C1007;
+    --milk      : #140C04;
+    --surface   : #100A02;
+    --border    : #3A2810;
+    --muted     : #A89070;
+    --text      : #F6E8CC;
+    --success   : #52B288;
+    --danger    : #E05040;
+    --blue      : #6090D8;
+  }
+}
+
 /* ── Animations ──────────────────────────────────────────────────────────── */
 @keyframes spin      { to { transform:rotate(360deg) } }
 @keyframes fadeUp    { from { opacity:0; transform:translateY(22px) } to { opacity:1; transform:none } }
@@ -594,6 +632,7 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
         <div id="notif-list"><div class="notif-empty">No notifications yet</div></div>
       </div>
     </div>
+    <button id="darkToggleBtn" onclick="toggleDarkMode()" title="Toggle dark mode" style="background:none;border:none;cursor:pointer;font-size:1.25rem;padding:4px 6px;line-height:1;color:var(--cream);opacity:.85;transition:opacity .2s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">🌙</button>
     <button class="btn-settings" onclick="openSettings()" title="Settings">⚙️</button>
     <a id="nav-admin-link" href="admin.html" title="Admin Panel" style="display:none;align-items:center;gap:5px;padding:6px 13px;border-radius:20px;background:rgba(232,160,48,.18);border:1px solid rgba(232,160,48,.4);color:var(--amber);font-size:12px;font-weight:700;letter-spacing:.03em;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(232,160,48,.28)'" onmouseout="this.style.background='rgba(232,160,48,.18)'">⚙ Admin</a>
     <button class="hamburger" onclick="toggleMobileNav()" aria-label="Menu">☰</button>
@@ -1361,6 +1400,21 @@ function fmtTemp(c) {
   if (TEMP_UNIT === 'F') return Math.round(c * 9/5 + 32) + '°F';
   return c + '°C';
 }
+
+// ── Dark mode ──────────────────────────────────────────────────────────────
+function applyTheme(dark) {
+  document.body.classList.toggle('dark', dark);
+  document.body.classList.toggle('light', !dark);
+  localStorage.setItem('borgol_dark', dark ? '1' : '0');
+  const btn = document.getElementById('darkToggleBtn');
+  if (btn) btn.textContent = dark ? '☀️' : '🌙';
+}
+function toggleDarkMode() { applyTheme(!document.body.classList.contains('dark')); }
+(function initTheme() {
+  const saved = localStorage.getItem('borgol_dark');
+  if (saved !== null) applyTheme(saved === '1');
+  // else: CSS @media query auto-applies, no JS class needed
+})();
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let TOKEN         = localStorage.getItem('borgol_token') || null;
@@ -3179,6 +3233,31 @@ async function pollNotifCount() {
   } catch(e) {}
 }
 
+// ── Redis Pub/Sub SSE мэдэгдлийн захиалга ─────────────────────────────────────
+// setInterval polling-г Server-Sent Events-р солино.
+// EventSource custom header дэмждэггүй тул token-г query param-аар дамжуулна.
+let _sseSource = null;
+function subscribeNotifications() {
+  if (!TOKEN || !ME) return;
+  if (_sseSource) { _sseSource.close(); _sseSource = null; }
+  const url = `/api/notifications/stream?token=${encodeURIComponent(TOKEN)}`;
+  const es = new EventSource(url);
+  _sseSource = es;
+  es.onmessage = e => {
+    try {
+      const event = JSON.parse(e.data);
+      toast(event.message || 'New notification', 'info');
+      pollNotifCount(); // badge шинэчлэнэ
+    } catch (_) {}
+  };
+  es.onerror = () => {
+    es.close();
+    _sseSource = null;
+    // 5 секундын дараа дахин холбогдоно
+    setTimeout(subscribeNotifications, 5000);
+  };
+}
+
 // ── Hashtag pages ──────────────────────────────────────────────────────────────
 async function openHashtagPage(tag) {
   try {
@@ -3227,8 +3306,8 @@ async function toggleHashtag(tag, btn) {
   updateNavUser();
   showPage(ME ? 'feed' : 'recipes');
   if (ME) {
-    pollNotifCount();
-    setInterval(pollNotifCount, 60000); // poll every minute
+    pollNotifCount();          // анхны badge тоо
+    subscribeNotifications();  // Redis Pub/Sub SSE захиалга (polling-г орлоно)
   }
 })();
 

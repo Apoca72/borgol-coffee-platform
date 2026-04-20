@@ -122,6 +122,15 @@ public class RedisClient {
     }
 
     /**
+     * JedisPool-г шууд буцаана — Pub/Sub, MULTI/EXEC, болон
+     * data-structure командуудад холболтыг удаан барих шаардлагатай үед.
+     * try-with-resources: pool.getResource() → ... → close()
+     */
+    public JedisPool pool() {
+        return pool;
+    }
+
+    /**
      * Холболтын сангийн нөөцийг чөлөөлнэ.
      * Программ зогсохдоо дуудаж болно.
      */

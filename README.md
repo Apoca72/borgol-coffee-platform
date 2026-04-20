@@ -112,62 +112,347 @@ Borgol нь кофе сонирхогчдод зориулсан нийгмий�
 - Хүлээгдэж буй, шийдвэрлэсэн, татгалзсан гомдлын тоо, шүүлтийн таб
 - Шийдвэрлэх, татгалзах товч, skeleton loading, toast мэдэгдэл
 
-### Мэдэгдэл
+### Мэдэгдэл (бодит цаг — Redis Pub/Sub + SSE)
 
 - Навигацийн хонхны дүрс, уншаагүй тоолуур
 - Like, сэтгэгдэл, дагасны мэдэгдэл
+- Redis Pub/Sub `borgol:notify:{userId}` сувгаар нэвтрэн Server-Sent Events (SSE) хүлээн авна
+- Polling-г бүрэн орлосон: `GET /api/notifications/stream` — нээлттэй холболтоор 25 секунд тутамд heartbeat явуулна
+- EventSource нь `?token=` query параметраар JWT дамжуулна (browser-н хязгаарлалтаас болж)
+
+### Харанхуй горим (Dark Mode)
+
+- Навбарт 🌙 / ☀️ товч — нэг дарагдалаар тохиргоо хадгалагдана
+- `localStorage` дотор `borgol_dark` гэсэн утгаар хадгалагдана
+- Шинэ хэрэглэгч системийн `prefers-color-scheme` тохиргоог автоматаар уншина
+- Дулаан хүрэн/кофе өнгөний палитр — брэндийн өнгийг хадгалсан харанхуй горим
 
 ---
 
 ## Архитектур
 
-```
-Веб интерфэйс (HTML / CSS / Vanilla JS)
-  index.html | profile.html | brew-timer.html | admin.html
-
-         HTTP REST (JSON) + SSE
-                  |
-         JSON REST API (Javalin)
-         BorgolApiServer
-
-  POST /api/bean/chat ─────► Google Gemini 1.5 Flash
-
-  POST /api/soap/register ──────────┐
-  POST /api/soap/login ─────────────┤  SOAP XML
-                                    ▼
-                     SOAP Auth Service (Spring-WS)
-                       ├── RegisterUser
-                       ├── LoginUser → JWT
-                       └── ValidateToken
-
-  BorgolRepository ──────────────────► PostgreSQL (Railway)
-```
-
-### Кодын бүтэц
+### Системийн бүрэлдэхүүн (хоёр тусдаа серверийн үйл ажиллагаа)
 
 ```
-cafe-project/
-├── auth/              SOAP auth микросервис (Spring Boot)
-│   └── src/main/java/com/example/soapauth/
-│       ├── endpoint/AuthEndpoint   SOAP dispatcher
-│       ├── service/AuthService     JWT + нууц үг
-│       ├── dto/                    JAXB DTO
-│       └── config/                 Spring-WS тохиргоо
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                        FRONTEND  (browser-д ажиллана)                        │
+│                                                                              │
+│  index.html      — Үндсэн апп (Feed, Recipes, Cafes, Journal, Timer, Learn)  │
+│  profile.html    — Профайл засах, зураг оруулах                              │
+│  brew-timer.html — Дарлалтын таймер, харьцааны тооцоолуур                    │
+│  admin.html      — Тайлан самбар (id=1 хэрэглэгчид)                         │
+│  login.html      — Нэвтрэх хуудас                                            │
+│  register.html   — Бүртгэл хуудас                                            │
+│                                                                              │
+│  Технологи: Vanilla HTML / CSS custom properties / ES2022 JS                 │
+│  Хүргэлт: Javalin static file serving (port 7000)                            │
+└────────────────────────┬─────────────────────────────────────────────────────┘
+                         │  HTTP REST (JSON) + Server-Sent Events (SSE)
+                         ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│               SERVER 1 — Javalin REST API  (port 7000)                       │
+│               JVM процесс 1  |  Main.java → Composition Root                 │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐     │
+│  │  GATEWAY LAYER  —  ApiGateway.java                                  │     │
+│  │                                                                     │     │
+│  │  • CORS headers (app.before)                                        │     │
+│  │  • Rate limiting: Redis INCR+EXPIRE → 5 req / 60s per IP           │     │
+│  │  • Request logging (audit trail)                                    │     │
+│  │  • Auth resolution: JWT → SOAP ValidateToken fallback               │     │
+│  │    (BorgolApiServer calls gateway.authenticate() — never JwtUtil    │     │
+│  │     directly — architectural boundary / private subnet pattern)     │     │
+│  └────────────────────────────┬────────────────────────────────────────┘     │
+│                               │                                              │
+│  ┌────────────────────────────▼────────────────────────────────────────┐     │
+│  │  HTTP ADAPTER  —  BorgolApiServer.java  (Front Controller)          │     │
+│  │                                                                     │     │
+│  │  30+ REST endpoints:                                                │     │
+│  │  /api/auth/*          /api/users/*        /api/recipes/*            │     │
+│  │  /api/cafes/*         /api/feed           /api/journal/*            │     │
+│  │  /api/hashtags/*      /api/notifications/stream  (SSE)              │     │
+│  │  /api/bean/chat       /api/report         /api/admin/*              │     │
+│  │  /api/soap/register   /api/soap/login     /api/menu/*               │     │
+│  └────────────────────────────┬────────────────────────────────────────┘     │
+│                               │                                              │
+│  ┌────────────────────────────▼────────────────────────────────────────┐     │
+│  │  APPLICATION SERVICE  —  BorgolService.java  (Business Logic)       │     │
+│  │                                                                     │     │
+│  │  • User CRUD, follow/unfollow, block                                │     │
+│  │  • Recipe CRUD, like, comment, save                                 │     │
+│  │  • Café listing, rating, nearby search                              │     │
+│  │  • Feed generation (followed users + trending fallback)             │     │
+│  │  • Brew journal + guide management                                  │     │
+│  │  • Notification creation → eventBus.publish()                      │     │
+│  │  • Trending hashtags via Redis Sorted Set                          │     │
+│  │  • User profile caching via Redis Hash                             │     │
+│  │  • Bean AI chat (Google Gemini 1.5 Flash via Anthropic SDK)        │     │
+│  │  • Admin: report resolution, stats                                  │     │
+│  └────────────────────────────┬────────────────────────────────────────┘     │
+│                               │                                              │
+│  ┌────────────────────────────▼────────────────────────────────────────┐     │
+│  │  DATA ACCESS  —  BorgolRepository.java  (Repository/DAO)            │     │
+│  │                                                                     │     │
+│  │  All SQL: PreparedStatement, idempotent schema migration on startup │     │
+│  │  H2 (local ./data/cafe_db.mv.db) or PostgreSQL (DATABASE_URL env)  │     │
+│  └────────────────────────────┬────────────────────────────────────────┘     │
+│                               │                                              │
+│  ┌────────────────────────────▼────────────────────────────────────────┐     │
+│  │  DATABASE  —  H2 (local) / PostgreSQL Railway (production)          │     │
+│  └─────────────────────────────────────────────────────────────────────┘     │
+│                                                                              │
+│  CROSS-CUTTING INFRASTRUCTURE (wired in Main.java):                          │
+│  • DatabaseConnection.java   — DCL Singleton, JdbcConnection                │
+│  • RedisClient.java          — DCL Singleton, JedisPool                     │
+│  • RedisEventBus.java        — Pub/Sub virtual thread fan-out               │
+│  • EmailService.java         — Jakarta Mail SMTP (registration/reset)       │
+│  • JwtUtil.java              — HMAC-SHA256 JWT (no external lib)            │
+│  • PasswordUtil.java         — SHA-256 + SecureRandom salt                  │
+│  • SoapAuthClient.java       — HTTP Proxy → Server 2                        │
+└──────────────────────────────────────────────────────────────────────────────┘
+         │ Redis Pub/Sub (borgol:notify:{userId})          │ SMTP
+         ▼                                                  ▼
+┌─────────────────────┐                          ┌──────────────────────┐
+│  Redis (Railway)    │                          │  Email (SMTP relay)  │
+│  redis-cache-a      │                          │  Jakarta Mail 2.0    │
+│  private subnet     │                          └──────────────────────┘
+│                     │
+│  String: recipes,   │
+│    feed, cafes      │
+│  Hash: users        │
+│  Sorted Set:        │
+│    trending tags    │
+│  INCR: rate limit   │
+│  Pub/Sub: notifs    │
+└─────────────────────┘
+
+         │ SOAP/XML (RegisterUser, LoginUser, ValidateToken)
+         ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│               SERVER 2 — SOAP Auth Service  (port 8081)                      │
+│               JVM процесс 2  |  Spring Boot 3.2.5 + Spring-WS               │
+│                                                                              │
+│  AuthEndpoint.java    — SOAP dispatcher (routes XML to service methods)      │
+│  AuthService.java     — JWT generation (HMAC-SHA256), password hashing       │
+│  WebServiceConfig.java — Spring-WS config, WSDL exposure                    │
+│  CorsFilter.java      — CORS for SOAP service                                │
+│                                                                              │
+│  Storage: ConcurrentHashMap (in-memory — stateless, no DB)                   │
+│  WSDL:    http://localhost:8081/ws/authService.wsdl                          │
+│  Schema:  xsd/auth-service.xsd  (JAXB namespace: http://num.edu.mn/soapauth) │
+│                                                                              │
+│  DTO classes (JAXB):                                                         │
+│  LoginUserRequest/Response | RegisterUserRequest/Response                    │
+│  ValidateTokenRequest/Response                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+Fallback chain (Server 1): if SOAP service is unreachable →
+  SoapAuthClient catches exception → falls back to local JwtUtil
+```
+
+---
+
+### Файлын бүтэц (бүрэн, архитектурын үүргээр)
+
+```
+borgol-coffee-platform/
 │
-└── src/main/java/mn/edu/num/cafe/
-    ├── app/Main.java               Composition Root
-    ├── core/
-    │   ├── domain/                 Entity классууд
-    │   └── application/BorgolService   Бизнесийн логик
-    ├── infrastructure/
-    │   ├── persistence/BorgolRepository  SQL, схемийн миграц
-    │   └── security/
-    │       ├── JwtUtil             Дотоод JWT
-    │       ├── PasswordUtil        SHA-256 + давс
-    │       └── SoapAuthClient      SOAP HTTP клиент
-    └── ui/
-        ├── web/BorgolApiServer     REST endpoint, Bean AI, админ
-        └── desktop/                JavaFX (legacy)
+│  ── DEPLOYMENT & BUILD ─────────────────────────────────────────────────
+├── pom.xml                     Maven build (Java 21, Javalin 6.3, JavaFX 21,
+│                               Jedis 5.1, Jakarta Mail, Anthropic SDK 2.16.1,
+│                               H2, PostgreSQL, Gson, Jackson, JUnit 5)
+├── mvnw / mvnw.cmd             Maven wrapper (no local Maven install needed)
+├── Dockerfile                  Container image — SERVER 1 (Javalin REST API)
+├── railway.toml                Railway deploy config — SERVER 1
+├── deploy.sh                   Deployment helper script
+├── .github/workflows/
+│   └── deploy.yml              CI/CD pipeline (GitHub Actions)
+│
+│  ── FRONTEND ───────────────────────────────────────────────────────────
+│  Served statically by Javalin at port 7000 from target/classes/public/
+│
+├── src/main/resources/public/
+│   ├── index.html              ★ MAIN APP — 6-tab SPA
+│   │                           Tabs: Feed | Recipes | Cafes | Journal | Learn | Timer
+│   │                           Features: dark mode toggle, Bean AI chat (FAB),
+│   │                             SSE notification bell, GPS map, radar chart,
+│   │                             PDF/CSV export, QuickBrew overlay
+│   ├── profile.html            User profile — bio edit, avatar upload (canvas
+│   │                             compress → 240px JPEG → base64), equipment,
+│   │                             flavor prefs, saved recipes
+│   ├── brew-timer.html         Standalone brew timer — 6 methods, SVG ring
+│   │                             timer, ratio calculator, step guide
+│   ├── admin.html              Admin dashboard (id=1 only) — report queue,
+│   │                             resolve/reject, stats
+│   ├── login.html              Login form → POST /api/soap/login
+│   └── register.html           Register form → POST /api/soap/register
+│
+├── src/main/resources/
+│   ├── database.properties     Persistence config (mode=DB, H2 JDBC URL, sa)
+│   ├── style.css               JavaFX desktop UI stylesheet (warm espresso theme)
+│   └── style-dark.css          JavaFX desktop dark mode variant
+│
+│  ── SERVER 1: JAVALIN REST API (port 7000) ─────────────────────────────
+│
+├── src/main/java/mn/edu/num/cafe/
+│   │
+│   ├── app/
+│   │   ├── Main.java           ★ COMPOSITION ROOT
+│   │   │                       Reads MODE env var (web | desktop | javafx)
+│   │   │                       Wires: DB → Repo → Service → Gateway → Server
+│   │   │                       Starts: RedisEventBus Pub/Sub virtual thread
+│   │   │                       Registers: ConsoleMenuObserver
+│   │   └── ConsoleMenuObserver.java
+│   │                           Observer concrete impl — prints menu changes
+│   │
+│   ├── core/                   ── DOMAIN (no framework dependencies) ──────
+│   │   ├── domain/
+│   │   │   ├── User.java       Entity: id, username, email, passwordHash,
+│   │   │   │                     bio, avatarUrl, expertiseLevel, flavorPrefs
+│   │   │   ├── Recipe.java     Entity: authorId, title, drinkType, ingredients,
+│   │   │   │                     instructions, brewTime, difficulty, imageUrl,
+│   │   │   │                     flavorTags, likeCount
+│   │   │   ├── RecipeComment.java  Entity: recipeId, authorId, content
+│   │   │   ├── CafeListing.java    Entity: name, address, city, district,
+│   │   │   │                         phone, hours, avgRating
+│   │   │   ├── BrewJournalEntry.java  Entity: userId, coffeeBean, origin,
+│   │   │   │                           roastLevel, brewMethod, waterTempC,
+│   │   │   │                           doseG, brewTimeSec, aroma/flavor/
+│   │   │   │                           acidity/body/sweetness/finish (1-5)
+│   │   │   ├── BrewGuide.java  Entity: methodName, brewTimeMin, steps[], params
+│   │   │   ├── LearnArticle.java  Entity: title, category, content, readTimeMin
+│   │   │   ├── Equipment.java  Entity: userId, category (GRINDER|BREWER|
+│   │   │   │                     KETTLE|SCALE|OTHER), brand, notes
+│   │   │   ├── MenuItem.java   Entity: id, name, MenuCategory, price, available
+│   │   │   └── MenuCategory.java  Enum: COFFEE|TEA|SMOOTHIE|FOOD|DESSERT
+│   │   │
+│   │   ├── ports/              ── HEXAGONAL OUTBOUND PORTS (interfaces) ──
+│   │   │   ├── IMenuRepository.java    Port: save/findById/getAll/delete
+│   │   │   └── MenuChangeObserver.java Port: onItemAdded/Removed/Updated
+│   │   │
+│   │   └── application/        ── APPLICATION SERVICES (business logic) ──
+│   │       ├── BorgolService.java  ★ CORE SERVICE
+│   │       │                       User/Recipe/Café/Journal/Feed/Notif/AI
+│   │       │                       Redis: ZINCRBY (trending), HSET (user hash)
+│   │       │                       Publishes to RedisEventBus after notif create
+│   │       ├── MenuService.java    Menu CRUD + Observer notification dispatch
+│   │       └── MenuDto.java        Java Record DTO: MenuItem projection
+│   │
+│   ├── infrastructure/         ── INFRASTRUCTURE (framework adapters) ─────
+│   │   │
+│   │   ├── config/
+│   │   │   └── DatabaseConnection.java  Singleton (DCL + volatile)
+│   │   │                                H2 if no DATABASE_URL, else PostgreSQL
+│   │   │
+│   │   ├── persistence/        ── DATA ACCESS LAYER ──────────────────────
+│   │   │   ├── BorgolRepository.java    ★ MASTER DAO
+│   │   │   │                            All SQL for 18+ tables, PreparedStatement,
+│   │   │   │                            MERGE INTO (upserts), idempotent schema
+│   │   │   ├── JdbcMenuRepository.java  IMenuRepository impl (JDBC)
+│   │   │   ├── InMemoryMenuRepository.java  IMenuRepository impl (HashMap, tests)
+│   │   │   └── RepositoryFactory.java   Creates correct impl from database.properties
+│   │   │
+│   │   ├── security/           ── AUTH & SECURITY ─────────────────────────
+│   │   │   ├── JwtUtil.java     Custom HMAC-SHA256 JWT (javax.crypto.Mac)
+│   │   │   │                    No external JWT lib — 7-day expiry, constant-time compare
+│   │   │   ├── PasswordUtil.java  SHA-256 + SecureRandom salt → "saltHex:hashHex"
+│   │   │   └── SoapAuthClient.java  HTTP Proxy → SERVER 2
+│   │   │                            Calls RegisterUser / LoginUser / ValidateToken
+│   │   │                            Graceful degradation: falls back to JwtUtil on failure
+│   │   │
+│   │   ├── cache/              ── REDIS LAYER ─────────────────────────────
+│   │   │   ├── RedisClient.java     Singleton (DCL + volatile): JedisPool
+│   │   │   │                        REDIS_HOST/PORT/PASSWORD from env
+│   │   │   │                        pool() exposes JedisPool for Pub/Sub ops
+│   │   │   └── CacheKeyBuilder.java Utility: builds Redis keys
+│   │   │                            borgol:recipe:{id} | borgol:user:{id}
+│   │   │                            borgol:feed:userId:{id} | borgol:trending
+│   │   │                            borgol:cafes:nearby:{lat}:{lng}
+│   │   │                            borgol:ratelimit:{ip} | borgol:notify:{userId}
+│   │   │
+│   │   ├── messaging/          ── EVENT BUS ───────────────────────────────
+│   │   │   └── RedisEventBus.java  Redis Pub/Sub wrapper
+│   │   │                           One virtual thread: PSUBSCRIBE borgol:notify:*
+│   │   │                           Fan-out: notif event → Consumer<String> SSE handlers
+│   │   │                           subscribe(userId, handler) / unsubscribe(userId, handler)
+│   │   │
+│   │   └── email/              ── EMAIL ────────────────────────────────────
+│   │       └── EmailService.java   Jakarta Mail 2.0 SMTP
+│   │                               Sends: registration confirmation, password reset
+│   │                               Config: SMTP_HOST/PORT/USER/PASSWORD/EMAIL_FROM env vars
+│   │
+│   └── ui/                     ── ADAPTERS (UI layer) ─────────────────────
+│       │
+│       ├── web/                ── HTTP ADAPTERS (production) ───────────────
+│       │   ├── ApiGateway.java     ★ GATEWAY
+│       │   │                       registerFilters(app): CORS, rate-limit before-filters
+│       │   │                       authenticate(ctx, required): SOAP→JWT fallback
+│       │   │                       rateLimitAuth(ctx): Redis INCR+EXPIRE, fail-open
+│       │   ├── BorgolApiServer.java  ★ FRONT CONTROLLER (30+ routes)
+│       │   │                         Delegates auth to ApiGateway (never calls JwtUtil)
+│       │   │                         SSE: /api/notifications/stream — heartbeat loop
+│       │   │                         SSE: /api/bean/chat — Gemini token streaming
+│       │   └── CafeApiServer.java    Legacy REST adapter (menu endpoints)
+│       │
+│       └── desktop/            ── JAVAFX UI ADAPTERS (local MODE=desktop) ──
+│           ├── BorgolApp.java       JavaFX Application entry, window setup
+│           ├── MainWindow.java      BorderPane: navbar + swappable center pane
+│           ├── AppSession.java      Static: current userId, username
+│           ├── FeedPane.java        Social feed (3-column)
+│           ├── RecipesPane.java     Recipe browser, create/edit/like/comment
+│           ├── CafesPane.java       Café list, rate, nearby
+│           ├── JournalPane.java     Brew log + radar chart SVG + CSV export
+│           ├── BrewTimerPane.java   Timer (V60/Espresso/FP/AeroPress/Moka/CB)
+│           ├── LearnPane.java       Master-detail: guides + articles
+│           ├── ProfilePane.java     Bio, avatar upload (canvas), equipment
+│           ├── AdminPane.java       Report queue TableView
+│           ├── PeoplePane.java      User discovery cards
+│           ├── MapPane.java         Leaflet.js WebView (café map)
+│           ├── QuickBrewOverlay.java  Modal brew method step guide
+│           └── UiUtils.java         Shared styling helpers
+│
+│  ── TEST ────────────────────────────────────────────────────────────────
+└── src/test/java/mn/edu/num/cafe/
+    └── MenuServiceTest.java    JUnit 5: CRUD + Observer with InMemoryMenuRepository
+│
+│  ── SERVER 2: SOAP AUTH SERVICE (port 8081) ────────────────────────────
+│  Separate JVM process, separate Docker container, separate Railway service
+│
+└── soap-auth-service/
+    ├── pom.xml                 Spring Boot 3.2.5, Spring-WS, JAXB, Wsdl4j
+    ├── Dockerfile              Container image — SERVER 2
+    ├── railway.toml            Railway deploy config — SERVER 2
+    │
+    └── src/main/java/com/example/soapauth/
+        ├── SoapAuthApplication.java  Spring Boot entry (port 8081)
+        │
+        ├── config/
+        │   ├── WebServiceConfig.java  Spring-WS WSDL exposure config
+        │   └── CorsFilter.java        CORS for SOAP requests
+        │
+        ├── endpoint/
+        │   └── AuthEndpoint.java     ★ SOAP DISPATCHER
+        │                             @PayloadRoot routes XML payload:
+        │                             RegisterUserRequest → register()
+        │                             LoginUserRequest    → login()
+        │                             ValidateTokenRequest → validateToken()
+        │
+        ├── service/
+        │   └── AuthService.java      JWT generation (HMAC-SHA256)
+        │                             Password hashing (SHA-256 + salt)
+        │                             In-memory user store (ConcurrentHashMap)
+        │
+        ├── model/
+        │   └── AuthUser.java         username, passwordHash (in-memory entity)
+        │
+        ├── dto/                      JAXB-annotated request/response classes
+        │   ├── LoginUserRequest/Response.java
+        │   ├── RegisterUserRequest/Response.java
+        │   └── ValidateTokenRequest/Response.java
+        │
+        └── src/main/resources/
+            ├── application.properties  port=8081, JWT secret, log levels
+            └── xsd/auth-service.xsd    WSDL schema (namespace: num.edu.mn/soapauth)
 ```
 
 ---
@@ -214,7 +499,7 @@ PostgreSQL, Railway дээр deploy хийгдсэн. Schema нь startup бүр
 | Кафе | GET/POST /api/cafes, POST /api/cafes/{id}/rate, GET /api/cafes/nearby |
 | Тэмдэглэл | GET/POST /api/journal, PUT/DELETE /api/journal/{id} |
 | Зааварчилгаа | GET /api/brew-guides, GET /api/learn |
-| Мэдэгдэл | GET /api/notifications, POST /api/notifications/read |
+| Мэдэгдэл | GET /api/notifications, POST /api/notifications/read, GET /api/notifications/stream (SSE) |
 | Гомдол | POST /api/report |
 | Админ | GET /api/admin/reports, POST /api/admin/reports/{id}/resolve, GET /api/admin/stats |
 | Bean AI | POST /api/bean/chat — SSE дамжуулалт (Google Gemini 1.5 Flash) |
@@ -273,12 +558,22 @@ GEMINI_API_KEY=google-ai-studio-таас-авсан-түлхүүр
 
 ## Кэш давхарга (Redis)
 
+**String cache (JSON):**
+
 | Нөөц | Кэш түлхүүр | TTL |
 |---|---|---|
 | Жор | `borgol:recipe:{id}` | 300с |
-| Хэрэглэгч | `borgol:user:{id}` | 600с |
 | Feed | `borgol:feed:userId:{id}` | 60с |
 | Ойролцоо кафе | `borgol:cafes:nearby:{lat}:{lng}` | 120с |
+
+**Өгөгдлийн бүтцийн Redis операцууд:**
+
+| Бүтэц | Түлхүүр | Зориулалт |
+|---|---|---|
+| Hash | `borgol:user:{id}` | Хэрэглэгчийн профайлын 8 талбарыг тус тусад шинэчлэх — 600с TTL |
+| Sorted Set | `borgol:trending` | Хэштэгийн оноо — жор үүсгэх/устгахад `ZINCRBY`, дээд 20-ийг `ZREVRANGE` |
+| INCR+EXPIRE | `borgol:ratelimit:{ip}` | Rate limit — 5 оролдлого / 60с тутамд IP тус бүрт |
+| Pub/Sub | `borgol:notify:{userId}` | Бодит цагийн мэдэгдэл — `PUBLISH` → SSE fan-out → browser |
 
 Redis `redis-cache-a` нь Railway-н хувийн дотоод сүлжээнд ажиллана — гадна сүлжээнд нээлттэй биш.
 
@@ -297,6 +592,8 @@ SMTP тохиргоо: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `
 | Repository / DAO | BorgolRepository | SQL-г сервисээс тусгаарлана |
 | Service Layer | BorgolService | Бизнесийн дүрэм нэг газарт |
 | Front Controller | BorgolApiServer | Бүх HTTP хүсэлтийг нэг цэгт хүлээнэ |
+| API Gateway | ApiGateway | CORS, rate limiting, auth шийдвэрлэлт нэг давхаргад төвлөрнэ |
+| Publisher–Subscriber | RedisEventBus | Redis Pub/Sub-ээр мэдэгдэл нийтлэн, SSE-ээр хэрэглэгч тус бүрт хүргэнэ |
 | Proxy / Adapter | SoapAuthClient | JSON сервис SOAP-г шууд мэдэхгүйгээр ашиглана |
 | Observer | MenuChangeObserver | Цэсийн өөрчлөлтийг сонсогч |
 | Strategy | Main.java (MODE=web/desktop) | Нэг codebase, хоёр горимд ажиллана |
