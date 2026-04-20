@@ -42,7 +42,7 @@ jobs:
 
   # ── Job 2: Build (SOAP auth service) ────────────────────────────────────────
   build-soap-service:
-    name: Build soap-auth-service
+    name: Build auth
     runs-on: ubuntu-latest
 
     steps:
@@ -57,5 +57,5 @@ jobs:
           cache: maven
 
       - name: Build SOAP service
-        working-directory: soap-auth-service
+        working-directory: auth
         run: mvn package -DskipTests -B -q

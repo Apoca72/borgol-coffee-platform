@@ -511,7 +511,7 @@ PostgreSQL, Railway дээр deploy хийгдсэн. Schema нь startup бүр
 ### 1. SOAP Auth Service (эхлэж эхлүүлнэ)
 
 ```bash
-cd soap-auth-service
+cd auth
 mvn spring-boot:run
 ```
 
