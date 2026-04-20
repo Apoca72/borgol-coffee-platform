@@ -12,7 +12,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.example</groupId>
+    <groupId>borgol</groupId>
     <artifactId>soap-auth-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>borgol-auth</name>
