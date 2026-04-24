@@ -205,7 +205,7 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
 .cafe-name{font-size:16px;font-weight:700;margin-bottom:4px}
 .cafe-addr{font-size:12px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:4px}
 .stars{display:flex;align-items:center;gap:2px;font-size:14px}
-.star{color:#ddd}
+.star{color:var(--border)}
 .star.on{color:#F5A623}
 .star.half{color:#F5A623;opacity:.6}
 .rating-text{font-size:12px;color:var(--muted);margin-left:6px}
@@ -221,6 +221,16 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
 .dt-TEA        {background:#B8D4B0;color:#1B5E20}
 .dt-SMOOTHIE   {background:#D0B8D8;color:#4A1580}
 .dt-OTHER      {background:#D8D0C8;color:#444}
+body.dark .dt-ESPRESSO   {background:#3D1505;color:#C8AFA0}
+body.dark .dt-LATTE      {background:#3A1A08;color:#E8D5C0}
+body.dark .dt-CAPPUCCINO {background:#301208;color:#D4BCA8}
+body.dark .dt-AMERICANO  {background:#280C04;color:#B8A090}
+body.dark .dt-COLD_BREW  {background:#062030;color:#A8C4D0}
+body.dark .dt-POUR_OVER  {background:#281800;color:#D0C090}
+body.dark .dt-FRENCH_PRESS{background:#201200;color:#C4B080}
+body.dark .dt-TEA        {background:#0A2A10;color:#B8D4B0}
+body.dark .dt-SMOOTHIE   {background:#1E0830;color:#D0B8D8}
+body.dark .dt-OTHER      {background:#282420;color:#D8D0C8}
 
 /* ── Filters ──────────────────────────────────────────────────────────────── */
 .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;align-items:center}
@@ -243,7 +253,7 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
 .feed-body{padding:12px 16px}
 .feed-title{font-size:16px;font-weight:700;margin-bottom:4px;cursor:pointer;transition:.15s}
 .feed-title:hover{color:var(--caramel)}
-.feed-desc{font-size:14px;color:#555;line-height:1.6;margin-bottom:8px}
+.feed-desc{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:8px}
 .feed-footer{display:flex;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid var(--border)}
 
 /* ── Modal ───────────────────────────────────────────────────────────────── */
@@ -314,7 +324,11 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
 .level-ENTHUSIAST{background:#F3E5F5;color:#6A1B9A}
 .level-BARISTA   {background:#FFF3E0;color:#E65100}
 .level-EXPERT    {background:#FBE9E7;color:#BF360C}
-.profile-bio{font-size:14px;color:#555;line-height:1.6;margin-bottom:12px}
+body.dark .level-BEGINNER  {background:#0D2540;color:#90B8E8}
+body.dark .level-ENTHUSIAST{background:#2A1040;color:#C090E0}
+body.dark .level-BARISTA   {background:#2A1800;color:#F0A060}
+body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
+.profile-bio{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:12px}
 .profile-stats{display:flex;gap:24px;flex-wrap:wrap}
 .stat-item{text-align:center;cursor:pointer}
 .stat-item:hover .stat-num{color:var(--caramel)}
@@ -339,7 +353,7 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
 .comment-body{flex:1}
 .comment-author{font-size:13px;font-weight:700;margin-bottom:2px;cursor:pointer;transition:.15s}
 .comment-author:hover{color:var(--caramel)}
-.comment-text{font-size:13px;color:#444;line-height:1.6}
+.comment-text{font-size:13px;color:var(--text);line-height:1.6}
 .comment-time{font-size:11px;color:var(--muted);margin-top:2px}
 .comment-input{display:flex;gap:8px;margin-top:16px}
 .comment-input input{flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;outline:none;font-family:inherit}
@@ -407,7 +421,7 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
 .guide-card-inner{padding:22px}
 .guide-icon{font-size:38px;margin-bottom:12px}
 .guide-name{font-size:16px;font-weight:700;margin-bottom:4px}
-.guide-desc{font-size:13px;color:#555;line-height:1.5;margin-bottom:12px}
+.guide-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:12px}
 .guide-meta{display:flex;gap:8px;flex-wrap:wrap}
 .guide-pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;background:var(--cream);color:var(--muted)}
 .guide-detail-header{padding:24px 24px 0}
@@ -424,9 +438,9 @@ h1,h2,h3,.section-title,.modal-title,.detail-title,.auth-hero h1,
 .article-icon{font-size:34px;margin-bottom:10px}
 .article-cat{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--caramel);margin-bottom:4px}
 .article-title{font-size:15px;font-weight:700;margin-bottom:6px;line-height:1.35}
-.article-preview{font-size:13px;color:#666;line-height:1.5;margin-bottom:10px}
+.article-preview{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:10px}
 .article-footer{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted)}
-.article-content{padding:0 24px 24px;font-size:14px;line-height:1.8;color:#333}
+.article-content{padding:0 24px 24px;font-size:14px;line-height:1.8;color:var(--text)}
 .article-content h2{font-size:16px;font-weight:700;color:var(--roast);margin:20px 0 8px;font-family:var(--font-serif)}
 .article-content p{margin-bottom:12px}
 
@@ -2566,8 +2580,11 @@ function renderJournalGrid() {
         </div>
       </div>
       ${e.notes?`<div class="journal-notes">${esc(e.notes)}</div>`:''}
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0 0;border-top:1px solid var(--border);margin-top:8px;font-size:11px;color:var(--muted)">
-        <span>${timeAgo(e.createdAt)}</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0 0;border-top:1px solid var(--border);margin-top:8px">
+        <div style="display:flex;align-items:center;gap:5px;background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:3px 9px">
+          <span style="font-size:12px">📅</span>
+          <span style="font-size:11px;font-weight:700;color:var(--muted)" title="${e.createdAt ? new Date(e.createdAt).toLocaleString() : ''}">${timeAgo(e.createdAt)}</span>
+        </div>
         <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
           <button class="btn btn-sm btn-secondary" style="padding:3px 8px;font-size:11px" onclick="openEditJournal(${e.id})">Edit</button>
           <button class="btn btn-sm btn-danger" style="padding:3px 8px;font-size:11px" onclick="deleteJournalEntry(${e.id})">Del</button>
@@ -2700,8 +2717,15 @@ function openJournalDetail(id) {
         <div class="radar-wrap">${buildRadarSVG(vals, 220, true)}</div>
       </div>
     </div>
-    ${e.notes?`<div class="section-label">Tasting Notes</div><p style="font-size:14px;line-height:1.7;color:#444;margin-top:8px">${esc(e.notes)}</p>`:''}
-    <div style="font-size:11px;color:var(--muted);margin-top:16px">Logged ${timeAgo(e.createdAt)}</div>`;
+    ${e.notes?`<div class="section-label">Tasting Notes</div><p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px">${esc(e.notes)}</p>`:''}
+    <div style="display:flex;align-items:center;gap:8px;margin-top:20px;padding-top:14px;border-top:1px solid var(--border)">
+      <span style="font-size:16px">📅</span>
+      <div>
+        <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Added</div>
+        <div style="font-size:14px;font-weight:700;color:var(--roast)">${e.createdAt ? new Date(e.createdAt).toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}) : '—'}</div>
+        <div style="font-size:11px;color:var(--muted)">${e.createdAt ? new Date(e.createdAt).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}) : ''} · ${timeAgo(e.createdAt)}</div>
+      </div>
+    </div>`;
   openModal('journal-detail-modal');
 }
 
