@@ -49,7 +49,7 @@ public class RedisClient {
         config.setTestOnBorrow(true);
 
         if (password != null && !password.isBlank()) {
-            // Нууц үгтэй Redis — Railway production горим
+            // Нууц үгтэй Redis — cloud production горим (Render, etc.)
             pool = new JedisPool(config, host, port, 2000, password);
         } else {
             // Нууц үггүй Redis — локал тест горим

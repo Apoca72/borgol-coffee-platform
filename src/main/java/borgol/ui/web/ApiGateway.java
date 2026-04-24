@@ -57,11 +57,17 @@ public class ApiGateway {
      * BorgolApiServer конструктороос нэг удаа дуудагдана.
      */
     public void registerFilters(Javalin app) {
-        // 1. CORS — бүх endpoint-д
+        // 1. CORS + Security headers — бүх endpoint-д
         app.before(ctx -> {
             ctx.header("Access-Control-Allow-Origin",  "*");
             ctx.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
             ctx.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            // Prevent MIME-type sniffing
+            ctx.header("X-Content-Type-Options", "nosniff");
+            // Deny framing — clickjacking protection
+            ctx.header("X-Frame-Options", "DENY");
+            // Limit referrer info sent to third parties
+            ctx.header("Referrer-Policy", "strict-origin-when-cross-origin");
         });
         app.options("/*", ctx -> ctx.status(200));
 
@@ -73,6 +79,21 @@ public class ApiGateway {
 
         // 3. Хүсэлт аудит лог
         app.before(ctx -> log.debug("[GW] {} {}", ctx.method(), ctx.path()));
+    }
+
+    // ── SOAP proxy — subnet-ийн цорын ганц нэвтрэх цэг ─────────────────────
+    // BorgolApiServer нь SoapAuthClient-г шууд ашиглахгүй — gateway дамжина.
+
+    /** Delegates register to the SOAP auth service (private-subnet boundary). */
+    public borgol.infrastructure.security.SoapAuthClient.AuthResult soapRegister(
+            String username, String email, String password) {
+        return soap.register(username, email, password);
+    }
+
+    /** Delegates login to the SOAP auth service (private-subnet boundary). */
+    public borgol.infrastructure.security.SoapAuthClient.AuthResult soapLogin(
+            String email, String password) {
+        return soap.login(email, password);
     }
 
     // ── Нэвтрэлт баталгаажуулалт ─────────────────────────────────────────────

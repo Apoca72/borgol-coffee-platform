@@ -29,10 +29,17 @@ import java.util.Map;
  */
 public class JwtUtil {
 
-    // SECRET: production-д environment variable-аас уншина
-    // Одоо hardcode хийсэн — тестийн/боловсролын зорилгоор
-    private static final String SECRET      = "borgol-coffee-platform-jwt-secret-2026-num";
+    // SECRET: JWT_SECRET env var-аас уншина; тест горимд dev default ашиглана.
+    // Production-д заавал JWT_SECRET тохируулах шаардлагатай.
+    private static final String SECRET = resolveSecret();
     private static final long   EXPIRY_SECS = 86400L * 7; // 7 хоног (секундаар)
+
+    private static String resolveSecret() {
+        String env = System.getenv("JWT_SECRET");
+        if (env != null && !env.isBlank()) return env;
+        System.err.println("[JWT] WARNING: JWT_SECRET env var not set — using insecure dev default");
+        return "borgol-coffee-platform-jwt-secret-2026-num";
+    }
 
     // ── Токен үүсгэх ──────────────────────────────────────────────────────────
 

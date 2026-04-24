@@ -1,6 +1,7 @@
 package borgol.infrastructure.config;
 
 import java.io.InputStream;
+import java.net.URI;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -30,23 +31,29 @@ public class DatabaseConnection {
         } catch (Exception ignored) {}
 
         // ── Resolve connection details (priority order) ───────────────────────
-        // 1. DATABASE_URL — Railway PostgreSQL plugin sets this automatically
+        // 1. DATABASE_URL — set by Render/cloud PostgreSQL add-ons automatically
         //    format: postgresql://user:password@host:port/dbname
         // 2. DB_URL + DB_USER + DB_PASSWORD — manual env vars
         // 3. database.properties — local / Eclipse
         // 4. in-memory H2 — last resort fallback
         String dbUrl, dbUser, dbPass, dbDriver;
 
-        String railwayUrl = System.getenv("DATABASE_URL");
-        if (railwayUrl != null && !railwayUrl.isBlank()) {
-            // Parse postgresql://user:password@host:port/dbname
-            // → jdbc:postgresql://host:port/dbname
-            String stripped = railwayUrl.replaceFirst("^postgresql://", "");
-            String userInfo  = stripped.substring(0, stripped.indexOf('@'));
-            String hostAndDb = stripped.substring(stripped.indexOf('@') + 1);
-            dbUser   = userInfo.contains(":") ? userInfo.split(":", 2)[0] : userInfo;
-            dbPass   = userInfo.contains(":") ? userInfo.split(":", 2)[1] : "";
-            dbUrl    = "jdbc:postgresql://" + hostAndDb;
+        String databaseUrl = System.getenv("DATABASE_URL");
+        if (databaseUrl != null && !databaseUrl.isBlank()) {
+            // Parse postgresql://user:password@host:port/dbname via java.net.URI
+            // so that percent-encoded credentials (e.g. p%40ss) are decoded correctly
+            // before being handed to the JDBC driver.
+            try {
+                URI uri = new URI(databaseUrl.replaceFirst("^postgresql://", "borgol-pg://"));
+                String userInfo = uri.getUserInfo(); // already percent-decoded by URI
+                dbUser   = userInfo != null && userInfo.contains(":")
+                           ? userInfo.split(":", 2)[0] : (userInfo != null ? userInfo : "");
+                dbPass   = userInfo != null && userInfo.contains(":")
+                           ? userInfo.split(":", 2)[1] : "";
+                dbUrl    = "jdbc:postgresql://" + uri.getHost() + ":" + uri.getPort() + uri.getPath();
+            } catch (Exception e) {
+                throw new RuntimeException("Invalid DATABASE_URL: " + databaseUrl, e);
+            }
             dbDriver = "org.postgresql.Driver";
         } else {
             dbUrl    = System.getenv().getOrDefault("DB_URL",

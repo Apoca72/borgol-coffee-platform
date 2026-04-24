@@ -86,9 +86,9 @@ public class Main {
         // ════════════════════════════════════════════════════════
         // Загвар: Strategy — орчны хувьсагчаар горимыг сонгоно
         // ════════════════════════════════════════════════════════
-        // MODE=web  → Railway/Docker cloud deployment (headless)
+        // MODE=web  → Render/Docker cloud deployment (headless)
         // MODE=desktop → орон нутгийн JavaFX GUI горим
-        // PORT → Railway автоматаар тохируулна, default: 7000
+        // PORT → Render автоматаар тохируулна, default: 7000
         String mode = System.getenv().getOrDefault("MODE",
                       System.getProperty("mode", "desktop"));
 

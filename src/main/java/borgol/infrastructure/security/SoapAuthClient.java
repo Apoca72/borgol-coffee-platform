@@ -36,8 +36,8 @@ public class SoapAuthClient {
      * SOAP service base URL — configurable via environment variable.
      *
      * Local development : SOAP_SERVICE_URL not set → http://localhost:8081/ws
-     * Railway deployment: set SOAP_SERVICE_URL=https://your-soap-service.up.railway.app
-     *                     in the cafe-project service's Railway environment variables.
+     * Render deployment : set SOAP_SERVICE_URL=https://your-soap-service.onrender.com
+     *                     in the borgol-api service's Render environment variables.
      */
     private final String soapUrl;
     // NAMESPACE → SOAP XML namespace, SOAP сервисийн конфигтой таарах ёстой

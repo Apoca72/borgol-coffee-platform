@@ -1,0 +1,93 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  Borgol Coffee Platform — Render Blueprint
+#  https://render.com/docs/blueprint-spec
+#
+#  Services defined here:
+#    borgol-api    — Javalin REST API (Docker, web mode)
+#    borgol-cache  — Redis (rate limiting + Pub/Sub notifications)
+#    borgol-db     — PostgreSQL (primary datastore)
+#
+#  Deploy: connect this repo to Render and it provisions everything
+#  automatically from this file.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Web API ────────────────────────────────────────────────────────────────
+  - type: web
+    name: borgol-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    plan: free
+    autoDeploy: true
+    envVars:
+      # Start in web (Javalin) mode — skips JavaFX
+      - key: MODE
+        value: web
+
+      # Render injects PORT; 7000 is the in-container default
+      - key: PORT
+        value: "7000"
+
+      # PostgreSQL — wired automatically from borgol-db
+      - key: DATABASE_URL
+        fromDatabase:
+          name: borgol-db
+          property: connectionString
+
+      # Redis — wired automatically from borgol-cache
+      - key: REDIS_HOST
+        fromService:
+          type: redis
+          name: borgol-cache
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: redis
+          name: borgol-cache
+          property: port
+      - key: REDIS_PASSWORD
+        fromService:
+          type: redis
+          name: borgol-cache
+          property: password
+
+      # JWT signing secret — Render generates a secure random value once
+      - key: JWT_SECRET
+        generateValue: true
+
+      # Bean AI chatbot (Google Gemini) — set your key in the Render dashboard
+      - key: GEMINI_API_KEY
+        value: ""
+
+      # SOAP auth service — leave blank to use local JWT fallback
+      - key: SOAP_SERVICE_URL
+        value: ""
+
+      # SMTP email — fill in after deploy if needed
+      - key: SMTP_HOST
+        value: ""
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        value: ""
+      - key: SMTP_PASSWORD
+        value: ""
+      - key: EMAIL_FROM
+        value: ""
+
+  # ── Redis ──────────────────────────────────────────────────────────────────
+  - type: redis
+    name: borgol-cache
+    plan: free
+    maxmemoryPolicy: noeviction
+
+# ── PostgreSQL ─────────────────────────────────────────────────────────────
+databases:
+  - name: borgol-db
+    databaseName: borgoldb
+    user: borgol
+    plan: free
+    # ipAllowList: []  — uncomment to restrict DB access to internal traffic only

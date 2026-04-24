@@ -12,6 +12,7 @@ import borgol.core.application.MenuService;
 import borgol.core.domain.MenuCategory;
 import borgol.infrastructure.messaging.RedisEventBus;
 import borgol.infrastructure.security.SoapAuthClient;
+// SoapAuthClient is imported only for its result record types — instantiation lives in ApiGateway
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -81,10 +82,8 @@ public class BorgolApiServer {
     private final BorgolService  borgol;       // бизнесийн логик
     private final MenuService    menuService;  // legacy цэсний сервис
     private final Javalin        app;          // Javalin/Jetty HTTP сервер
-    private final ApiGateway     gateway;      // нэвтрэлт, хурд хязгаарлалт, CORS
+    private final ApiGateway     gateway;      // нэвтрэлт, хурд хязгаарлалт, CORS, SOAP subnet
     private final RedisEventBus  eventBus;     // Pub/Sub SSE мэдэгдэл
-    // SOAP клиент — SOAP бүртгэл/нэвтрэх endpoint-уудад ашиглана
-    private final SoapAuthClient soapClient = new SoapAuthClient();
 
     public BorgolApiServer(BorgolService borgol, MenuService menuService,
                            ApiGateway gateway, RedisEventBus eventBus) {
@@ -120,7 +119,7 @@ public class BorgolApiServer {
     private void registerRoutes() {
         // Үндсэн хуудас руу дахин чиглүүлнэ
         app.get("/", ctx -> ctx.redirect("/index.html"));
-        // Railway health check — deployment амьд эсэхийг шалгах
+        // Health check — Render (and other platforms) use this to verify the service is up
         app.get("/health", ctx -> ctx.json(Map.of("status", "ok")));
 
         // ── Дотоод auth (SOAP унасан үед fallback болно) ────────────────────
@@ -264,9 +263,9 @@ public class BorgolApiServer {
     private void soapRegister(Context ctx) {
         var req = ctx.bodyAsClass(AuthReq.class);
 
-        // ── SOAP сервист бүртгэлийн хүсэлт илгээнэ ──────────────────────────
+        // ── ApiGateway дамжуулан SOAP сервист бүртгэлийн хүсэлт илгээнэ ────
         SoapAuthClient.AuthResult soapResult =
-                soapClient.register(req.username, req.email, req.password);
+                gateway.soapRegister(req.username, req.email, req.password);
 
         // SOAP сервис унасан эсэхийг мессежээр тодорхойлно
         boolean soapDown = soapResult.message() != null &&
@@ -305,9 +304,9 @@ public class BorgolApiServer {
     private void soapLogin(Context ctx) {
         var req = ctx.bodyAsClass(AuthReq.class);
 
-        // Delegate to SOAP service
+        // Delegate to SOAP service via ApiGateway (private subnet)
         SoapAuthClient.AuthResult soapResult =
-                soapClient.login(req.email, req.password);
+                gateway.soapLogin(req.email, req.password);
 
         if (!soapResult.success()) {
             // SOAP failed – try local auth as fallback

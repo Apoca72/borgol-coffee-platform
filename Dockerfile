@@ -1,6 +1,6 @@
 # ═══════════════════════════════════════════════════════════════
 #  Borgol Coffee Platform — JSON Service (Web Mode)
-#  Runs the Javalin REST API on Railway (no JavaFX / no display)
+#  Runs the Javalin REST API on Render (no JavaFX / no display)
 # ═══════════════════════════════════════════════════════════════
 
 FROM maven:3.9.6-eclipse-temurin-21-alpine
@@ -20,8 +20,9 @@ RUN mvn package -B -q -DskipTests -Dfile.encoding=UTF-8
 
 # ── 3. Runtime configuration ───────────────────────────────────
 # MODE=web  → starts Javalin REST server, skips JavaFX
-# PORT      → set automatically by Railway
-# SOAP_SERVICE_URL → set in Railway env vars after deploying soap-auth-service
+# PORT      → overridden at runtime by Render (default: 7000)
+# All other env vars (DATABASE_URL, REDIS_*, JWT_SECRET, etc.)
+# are injected by Render via render.yaml — no hardcoding needed
 ENV MODE=web
 ENV PORT=7000
 
