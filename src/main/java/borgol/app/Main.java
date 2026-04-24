@@ -133,7 +133,7 @@ public class Main {
 
     private static void seedBaseUsers(BorgolService svc) {
         // Demo users
-        var u1 = svc.register("coffee_master", "coffee@borgol.mn", "password123");
+        var u1 = svc.register("coffee_master", "that.u.sir.name@gmail.com", "Uya.5284");
         var u2 = svc.register("barista_sara",  "sara@borgol.mn",   "password123");
         var u3 = svc.register("tea_lover",     "tea@borgol.mn",    "password123");
 
