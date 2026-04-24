@@ -38,6 +38,7 @@ services:
           property: connectionString
 
       # Redis — wired automatically from borgol-cache
+      # Render only exposes host and port for Redis (no separate password property)
       - key: REDIS_HOST
         fromService:
           type: redis
@@ -48,11 +49,6 @@ services:
           type: redis
           name: borgol-cache
           property: port
-      - key: REDIS_PASSWORD
-        fromService:
-          type: redis
-          name: borgol-cache
-          property: password
 
       # JWT signing secret — Render generates a secure random value once
       - key: JWT_SECRET
@@ -90,4 +86,4 @@ databases:
     databaseName: borgoldb
     user: borgol
     plan: free
-    # ipAllowList: []  — uncomment to restrict DB access to internal traffic only
+    ipAllowList: []  # empty = only allow internal Render services
