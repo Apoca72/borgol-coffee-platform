@@ -79,6 +79,7 @@ services:
     name: borgol-cache
     plan: free
     maxmemoryPolicy: noeviction
+    ipAllowList: []  # empty = only allow internal Render services
 
 # ── PostgreSQL ─────────────────────────────────────────────────────────────
 databases:
