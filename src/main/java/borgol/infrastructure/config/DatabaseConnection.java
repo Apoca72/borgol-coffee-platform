@@ -50,7 +50,8 @@ public class DatabaseConnection {
                            ? userInfo.split(":", 2)[0] : (userInfo != null ? userInfo : "");
                 dbPass   = userInfo != null && userInfo.contains(":")
                            ? userInfo.split(":", 2)[1] : "";
-                dbUrl    = "jdbc:postgresql://" + uri.getHost() + ":" + uri.getPort() + uri.getPath();
+                String portPart = uri.getPort() != -1 ? ":" + uri.getPort() : "";
+                dbUrl    = "jdbc:postgresql://" + uri.getHost() + portPart + uri.getPath();
             } catch (Exception e) {
                 throw new RuntimeException("Invalid DATABASE_URL: " + databaseUrl, e);
             }
