@@ -1156,4 +1156,53 @@ public class BorgolService {
             u.getCreatedAt()
         );
     }
+
+    // ── Bean Bag Tracker ─────────────────────────────────────────────────────
+
+    public java.util.List<borgol.core.domain.BeanBag> getBeanBags(int userId) {
+        return repo.getBeanBags(userId);
+    }
+
+    public borgol.core.domain.BeanBag createBeanBag(int userId, String name, String roaster,
+            String origin, String roastLevel, String roastDate,
+            double remainingGrams, int rating, String notes) {
+        borgol.core.domain.BeanBag b = new borgol.core.domain.BeanBag();
+        b.setUserId(userId);
+        b.setName(name);
+        b.setRoaster(roaster != null ? roaster : "");
+        b.setOrigin(origin != null ? origin : "");
+        b.setRoastLevel(roastLevel != null ? roastLevel : "MEDIUM");
+        b.setRoastDate(roastDate);
+        b.setRemainingGrams(remainingGrams);
+        b.setRating(Math.max(0, Math.min(5, rating)));
+        b.setNotes(notes != null ? notes : "");
+        return repo.createBeanBag(b);
+    }
+
+    public borgol.core.domain.BeanBag updateBeanBag(int id, int userId, String name,
+            String roaster, String origin, String roastLevel, String roastDate,
+            double remainingGrams, int rating, String notes) {
+        borgol.core.domain.BeanBag b = new borgol.core.domain.BeanBag();
+        b.setId(id);
+        b.setUserId(userId);
+        b.setName(name);
+        b.setRoaster(roaster != null ? roaster : "");
+        b.setOrigin(origin != null ? origin : "");
+        b.setRoastLevel(roastLevel != null ? roastLevel : "MEDIUM");
+        b.setRoastDate(roastDate);
+        b.setRemainingGrams(remainingGrams);
+        b.setRating(Math.max(0, Math.min(5, rating)));
+        b.setNotes(notes != null ? notes : "");
+        return repo.updateBeanBag(b);
+    }
+
+    public void deleteBeanBag(int id, int userId) {
+        repo.deleteBeanBag(id, userId);
+    }
+
+    // ── Journal Stats ────────────────────────────────────────────────────────
+
+    public java.util.Map<String, Object> getJournalStats(int userId) {
+        return repo.getJournalStats(userId);
+    }
 }

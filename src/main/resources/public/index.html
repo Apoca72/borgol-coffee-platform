@@ -7,6 +7,8 @@
 <!-- Leaflet.js — OpenStreetMap tiles, no API key required -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Chart.js — brew stats charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 /* ── Google Fonts ────────────────────────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
@@ -454,6 +456,22 @@ body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
 .rating-slider{flex:1;accent-color:var(--caramel)}
 .rating-val{font-size:13px;font-weight:800;color:var(--roast);width:20px;text-align:right;flex-shrink:0}
 
+/* ── Ratio Calculator ──────────────────────────────────────────────────────── */
+.ratio-calc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 22px;margin-bottom:20px}
+.ratio-calc-title{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px}
+.ratio-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.ratio-lbl{font-size:12px;font-weight:700;color:var(--muted);width:52px;flex-shrink:0}
+.ratio-slider{flex:1;accent-color:var(--caramel)}
+.ratio-val{font-size:14px;font-weight:800;color:var(--roast);width:54px;text-align:right}
+.ratio-result{display:flex;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);flex-wrap:wrap}
+.ratio-chip{background:var(--cream);border:1px solid var(--border);border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;color:var(--roast);text-align:center}
+.ratio-chip span{display:block;font-size:10px;font-weight:400;color:var(--muted);margin-top:1px}
+
+/* ── Tab bar ──────────────────────────────────────────────────────────────── */
+.tab-bar{display:flex;gap:6px;flex-wrap:wrap}
+.tab-btn{background:none;border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .2s}
+.tab-btn.active,.tab-btn:hover{background:var(--caramel);border-color:var(--caramel);color:#fff}
+
 /* ── Journal entry cards ─────────────────────────────────────────────────── */
 .journal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
 .journal-card{padding:16px;cursor:pointer}
@@ -615,6 +633,7 @@ body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
     <button class="nav-link" onclick="showPage('cafes')" data-i18n="cafes">☕ Cafes</button>
     <button class="nav-link" onclick="showPage('explore')" data-i18n="explore">🔭 Explore</button>
     <button class="nav-link" onclick="showPage('journal')" data-i18n="journal">📓 Journal</button>
+    <button class="nav-link" onclick="showPage('beans')">🫘 My Beans</button>
     <button class="nav-link" onclick="showPage('learn')" data-i18n="learn">🎓 Learn</button>
     <button class="nav-link" onclick="showPage('map')" data-i18n="map">🗺️ Map</button>
     <button class="nav-link" onclick="showPage('timer')" data-i18n="timer">⏱️ Timer</button>
@@ -664,6 +683,7 @@ body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('cafes')" data-i18n="cafes">☕ Cafes</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('explore')" data-i18n="explore">🔭 Explore</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('journal')" data-i18n="journal">📓 Journal</button>
+  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('beans')">🫘 My Beans</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('learn')" data-i18n="learn">🎓 Learn</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('map')" data-i18n="map">🗺️ Map</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('timer')">⏱️ Brew Timer</button>
@@ -797,7 +817,7 @@ body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
 <!-- JOURNAL PAGE -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <div class="page" id="page-journal">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
     <div class="section-title">📓 My Brew Journal</div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-secondary" onclick="exportJournalPDF()" id="btn-export-journal" title="Export as PDF" data-i18n="exportPDF">📄 Export PDF</button>
@@ -805,8 +825,68 @@ body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
       <button class="btn btn-primary" onclick="openNewJournalModal()" id="btn-new-journal" data-i18n="newEntry">+ New Entry</button>
     </div>
   </div>
+  <!-- Journal sub-tabs: Entries / Stats -->
+  <div class="tab-bar" style="margin-bottom:20px">
+    <button class="tab-btn active" id="journal-tab-entries" onclick="switchJournalTab('entries',this)">Entries</button>
+    <button class="tab-btn" id="journal-tab-stats" onclick="switchJournalTab('stats',this)">📊 Stats</button>
+  </div>
+  <!-- Ratio Calculator (shown on Entries tab) -->
+  <div class="ratio-calc" id="ratio-calc">
+    <div class="ratio-calc-title">⚖️ Brew Ratio Calculator</div>
+    <div class="ratio-row">
+      <span class="ratio-lbl">Dose</span>
+      <input class="ratio-slider" type="range" id="rc-dose" min="8" max="40" value="18" step="0.5" oninput="rcUpdate()">
+      <span class="ratio-val"><span id="rc-dose-val">18</span>g</span>
+    </div>
+    <div class="ratio-row">
+      <span class="ratio-lbl">Ratio</span>
+      <input class="ratio-slider" type="range" id="rc-ratio" min="1" max="20" value="2" step="0.1" oninput="rcUpdate()">
+      <span class="ratio-val">1:<span id="rc-ratio-val">2.0</span></span>
+    </div>
+    <div class="ratio-result" id="rc-result"></div>
+  </div>
+  <!-- Stats panel (shown on Stats tab) -->
+  <div id="journal-stats-panel" style="display:none">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:24px">
+      <div class="card" style="padding:18px 24px;flex:1;min-width:140px;text-align:center">
+        <div style="font-size:28px;font-weight:800;color:var(--roast)" id="stat-total">—</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Total Brews</div>
+      </div>
+      <div class="card" style="padding:18px 24px;flex:1;min-width:140px;text-align:center">
+        <div style="font-size:28px;font-weight:800;color:var(--caramel)" id="stat-avg">—</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Avg Rating</div>
+      </div>
+      <div class="card" style="padding:18px 24px;flex:1;min-width:140px;text-align:center">
+        <div style="font-size:18px;font-weight:800;color:var(--roast);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="stat-top-method">—</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Top Method</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div class="card" style="padding:18px">
+        <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:12px">Brew Methods</div>
+        <canvas id="chart-methods" height="200"></canvas>
+      </div>
+      <div class="card" style="padding:18px">
+        <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:12px">Monthly Avg Rating</div>
+        <canvas id="chart-monthly" height="200"></canvas>
+      </div>
+    </div>
+  </div>
   <div id="journal-grid" class="journal-grid">
     <div class="loading"><div class="spinner"></div> Loading journal…</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- BEANS PAGE -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-beans">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div class="section-title">🫘 My Bean Collection</div>
+    <button class="btn btn-primary" onclick="openNewBeanModal()">+ Add Bean</button>
+  </div>
+  <div id="beans-grid" class="recipe-grid">
+    <div class="loading"><div class="spinner"></div> Loading beans…</div>
   </div>
 </div>
 
@@ -1353,6 +1433,47 @@ body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
   </div>
 </div>
 
+<!-- Bean Bag Modal -->
+<div class="modal-overlay" id="bean-modal">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <div class="modal-title" id="bean-modal-title">🫘 Add Bean</div>
+      <button class="modal-close" onclick="closeModal('bean-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="bean-edit-id"/>
+      <div class="form-row">
+        <div class="field"><label>Bean Name *</label><input id="bean-name" placeholder="e.g. Yirgacheffe Natural"/></div>
+        <div class="field"><label>Roaster</label><input id="bean-roaster" placeholder="e.g. Blue Bottle"/></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Origin</label><input id="bean-origin" placeholder="e.g. Ethiopia"/></div>
+        <div class="field"><label>Roast Level</label>
+          <select id="bean-roast-level">
+            <option value="LIGHT">Light</option>
+            <option value="MEDIUM" selected>Medium</option>
+            <option value="MEDIUM-DARK">Medium-Dark</option>
+            <option value="DARK">Dark</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Roast Date</label><input type="date" id="bean-roast-date"/></div>
+        <div class="field"><label>Remaining (g)</label><input type="number" id="bean-remaining" value="250" min="0" max="5000"/></div>
+      </div>
+      <div class="field"><label>Your Rating (0=unrated)</label>
+        <input type="range" id="bean-rating" min="0" max="5" value="0" step="1" oninput="document.getElementById('bean-rating-val').textContent=this.value"/>
+        <span id="bean-rating-val">0</span>/5
+      </div>
+      <div class="field"><label>Notes</label><textarea id="bean-notes" rows="2" placeholder="Tasting notes, where you got it…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('bean-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBeanBag()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -1426,8 +1547,18 @@ function applyTheme(dark) {
 function toggleDarkMode() { applyTheme(!document.body.classList.contains('dark')); }
 (function initTheme() {
   const saved = localStorage.getItem('borgol_dark');
-  if (saved !== null) applyTheme(saved === '1');
-  // else: CSS @media query auto-applies, no JS class needed
+  if (saved !== null) {
+    applyTheme(saved === '1');
+  } else {
+    // Follow system preference and keep JS state in sync
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(prefersDark);
+    // Listen for system changes (only when user hasn't manually set a preference)
+    window.matchMedia('(prefers-color-scheme: dark)')
+      .addEventListener('change', e => {
+        if (localStorage.getItem('borgol_dark') === null) applyTheme(e.matches);
+      });
+  }
 })();
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -1562,6 +1693,7 @@ function showPage(name, userId=null) {
   else if (name === 'cafes')   loadCafes();
   else if (name === 'explore') loadTopUsers();
   else if (name === 'journal') loadJournal();
+  else if (name === 'beans')   { if (TOKEN) loadBeans(); else openModal('login-modal'); }
   else if (name === 'learn')   loadLearn();
   else if (name === 'map')     loadMap();
   else if (name === 'profile') loadProfile(userId || (ME && ME.id));
@@ -2553,6 +2685,7 @@ async function loadJournal() {
   try {
     JOURNAL_ENTRIES = await api('/api/journal');
     renderJournalGrid();
+    rcUpdate();
   } catch(e) { grid.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-msg">${esc(e.message)}</div></div>`; }
 }
 
@@ -3157,6 +3290,176 @@ function exportJournalCSV() {
   a.click();
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
   toast('CSV downloaded!');
+}
+
+// ── Brew Ratio Calculator ──────────────────────────────────────────────────────
+function rcUpdate() {
+  const dose  = parseFloat(document.getElementById('rc-dose').value);
+  const ratio = parseFloat(document.getElementById('rc-ratio').value);
+  const yield_ = +(dose * ratio).toFixed(1);
+  const tds    = +(1.35 / ratio * 100).toFixed(2);
+  document.getElementById('rc-dose-val').textContent  = dose;
+  document.getElementById('rc-ratio-val').textContent = ratio.toFixed(1);
+  document.getElementById('rc-result').innerHTML = `
+    <div class="ratio-chip">${yield_}g<span>Yield / Water</span></div>
+    <div class="ratio-chip">${(dose+yield_).toFixed(1)}g<span>Total Weight</span></div>
+    <div class="ratio-chip">~${tds}%<span>Est. TDS</span></div>
+    <div class="ratio-chip">${ratio >= 15 ? 'Filter' : ratio >= 8 ? 'Espresso+' : 'Espresso'}<span>Style</span></div>
+  `;
+}
+
+// ── Journal Tab switcher ───────────────────────────────────────────────────────
+let _methodChart = null, _monthlyChart = null;
+
+function switchJournalTab(tab, btn) {
+  document.querySelectorAll('#page-journal .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const isStats = tab === 'stats';
+  document.getElementById('ratio-calc').style.display           = isStats ? 'none' : '';
+  document.getElementById('journal-grid').style.display         = isStats ? 'none' : '';
+  document.getElementById('journal-stats-panel').style.display  = isStats ? '' : 'none';
+  if (isStats) loadJournalStats();
+}
+
+async function loadJournalStats() {
+  try {
+    const s = await api('/api/journal/stats');
+    document.getElementById('stat-total').textContent = s.totalEntries || 0;
+    document.getElementById('stat-avg').textContent   = s.avgRating ? s.avgRating.toFixed(1) : '—';
+    document.getElementById('stat-top-method').textContent =
+      s.brewMethods && s.brewMethods.length ? s.brewMethods[0].method : '—';
+    if (_methodChart) _methodChart.destroy();
+    _methodChart = new Chart(document.getElementById('chart-methods'), {
+      type: 'bar',
+      data: {
+        labels: (s.brewMethods||[]).map(m => m.method),
+        datasets: [{ data: (s.brewMethods||[]).map(m => m.count),
+          backgroundColor: '#CB8840', borderRadius: 6 }]
+      },
+      options: { plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1}}} }
+    });
+    if (_monthlyChart) _monthlyChart.destroy();
+    _monthlyChart = new Chart(document.getElementById('chart-monthly'), {
+      type: 'line',
+      data: {
+        labels: (s.monthly||[]).map(m => m.month),
+        datasets: [{ data: (s.monthly||[]).map(m => +m.avgRating.toFixed(2)),
+          borderColor: '#CB8840', backgroundColor: 'rgba(203,136,64,.12)',
+          fill: true, tension: 0.4, pointRadius: 4 }]
+      },
+      options: { plugins:{legend:{display:false}},
+        scales:{y:{beginAtZero:false,min:0,max:10,ticks:{stepSize:2}}} }
+    });
+  } catch(e) { console.error('Stats error', e); }
+}
+
+// ── Bean Bag Tracker ───────────────────────────────────────────────────────────
+let BEAN_BAGS = [];
+
+async function loadBeans() {
+  const grid = document.getElementById('beans-grid');
+  try {
+    BEAN_BAGS = await api('/api/beans');
+    renderBeanGrid();
+  } catch(e) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-msg">${esc(e.message)}</div></div>`;
+  }
+}
+
+function renderBeanGrid() {
+  const grid = document.getElementById('beans-grid');
+  if (!BEAN_BAGS.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🫘</div><div class="empty-msg">No beans logged yet. Add your first bag!</div><button class="btn btn-primary" onclick="openNewBeanModal()">+ Add Bean</button></div>`;
+    return;
+  }
+  const roastColors = {LIGHT:'#F0E0C0',MEDIUM:'#C8904A','MEDIUM-DARK':'#8B5020',DARK:'#3D1505'};
+  grid.innerHTML = BEAN_BAGS.map(b => `
+    <div class="card card-hover" style="padding:16px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:36px;height:36px;border-radius:50%;background:${roastColors[b.roastLevel]||'#C8904A'};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🫘</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.name)}</div>
+          <div style="font-size:11px;color:var(--muted)">${esc(b.roaster)}${b.roaster&&b.origin?' · ':''}${esc(b.origin)}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <span class="journal-tag">${esc(b.roastLevel)}</span>
+        ${b.roastDate?`<span class="journal-tag">🗓 ${b.roastDate}</span>`:''}
+        ${b.remainingGrams>0?`<span class="journal-tag" style="background:var(--cream);color:var(--caramel)">⚖️ ${b.remainingGrams}g left</span>`:'<span class="journal-tag" style="background:#FFEBEE;color:var(--danger)">Empty</span>'}
+        ${b.rating>0?`<span class="journal-tag" style="background:var(--cream);color:var(--caramel)">⭐ ${b.rating}/5</span>`:''}
+      </div>
+      ${b.notes?`<div style="font-size:12px;color:var(--muted);margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.notes)}</div>`:''}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--muted)">
+        <span>📅 ${timeAgo(b.createdAt)}</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-secondary" style="padding:3px 8px;font-size:11px" onclick="openEditBean(${b.id})">Edit</button>
+          <button class="btn btn-sm btn-danger"    style="padding:3px 8px;font-size:11px" onclick="deleteBeanBag(${b.id})">Del</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function openNewBeanModal() {
+  document.getElementById('bean-edit-id').value = '';
+  document.getElementById('bean-modal-title').textContent = '🫘 Add Bean';
+  ['name','roaster','origin','notes'].forEach(f => document.getElementById('bean-'+f).value = '');
+  document.getElementById('bean-roast-level').value = 'MEDIUM';
+  document.getElementById('bean-roast-date').value = '';
+  document.getElementById('bean-remaining').value = 250;
+  document.getElementById('bean-rating').value = 0;
+  document.getElementById('bean-rating-val').textContent = '0';
+  openModal('bean-modal');
+}
+
+function openEditBean(id) {
+  const b = BEAN_BAGS.find(x=>x.id===id);
+  if (!b) return;
+  document.getElementById('bean-edit-id').value = b.id;
+  document.getElementById('bean-modal-title').textContent = '✏️ Edit Bean';
+  document.getElementById('bean-name').value = b.name || '';
+  document.getElementById('bean-roaster').value = b.roaster || '';
+  document.getElementById('bean-origin').value = b.origin || '';
+  document.getElementById('bean-roast-level').value = b.roastLevel || 'MEDIUM';
+  document.getElementById('bean-roast-date').value = b.roastDate || '';
+  document.getElementById('bean-remaining').value = b.remainingGrams || 0;
+  document.getElementById('bean-rating').value = b.rating || 0;
+  document.getElementById('bean-rating-val').textContent = b.rating || 0;
+  document.getElementById('bean-notes').value = b.notes || '';
+  openModal('bean-modal');
+}
+
+async function saveBeanBag() {
+  const editId = document.getElementById('bean-edit-id').value;
+  const body = {
+    name:           document.getElementById('bean-name').value.trim(),
+    roaster:        document.getElementById('bean-roaster').value.trim(),
+    origin:         document.getElementById('bean-origin').value.trim(),
+    roastLevel:     document.getElementById('bean-roast-level').value,
+    roastDate:      document.getElementById('bean-roast-date').value,
+    remainingGrams: parseFloat(document.getElementById('bean-remaining').value) || 0,
+    rating:         parseInt(document.getElementById('bean-rating').value) || 0,
+    notes:          document.getElementById('bean-notes').value.trim(),
+  };
+  if (!body.name) { toast('Bean name is required', 'err'); return; }
+  try {
+    if (editId) {
+      await api(`/api/beans/${editId}`, 'PUT', body);
+    } else {
+      await api('/api/beans', 'POST', body);
+    }
+    closeModal('bean-modal');
+    await loadBeans();
+    toast('Bean saved!');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function deleteBeanBag(id) {
+  if (!confirm('Delete this bean entry?')) return;
+  try {
+    await api(`/api/beans/${id}`, 'DELETE');
+    await loadBeans();
+    toast('Deleted');
+  } catch(e) { toast(e.message, 'err'); }
 }
 
 // ── Save (Bookmark) ────────────────────────────────────────────────────────────

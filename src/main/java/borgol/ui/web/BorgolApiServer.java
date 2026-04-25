@@ -177,6 +177,15 @@ public class BorgolApiServer {
         app.post  ("/api/equipment",      this::addEquipment);
         app.delete("/api/equipment/{id}", this::deleteEquipment);
 
+        // Bean Bags
+        app.get   ("/api/beans",      this::getBeanBags);
+        app.post  ("/api/beans",      this::createBeanBag);
+        app.put   ("/api/beans/{id}", this::updateBeanBag);
+        app.delete("/api/beans/{id}", this::deleteBeanBag);
+
+        // Journal Stats
+        app.get("/api/journal/stats", this::getJournalStats);
+
         // Brew Guides
         app.get("/api/brew-guides",      this::getBrewGuides);
         app.get("/api/brew-guides/{id}", this::getBrewGuide);
@@ -718,6 +727,57 @@ public class BorgolApiServer {
         ctx.status(204);
     }
 
+    // ── Bean Bag handlers ─────────────────────────────────────────────────────
+
+    private void getBeanBags(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.getBeanBags(userId));
+    }
+
+    private void createBeanBag(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        try {
+            var req = ctx.bodyAsClass(BeanBagReq.class);
+            if (req.name == null || req.name.isBlank())
+                throw new IllegalArgumentException("Bean name is required");
+            ctx.status(201).json(borgol.createBeanBag(userId, req.name, req.roaster, req.origin,
+                req.roastLevel, req.roastDate, req.remainingGrams, req.rating, req.notes));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(err(e.getMessage()));
+        }
+    }
+
+    private void updateBeanBag(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        try {
+            var req = ctx.bodyAsClass(BeanBagReq.class);
+            if (req.name == null || req.name.isBlank())
+                throw new IllegalArgumentException("Bean name is required");
+            ctx.json(borgol.updateBeanBag(intParam(ctx, "id"), userId, req.name, req.roaster,
+                req.origin, req.roastLevel, req.roastDate, req.remainingGrams, req.rating, req.notes));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(err(e.getMessage()));
+        }
+    }
+
+    private void deleteBeanBag(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        borgol.deleteBeanBag(intParam(ctx, "id"), userId);
+        ctx.status(204);
+    }
+
+    // ── Journal Stats handler ─────────────────────────────────────────────────
+
+    private void getJournalStats(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.getJournalStats(userId));
+    }
+
     // ── Brew Guide handlers ───────────────────────────────────────────────────
 
     private void getBrewGuides(Context ctx) {
@@ -1166,6 +1226,17 @@ public class BorgolApiServer {
 
     public static class ResolveReq {
         public String action; // "resolved" or "dismissed"
+    }
+
+    public static class BeanBagReq {
+        public String name          = "";
+        public String roaster       = "";
+        public String origin        = "";
+        public String roastLevel    = "MEDIUM";
+        public String roastDate;
+        public double remainingGrams = 0;
+        public int    rating         = 0;
+        public String notes          = "";
     }
 
     public static class JournalReq {
