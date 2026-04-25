@@ -172,6 +172,12 @@ public class BorgolApiServer {
         app.put   ("/api/journal/{id}", this::updateJournalEntry);
         app.delete("/api/journal/{id}", this::deleteJournalEntry);
 
+        // My Beans
+        app.get   ("/api/beans",      this::getBeans);
+        app.post  ("/api/beans",      this::createBean);
+        app.put   ("/api/beans/{id}", this::updateBean);
+        app.delete("/api/beans/{id}", this::deleteBean);
+
         // Equipment
         app.get   ("/api/equipment",      this::getEquipment);
         app.post  ("/api/equipment",      this::addEquipment);
@@ -692,6 +698,41 @@ public class BorgolApiServer {
         }
     }
 
+    // ── My Beans handlers ────────────────────────────────────────────────────
+
+    private void getBeans(Context ctx) {
+        int userId = gateway.authenticate(ctx, true);
+        ctx.json(borgol.getUserBeans(userId));
+    }
+
+    private void createBean(Context ctx) {
+        int userId = gateway.authenticate(ctx, true);
+        try {
+            var req = ctx.bodyAsClass(UserBeanReq.class);
+            ctx.status(201).json(borgol.createUserBean(userId, req.name, req.origin,
+                req.roastLevel, req.weightG, req.purchaseDate, req.roastedDate, req.notes));
+        } catch (Exception e) { ctx.status(400).result(e.getMessage()); }
+    }
+
+    private void updateBean(Context ctx) {
+        int userId = gateway.authenticate(ctx, true);
+        int id = intParam(ctx, "id");
+        try {
+            var req = ctx.bodyAsClass(UserBeanReq.class);
+            ctx.json(borgol.updateUserBean(id, userId, req.name, req.origin,
+                req.roastLevel, req.weightG, req.purchaseDate, req.roastedDate, req.notes));
+        } catch (Exception e) { ctx.status(400).result(e.getMessage()); }
+    }
+
+    private void deleteBean(Context ctx) {
+        int userId = gateway.authenticate(ctx, true);
+        int id = intParam(ctx, "id");
+        try {
+            borgol.deleteUserBean(id, userId);
+            ctx.status(204);
+        } catch (Exception e) { ctx.status(404).result(e.getMessage()); }
+    }
+
     // ── Equipment handlers ────────────────────────────────────────────────────
 
     private void getEquipment(Context ctx) {
@@ -1185,5 +1226,15 @@ public class BorgolApiServer {
         public int    ratingSweetness = 5;
         public int    ratingFinish    = 5;
         public String notes       = "";
+    }
+
+    public static class UserBeanReq {
+        public String name         = "";
+        public String origin       = "";
+        public String roastLevel   = "";
+        public double weightG      = 0;
+        public String purchaseDate = "";
+        public String roastedDate  = "";
+        public String notes        = "";
     }
 }

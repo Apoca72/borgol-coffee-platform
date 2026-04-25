@@ -602,6 +602,20 @@ body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
 .qb-step-text{font-size:1.05rem;color:var(--text,#180F08);line-height:1.5;font-weight:500;min-height:64px}
 .qb-recipe-title{font-family:var(--font-serif,serif);font-size:1.1rem;color:#2B1005;margin-bottom:16px}
 .qb-nav{display:flex;gap:10px;margin-top:20px;justify-content:space-between;align-items:center}
+/* ── Bean Stash cards ──────────────────────────────────────────────────────── */
+.bean-card{background:var(--surface,#FFFEF8);border:1px solid var(--border,#EDDBBA);border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;box-shadow:0 2px 12px rgba(12,4,0,.07);transition:.2s}
+.bean-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(12,4,0,.12)}
+.bean-card-top{display:flex;justify-content:space-between;align-items:flex-start}
+.bean-name{font-family:var(--font-serif,serif);font-size:1.05rem;font-weight:700;color:#2B1005}
+.bean-origin{font-size:.8rem;color:var(--muted,#8A7054);margin-top:2px}
+.bean-badge{padding:3px 9px;border-radius:20px;font-size:.7rem;font-weight:700;background:rgba(168,98,30,.1);color:#A8621E;white-space:nowrap}
+.bean-meta{display:flex;gap:12px;flex-wrap:wrap}
+.bean-meta-item{font-size:.78rem;color:var(--muted,#8A7054);display:flex;align-items:center;gap:4px}
+.bean-weight{font-size:1.1rem;font-weight:700;color:#A8621E}
+.bean-notes{font-size:.8rem;color:var(--text,#180F08);line-height:1.5;opacity:.8;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bean-actions{display:flex;gap:8px;margin-top:4px}
+/* ── Journal stats tabs ────────────────────────────────────────────────────── */
+.journal-tab-content{display:none}.journal-tab-content.active{display:block}
 </style>
 </head>
 <body>
@@ -618,6 +632,7 @@ body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
     <button class="nav-link" onclick="showPage('learn')" data-i18n="learn">🎓 Learn</button>
     <button class="nav-link" onclick="showPage('map')" data-i18n="map">🗺️ Map</button>
     <button class="nav-link" onclick="showPage('timer')" data-i18n="timer">⏱️ Timer</button>
+    <button class="nav-link" onclick="showPage('beans')" data-i18n="beans">🫘 My Beans</button>
   </div>
   <div class="nav-right">
     <div class="search-wrap">
@@ -667,6 +682,7 @@ body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('learn')" data-i18n="learn">🎓 Learn</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('map')" data-i18n="map">🗺️ Map</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('timer')">⏱️ Brew Timer</button>
+  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('beans')">🫘 My Beans</button>
   <hr class="mobile-divider"/>
   <div id="mobile-auth-section">
     <button class="mobile-nav-link" onclick="toggleMobileNav();openModal('login-modal')" data-i18n="logIn">🔑 Log In</button>
@@ -797,16 +813,27 @@ body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
 <!-- JOURNAL PAGE -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <div class="page" id="page-journal">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
     <div class="section-title">📓 My Brew Journal</div>
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px" id="journal-header-actions">
       <button class="btn btn-secondary" onclick="exportJournalPDF()" id="btn-export-journal" title="Export as PDF" data-i18n="exportPDF">📄 Export PDF</button>
       <button class="btn btn-secondary" onclick="exportJournalCSV()" id="btn-export-csv" title="Export as CSV" data-i18n="exportCSV">📊 Export CSV</button>
       <button class="btn btn-primary" onclick="openNewJournalModal()" id="btn-new-journal" data-i18n="newEntry">+ New Entry</button>
     </div>
   </div>
-  <div id="journal-grid" class="journal-grid">
-    <div class="loading"><div class="spinner"></div> Loading journal…</div>
+  <div class="tab-bar" style="margin-bottom:20px">
+    <button class="tab-btn active" onclick="journalTab('entries',this)">📋 Entries</button>
+    <button class="tab-btn" onclick="journalTab('stats',this)">📊 Stats</button>
+  </div>
+  <div class="journal-tab-content active" id="journal-tab-entries">
+    <div id="journal-grid" class="journal-grid">
+      <div class="loading"><div class="spinner"></div> Loading journal…</div>
+    </div>
+  </div>
+  <div class="journal-tab-content" id="journal-tab-stats">
+    <div id="journal-stats-content">
+      <div class="loading"><div class="spinner"></div> Loading stats…</div>
+    </div>
   </div>
 </div>
 
@@ -908,6 +935,51 @@ body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
       <button class="timer-btn secondary" id="tmr-btn-reset" onclick="tmr_resetTimer()">↺ Reset</button>
     </div>
     <ul class="steps-list" id="tmr-steps-list"></ul>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- MY BEANS PAGE -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-beans">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div class="section-title">🫘 My Bean Stash</div>
+    <button class="btn btn-primary" id="btn-new-bean" onclick="openNewBeanModal()">+ Add Bean</button>
+  </div>
+  <div id="beans-grid" class="recipe-grid">
+    <div class="loading"><div class="spinner"></div> Loading beans…</div>
+  </div>
+</div>
+
+<!-- Bean modal -->
+<div class="modal-overlay" id="bean-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="bean-modal-title">🫘 Add Bean</div>
+      <button class="modal-close" onclick="closeModal('bean-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Bean Name</label><input id="b-name" type="text" placeholder="e.g. Ethiopian Yirgacheffe Natural"/></div>
+      <div class="field"><label>Origin / Farm</label><input id="b-origin" type="text" placeholder="e.g. Ethiopia, Guji Zone"/></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>Roast Level</label>
+          <select id="b-roast">
+            <option>Light</option><option>Medium-Light</option><option>Medium</option>
+            <option>Medium-Dark</option><option>Dark</option>
+          </select>
+        </div>
+        <div class="field"><label>Weight (g)</label><input id="b-weight" type="number" min="0" step="5" value="250" placeholder="250"/></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>Purchase Date</label><input id="b-purchase" type="date"/></div>
+        <div class="field"><label>Roast Date</label><input id="b-roasted" type="date"/></div>
+      </div>
+      <div class="field"><label>Notes</label><textarea id="b-notes" rows="3" placeholder="Tasting notes, processing method, etc."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('bean-modal')">Cancel</button>
+      <button class="btn btn-primary" id="btn-save-bean" onclick="saveBean()">Save Bean</button>
+    </div>
   </div>
 </div>
 
@@ -1173,10 +1245,22 @@ body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
         <div class="field"><label>Water Temp (°C)</label><input id="j-temp" type="number" min="50" max="100" value="93"/></div>
       </div>
       <div class="form-row">
-        <div class="field"><label>Dose (grams)</label><input id="j-dose" type="number" step="0.1" min="1" max="100" value="18"/></div>
-        <div class="field"><label>Yield (grams)</label><input id="j-yield" type="number" step="0.1" min="1" max="500" value="36"/></div>
+        <div class="field"><label>Dose (grams)</label><input id="j-dose" type="number" step="0.1" min="1" max="100" value="18" oninput="jRatioUpdate('dose')"/></div>
+        <div class="field"><label>Water (ml)</label><input id="j-water" type="number" step="5" min="1" max="2000" value="300" oninput="jRatioUpdate('water')"/></div>
       </div>
-      <div class="field"><label>Brew Time (seconds)</label><input id="j-time" type="number" min="0" max="3600" value="210"/></div>
+      <div style="display:flex;align-items:center;gap:10px;margin:-8px 0 12px;padding:8px 12px;background:rgba(168,98,30,.06);border:1px solid rgba(168,98,30,.2);border-radius:10px;font-size:.82rem">
+        <span>⚖️ Ratio:</span>
+        <strong id="j-ratio-display" style="color:#A8621E">1 : 16.7</strong>
+        <span style="color:var(--muted);font-size:.75rem">· click a preset:</span>
+        <button type="button" style="border:1px solid var(--border);background:var(--cream);border-radius:6px;padding:2px 8px;font-size:.75rem;cursor:pointer;color:#A8621E" onclick="jRatioPreset(15)">1:15</button>
+        <button type="button" style="border:1px solid var(--border);background:var(--cream);border-radius:6px;padding:2px 8px;font-size:.75rem;cursor:pointer;color:#A8621E" onclick="jRatioPreset(16)">1:16</button>
+        <button type="button" style="border:1px solid var(--border);background:var(--cream);border-radius:6px;padding:2px 8px;font-size:.75rem;cursor:pointer;color:#A8621E" onclick="jRatioPreset(17)">1:17</button>
+        <button type="button" style="border:1px solid var(--border);background:var(--cream);border-radius:6px;padding:2px 8px;font-size:.75rem;cursor:pointer;color:#A8621E" onclick="jRatioPreset(2.5)">1:2.5</button>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Yield (grams)</label><input id="j-yield" type="number" step="0.1" min="1" max="500" value="36"/></div>
+        <div class="field"><label>Brew Time (seconds)</label><input id="j-time" type="number" min="0" max="3600" value="210"/></div>
+      </div>
       <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;margin:16px 0">
         <div style="flex:1;min-width:220px">
           <div class="section-label" style="margin-bottom:12px">Rate Your Brew (0–10)</div>
@@ -1564,6 +1648,7 @@ function showPage(name, userId=null) {
   else if (name === 'journal') loadJournal();
   else if (name === 'learn')   loadLearn();
   else if (name === 'map')     loadMap();
+  else if (name === 'beans')   loadBeans();
   else if (name === 'profile') loadProfile(userId || (ME && ME.id));
 }
 
@@ -2543,6 +2628,16 @@ function buildRadarSVG(values, size, showLabels) {
 let JOURNAL_ENTRIES = [];
 let currentJournalEntry = null;
 
+function journalTab(name, btn) {
+  document.querySelectorAll('#page-journal .tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.journal-tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('journal-tab-' + name).classList.add('active');
+  const actions = document.getElementById('journal-header-actions');
+  if (actions) actions.style.display = name === 'entries' ? 'flex' : 'none';
+  if (name === 'stats') renderJournalStats(JOURNAL_ENTRIES);
+}
+
 async function loadJournal() {
   const grid = document.getElementById('journal-grid');
   if (!ME) {
@@ -2594,6 +2689,21 @@ function renderJournalGrid() {
   }).join('');
 }
 
+function jRatioUpdate(changed) {
+  const dose  = parseFloat(document.getElementById('j-dose')?.value)  || 1;
+  const water = parseFloat(document.getElementById('j-water')?.value) || 1;
+  const el    = document.getElementById('j-ratio-display');
+  if (el) el.textContent = `1 : ${(water / dose).toFixed(1)}`;
+}
+
+function jRatioPreset(r) {
+  const dose  = parseFloat(document.getElementById('j-dose')?.value) || 18;
+  const water = Math.round(dose * r);
+  const wEl   = document.getElementById('j-water');
+  if (wEl) wEl.value = water;
+  jRatioUpdate('water');
+}
+
 function openNewJournalModal() {
   if (!ME) { openModal('login-modal'); return; }
   document.getElementById('journal-edit-id').value = '';
@@ -2604,8 +2714,10 @@ function openNewJournalModal() {
   document.getElementById('j-grind').value = 'Medium-Fine';
   document.getElementById('j-temp').value  = '93';
   document.getElementById('j-dose').value  = '18';
+  document.getElementById('j-water').value = '300';
   document.getElementById('j-yield').value = '36';
   document.getElementById('j-time').value  = '210';
+  jRatioUpdate('dose');
   ['aroma','flavor','acidity','body','sweetness','finish'].forEach(k => {
     document.getElementById('j-'+k).value = 7;
     document.getElementById('jv-'+k).textContent = 7;
@@ -2626,8 +2738,11 @@ function openEditJournal(id) {
   document.getElementById('j-grind').value  = e.grindSize || 'Medium-Fine';
   document.getElementById('j-temp').value   = e.waterTempC || 93;
   document.getElementById('j-dose').value   = e.doseGrams || 18;
+  const inferredWater = Math.round((e.doseGrams || 18) * 16);
+  document.getElementById('j-water').value  = inferredWater;
   document.getElementById('j-yield').value  = e.yieldGrams || 36;
   document.getElementById('j-time').value   = e.brewTimeSec || 210;
+  jRatioUpdate('dose');
   document.getElementById('j-notes').value  = e.notes || '';
   const map = {aroma:e.ratingAroma, flavor:e.ratingFlavor, acidity:e.ratingAcidity,
                body:e.ratingBody, sweetness:e.ratingSweetness, finish:e.ratingFinish};
@@ -3964,6 +4079,249 @@ function qb_openInTimer() {
     document.getElementById('bean-input').focus();
   };
 })();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MY BEANS MODULE
+// ═══════════════════════════════════════════════════════════════════════════
+
+let _beans_list  = [];
+let _beans_editId = null;
+
+async function loadBeans() {
+  if (!ME) {
+    document.getElementById('beans-grid').innerHTML =
+      `<div class="empty-state"><div class="empty-icon">🫘</div><div class="empty-msg">Log in to track your coffee bean stash</div><button class="btn btn-primary" onclick="openModal('login-modal')">Log In</button></div>`;
+    return;
+  }
+  try {
+    _beans_list = await api('/api/beans');
+    renderBeans();
+  } catch { _beans_list = []; renderBeans(); }
+}
+
+function renderBeans() {
+  const grid = document.getElementById('beans-grid');
+  if (!grid) return;
+  if (!_beans_list.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🫘</div><div class="empty-msg">No beans tracked yet. Add your first bag!</div><button class="btn btn-primary" onclick="openNewBeanModal()">+ Add Bean</button></div>`;
+    return;
+  }
+  grid.innerHTML = _beans_list.map(b => {
+    const freshDays = b.roastedDate ? Math.floor((Date.now() - new Date(b.roastedDate)) / 86400000) : null;
+    const freshLabel = freshDays !== null
+      ? (freshDays < 0 ? 'Not yet roasted' : freshDays === 0 ? 'Roasted today' : `${freshDays}d since roast`)
+      : '';
+    return `<div class="bean-card">
+      <div class="bean-card-top">
+        <div>
+          <div class="bean-name">${esc(b.name || 'Unnamed Bean')}</div>
+          <div class="bean-origin">${esc(b.origin || '')}</div>
+        </div>
+        <span class="bean-badge">${esc(b.roastLevel || 'Unknown Roast')}</span>
+      </div>
+      <div class="bean-meta">
+        <div class="bean-meta-item">⚖️ <span class="bean-weight">${b.weightG}g</span></div>
+        ${b.purchaseDate ? `<div class="bean-meta-item">🛒 ${b.purchaseDate}</div>` : ''}
+        ${freshLabel ? `<div class="bean-meta-item">🔥 ${freshLabel}</div>` : ''}
+      </div>
+      ${b.notes ? `<div class="bean-notes">${esc(b.notes)}</div>` : ''}
+      <div class="bean-actions">
+        <button class="btn btn-secondary" style="padding:5px 12px;font-size:.78rem" onclick="openEditBeanModal(${b.id})">✏️ Edit</button>
+        <button class="btn btn-secondary" style="padding:5px 12px;font-size:.78rem;color:#EF9A9A" onclick="deleteBean(${b.id})">🗑️ Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openNewBeanModal() {
+  _beans_editId = null;
+  document.getElementById('bean-modal-title').textContent = '🫘 Add Bean';
+  document.getElementById('btn-save-bean').textContent = 'Save Bean';
+  ['b-name','b-origin','b-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('b-roast').value = 'Medium';
+  document.getElementById('b-weight').value = 250;
+  document.getElementById('b-purchase').value = '';
+  document.getElementById('b-roasted').value = '';
+  openModal('bean-modal');
+}
+
+function openEditBeanModal(id) {
+  const b = _beans_list.find(x => x.id === id);
+  if (!b) return;
+  _beans_editId = id;
+  document.getElementById('bean-modal-title').textContent = '✏️ Edit Bean';
+  document.getElementById('btn-save-bean').textContent = 'Update Bean';
+  document.getElementById('b-name').value    = b.name || '';
+  document.getElementById('b-origin').value  = b.origin || '';
+  document.getElementById('b-roast').value   = b.roastLevel || 'Medium';
+  document.getElementById('b-weight').value  = b.weightG || 0;
+  document.getElementById('b-purchase').value = b.purchaseDate || '';
+  document.getElementById('b-roasted').value  = b.roastedDate || '';
+  document.getElementById('b-notes').value   = b.notes || '';
+  openModal('bean-modal');
+}
+
+async function saveBean() {
+  const payload = {
+    name:         document.getElementById('b-name').value.trim(),
+    origin:       document.getElementById('b-origin').value.trim(),
+    roastLevel:   document.getElementById('b-roast').value,
+    weightG:      parseFloat(document.getElementById('b-weight').value) || 0,
+    purchaseDate: document.getElementById('b-purchase').value,
+    roastedDate:  document.getElementById('b-roasted').value,
+    notes:        document.getElementById('b-notes').value.trim()
+  };
+  if (!payload.name) { toast('Bean name is required', 'error'); return; }
+  try {
+    const url    = _beans_editId ? `/api/beans/${_beans_editId}` : '/api/beans';
+    const method = _beans_editId ? 'PUT' : 'POST';
+    const saved  = await api(url, { method, body: JSON.stringify(payload) });
+    if (_beans_editId) {
+      _beans_list = _beans_list.map(b => b.id === _beans_editId ? saved : b);
+    } else {
+      _beans_list.unshift(saved);
+    }
+    closeModal('bean-modal');
+    renderBeans();
+    toast(_beans_editId ? 'Bean updated!' : 'Bean added!');
+  } catch (e) { toast('Failed to save bean: ' + e.message, 'error'); }
+}
+
+async function deleteBean(id) {
+  if (!confirm('Delete this bean from your stash?')) return;
+  try {
+    await api(`/api/beans/${id}`, { method: 'DELETE' });
+    _beans_list = _beans_list.filter(b => b.id !== id);
+    renderBeans();
+    toast('Bean removed');
+  } catch (e) { toast('Failed to delete: ' + e.message, 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// JOURNAL STATS MODULE
+// ═══════════════════════════════════════════════════════════════════════════
+
+function renderJournalStats(entries) {
+  if (!entries || !entries.length) {
+    document.getElementById('journal-stats-content').innerHTML =
+      `<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-msg">Log some brews to see your stats!</div></div>`;
+    return;
+  }
+
+  // Method distribution
+  const methodCount = {};
+  entries.forEach(e => {
+    const m = e.brewMethod || 'Unknown';
+    methodCount[m] = (methodCount[m] || 0) + 1;
+  });
+  const methods = Object.keys(methodCount).sort((a,b) => methodCount[b] - methodCount[a]);
+  const methodCounts = methods.map(m => methodCount[m]);
+  const maxCount = Math.max(...methodCounts);
+
+  // Average scores over time (group by month)
+  const byMonth = {};
+  entries.forEach(e => {
+    const d  = new Date(e.createdAt || Date.now());
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (!byMonth[key]) byMonth[key] = { total: 0, count: 0 };
+    const avg = (e.ratingAroma + e.ratingFlavor + e.ratingAcidity + e.ratingBody + e.ratingSweetness + e.ratingFinish) / 6;
+    byMonth[key].total += avg;
+    byMonth[key].count++;
+  });
+  const months = Object.keys(byMonth).sort();
+  const avgScores = months.map(m => (byMonth[m].total / byMonth[m].count).toFixed(2));
+
+  document.getElementById('journal-stats-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">
+      <div class="ratio-card">
+        <h3 style="font-family:var(--font-serif,serif);font-size:1rem;color:#2B1005;margin-bottom:4px">🍺 Total Brews</h3>
+        <div style="font-size:2.5rem;font-weight:700;color:#A8621E">${entries.length}</div>
+      </div>
+      <div class="ratio-card">
+        <h3 style="font-family:var(--font-serif,serif);font-size:1rem;color:#2B1005;margin-bottom:4px">⭐ Avg Score</h3>
+        <div style="font-size:2.5rem;font-weight:700;color:#A8621E">${avgScores.length ? (avgScores.reduce((a,b)=>a+parseFloat(b),0)/avgScores.length).toFixed(1) : '—'}</div>
+      </div>
+    </div>
+
+    <div class="ratio-card" style="margin-bottom:20px">
+      <h3 style="font-family:var(--font-serif,serif);font-size:1rem;color:#2B1005;margin-bottom:16px">☕ Brews by Method</h3>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${methods.map((m,i) => `
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:3px">
+              <span style="color:var(--text,#180F08);font-weight:600">${esc(m)}</span>
+              <span style="color:#A8621E;font-weight:700">${methodCounts[i]}</span>
+            </div>
+            <div style="height:8px;border-radius:8px;background:var(--cream,#F6E8CC);overflow:hidden">
+              <div style="height:100%;border-radius:8px;background:linear-gradient(90deg,#A8621E,#CB8840);width:${Math.round(methodCounts[i]/maxCount*100)}%;transition:.4s"></div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    ${months.length > 1 ? `
+    <div class="ratio-card">
+      <h3 style="font-family:var(--font-serif,serif);font-size:1rem;color:#2B1005;margin-bottom:16px">📈 Average Score Over Time</h3>
+      <canvas id="journal-line-chart" height="160"></canvas>
+    </div>` : ''}
+  `;
+
+  if (months.length > 1) {
+    drawLineChart('journal-line-chart', months, avgScores.map(Number));
+  }
+}
+
+function drawLineChart(canvasId, labels, values) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx    = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 400;
+  const H = canvas.height;
+  canvas.width  = W;
+  const pad = { top: 16, right: 20, bottom: 32, left: 36 };
+  const w   = W - pad.left - pad.right;
+  const h   = H - pad.top  - pad.bottom;
+  const min = Math.max(0, Math.min(...values) - 0.5);
+  const max = Math.min(10, Math.max(...values) + 0.5);
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.strokeStyle = '#EDDBBA';
+  ctx.lineWidth   = 1;
+  [0, 0.25, 0.5, 0.75, 1].forEach(t => {
+    const y = pad.top + h * (1 - t);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + w, y); ctx.stroke();
+    ctx.fillStyle = '#8A7054'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText((min + (max - min) * t).toFixed(1), pad.left - 4, y + 3);
+  });
+
+  const xStep = values.length > 1 ? w / (values.length - 1) : w;
+  ctx.fillStyle = '#8A7054'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+  labels.forEach((l, i) => {
+    const x = pad.left + i * xStep;
+    ctx.fillText(l, x, H - 6);
+  });
+
+  ctx.beginPath();
+  ctx.strokeStyle = '#A8621E'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
+  values.forEach((v, i) => {
+    const x = pad.left + i * xStep;
+    const y = pad.top + h * (1 - (v - min) / (max - min));
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  ctx.fillStyle = '#A8621E';
+  values.forEach((v, i) => {
+    const x = pad.left + i * xStep;
+    const y = pad.top + h * (1 - (v - min) / (max - min));
+    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+  });
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 </script>
 </body>
 </html>
