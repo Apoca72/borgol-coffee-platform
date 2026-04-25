@@ -615,6 +615,46 @@ public class BorgolService {
         if (!deleted) throw new IllegalArgumentException("Entry not found or not authorized");
     }
 
+    // ── My Beans (UserBean) ───────────────────────────────────────────────────
+
+    public List<UserBean> getUserBeans(int userId) {
+        return repo.getUserBeans(userId);
+    }
+
+    public UserBean createUserBean(int userId, String name, String origin, String roastLevel,
+                                   double weightG, String purchaseDate, String roastedDate, String notes) {
+        UserBean b = new UserBean();
+        b.setUserId(userId);
+        b.setName(name == null ? "" : name.trim());
+        b.setOrigin(origin == null ? "" : origin.trim());
+        b.setRoastLevel(roastLevel == null ? "" : roastLevel.trim());
+        b.setWeightG(Math.max(0, weightG));
+        b.setPurchaseDate(purchaseDate == null ? "" : purchaseDate.trim());
+        b.setRoastedDate(roastedDate == null ? "" : roastedDate.trim());
+        b.setNotes(notes == null ? "" : notes.trim());
+        return repo.createUserBean(b);
+    }
+
+    public UserBean updateUserBean(int id, int userId, String name, String origin, String roastLevel,
+                                   double weightG, String purchaseDate, String roastedDate, String notes) {
+        UserBean b = new UserBean();
+        b.setId(id);
+        b.setUserId(userId);
+        b.setName(name == null ? "" : name.trim());
+        b.setOrigin(origin == null ? "" : origin.trim());
+        b.setRoastLevel(roastLevel == null ? "" : roastLevel.trim());
+        b.setWeightG(Math.max(0, weightG));
+        b.setPurchaseDate(purchaseDate == null ? "" : purchaseDate.trim());
+        b.setRoastedDate(roastedDate == null ? "" : roastedDate.trim());
+        b.setNotes(notes == null ? "" : notes.trim());
+        return repo.updateUserBean(b);
+    }
+
+    public void deleteUserBean(int id, int userId) {
+        boolean deleted = repo.deleteUserBean(id, userId);
+        if (!deleted) throw new IllegalArgumentException("Bean not found or not authorized");
+    }
+
     // ── Brew Guides ───────────────────────────────────────────────────────────
 
     public List<BrewGuide> getBrewGuides() {
