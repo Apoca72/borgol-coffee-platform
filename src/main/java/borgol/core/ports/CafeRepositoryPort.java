@@ -10,7 +10,7 @@ public interface CafeRepositoryPort {
     Optional<CafeListing> findCafeById(int id, int currentUserId);
     CafeListing createCafe(CafeListing c);
     void updateCafeCoordinates(int cafeId, double lat, double lng);
-    List<CafeListing> findCafesNearby(int currentUserId, double lat, double lng, double radiusKm);
+    List<CafeListing> findCafesNearby(int currentUserId, double minLat, double maxLat, double minLng, double maxLng);
     boolean rateCafe(int userId, int cafeId, int rating, String review);
     boolean isCafesSeeded();
     Map<String, Object> checkIn(int cafeId, int userId, String note);
