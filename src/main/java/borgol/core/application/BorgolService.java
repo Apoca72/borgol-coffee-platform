@@ -561,7 +561,7 @@ public class BorgolService {
             String roastLevel, String brewMethod, String grindSize, int waterTempC,
             double doseGrams, double yieldGrams, int brewTimeSec,
             int ratingAroma, int ratingFlavor, int ratingAcidity,
-            int ratingBody, int ratingSweetness, int ratingFinish, String notes) {
+            int ratingBody, int ratingSweetness, int ratingFinish, String notes, String weatherData) {
         BrewJournalEntry e = new BrewJournalEntry();
         e.setUserId(userId);
         e.setCoffeeBean(coffeeBean != null ? coffeeBean : "");
@@ -580,6 +580,7 @@ public class BorgolService {
         e.setRatingSweetness(ratingSweetness);
         e.setRatingFinish(ratingFinish);
         e.setNotes(notes != null ? notes : "");
+        e.setWeatherData(weatherData != null ? weatherData.substring(0, Math.min(weatherData.length(), 300)) : "");
         return repo.createJournalEntry(e);
     }
 
@@ -587,7 +588,7 @@ public class BorgolService {
             String roastLevel, String brewMethod, String grindSize, int waterTempC,
             double doseGrams, double yieldGrams, int brewTimeSec,
             int ratingAroma, int ratingFlavor, int ratingAcidity,
-            int ratingBody, int ratingSweetness, int ratingFinish, String notes) {
+            int ratingBody, int ratingSweetness, int ratingFinish, String notes, String weatherData) {
         BrewJournalEntry e = new BrewJournalEntry();
         e.setId(id);
         e.setUserId(userId);
@@ -607,6 +608,7 @@ public class BorgolService {
         e.setRatingSweetness(ratingSweetness);
         e.setRatingFinish(ratingFinish);
         e.setNotes(notes != null ? notes : "");
+        e.setWeatherData(weatherData != null ? weatherData.substring(0, Math.min(weatherData.length(), 300)) : "");
         return repo.updateJournalEntry(e);
     }
 
@@ -1204,5 +1206,63 @@ public class BorgolService {
 
     public java.util.Map<String, Object> getJournalStats(int userId) {
         return repo.getJournalStats(userId);
+    }
+
+    // ── Cafe Check-ins ────────────────────────────────────────────────────────
+
+    public java.util.Map<String,Object> checkIn(int cafeId, int userId, String note) {
+        return repo.checkIn(cafeId, userId, note != null ? note : "");
+    }
+
+    public java.util.List<java.util.Map<String,Object>> getCheckins(int cafeId) {
+        return repo.getCheckins(cafeId);
+    }
+
+    // ── Achievements ──────────────────────────────────────────────────────────
+
+    private static final java.util.Map<String, String[]> BADGE_META = java.util.Map.of(
+        "first_brew",       new String[]{"☕", "First Sip",        "Logged your first brew"},
+        "brew_10",          new String[]{"🔥", "Regular",          "Logged 10 brews"},
+        "brew_50",          new String[]{"💪", "Dedicated",        "Logged 50 brews"},
+        "recipe_author",    new String[]{"📝", "Recipe Author",    "Created your first recipe"},
+        "cafe_explorer",    new String[]{"🗺️", "Cafe Explorer",    "Rated 3 different cafes"},
+        "social_butterfly", new String[]{"🦋", "Social Butterfly", "Followed 5 users"},
+        "bean_collector",   new String[]{"🫘", "Bean Collector",   "Added 5 beans"},
+        "pour_over_pro",    new String[]{"⏱️", "Pour Over Pro",    "Logged 5 pour-over entries"}
+    );
+
+    public java.util.List<java.util.Map<String,Object>> getAchievements(int userId) {
+        return repo.getAchievements(userId, BADGE_META);
+    }
+
+    public java.util.List<String> checkAndAwardAchievements(int userId) {
+        return repo.checkAndAwardAchievements(userId, BADGE_META);
+    }
+
+    // ── Recipe Collections ────────────────────────────────────────────────────
+
+    public java.util.List<java.util.Map<String,Object>> getCollections(int userId) {
+        return repo.getCollections(userId);
+    }
+
+    public java.util.Map<String,Object> createCollection(int userId, String name, String description, boolean isPublic) {
+        if (name == null || name.isBlank()) throw new IllegalArgumentException("Collection name is required");
+        return repo.createCollection(userId, name.trim(), description, isPublic);
+    }
+
+    public void deleteCollection(int id, int userId) {
+        repo.deleteCollection(id, userId);
+    }
+
+    public void addRecipeToCollection(int collectionId, int recipeId, int userId) {
+        repo.addRecipeToCollection(collectionId, recipeId, userId);
+    }
+
+    public void removeRecipeFromCollection(int collectionId, int recipeId, int userId) {
+        repo.removeRecipeFromCollection(collectionId, recipeId, userId);
+    }
+
+    public java.util.List<java.util.Map<String,Object>> getCollectionRecipes(int collectionId) {
+        return repo.getCollectionRecipes(collectionId);
     }
 }

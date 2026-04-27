@@ -634,6 +634,7 @@ body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
     <button class="nav-link" onclick="showPage('explore')" data-i18n="explore">🔭 Explore</button>
     <button class="nav-link" onclick="showPage('journal')" data-i18n="journal">📓 Journal</button>
     <button class="nav-link" onclick="showPage('beans')">🫘 My Beans</button>
+    <button class="nav-link" onclick="showPage('collections')">📚 Collections</button>
     <button class="nav-link" onclick="showPage('learn')" data-i18n="learn">🎓 Learn</button>
     <button class="nav-link" onclick="showPage('map')" data-i18n="map">🗺️ Map</button>
     <button class="nav-link" onclick="showPage('timer')" data-i18n="timer">⏱️ Timer</button>
@@ -684,6 +685,7 @@ body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('explore')" data-i18n="explore">🔭 Explore</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('journal')" data-i18n="journal">📓 Journal</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('beans')">🫘 My Beans</button>
+  <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('collections')">📚 Collections</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('learn')" data-i18n="learn">🎓 Learn</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('map')" data-i18n="map">🗺️ Map</button>
   <button class="mobile-nav-link" onclick="toggleMobileNav();showPage('timer')">⏱️ Brew Timer</button>
@@ -887,6 +889,19 @@ body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
   </div>
   <div id="beans-grid" class="recipe-grid">
     <div class="loading"><div class="spinner"></div> Loading beans…</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- COLLECTIONS PAGE -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-collections">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div class="section-title">📚 My Collections</div>
+    <button class="btn btn-primary" onclick="openNewCollectionModal()">+ New Collection</button>
+  </div>
+  <div id="collections-grid" class="recipe-grid">
+    <div class="loading"><div class="spinner"></div> Loading…</div>
   </div>
 </div>
 
@@ -1274,6 +1289,12 @@ body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
         </div>
       </div>
       <div class="field"><label>Tasting Notes</label><textarea id="j-notes" rows="3" placeholder="e.g. Bright and floral with blueberry sweetness, silky body…"></textarea></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--cream);border-radius:10px;border:1px solid var(--border)">
+        <span style="font-size:18px">🌤</span>
+        <span id="j-weather-display" style="font-size:13px;color:var(--muted);flex:1">Weather not fetched</span>
+        <button type="button" class="btn btn-secondary" style="flex-shrink:0;font-size:12px;padding:5px 10px" onclick="fetchJournalWeather()">Fetch</button>
+        <input type="hidden" id="j-weather"/>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('journal-modal')">Cancel</button>
@@ -1470,6 +1491,56 @@ body.dark .level-EXPERT    {background:#280E0A;color:#E08070}
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('bean-modal')">Cancel</button>
       <button class="btn btn-primary" onclick="saveBeanBag()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Collection Modal -->
+<div class="modal-overlay" id="collection-new-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title">📚 New Collection</div>
+      <button class="modal-close" onclick="closeModal('collection-new-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Name *</label><input id="col-name" placeholder="e.g. Weekend Brews"/></div>
+      <div class="field"><label>Description</label><input id="col-desc" placeholder="Optional description"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('collection-new-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCollection()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Collection Detail Modal -->
+<div class="modal-overlay" id="collection-detail-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="col-detail-title">Collection</div>
+      <button class="modal-close" onclick="closeModal('collection-detail-modal')">✕</button>
+    </div>
+    <div id="col-detail-content" class="recipe-grid" style="padding:20px;max-height:70vh;overflow-y:auto">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Add to Collection Modal -->
+<div class="modal-overlay" id="add-to-col-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title">📚 Add to Collection</div>
+      <button class="modal-close" onclick="closeModal('add-to-col-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="atc-recipe-id"/>
+      <div id="atc-collections-list" style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('add-to-col-modal')">Close</button>
     </div>
   </div>
 </div>
@@ -1693,7 +1764,8 @@ function showPage(name, userId=null) {
   else if (name === 'cafes')   loadCafes();
   else if (name === 'explore') loadTopUsers();
   else if (name === 'journal') loadJournal();
-  else if (name === 'beans')   { if (TOKEN) loadBeans(); else openModal('login-modal'); }
+  else if (name === 'beans')        { if (TOKEN) loadBeans(); else openModal('login-modal'); }
+  else if (name === 'collections')  { if (TOKEN) loadCollections(); else openModal('login-modal'); }
   else if (name === 'learn')   loadLearn();
   else if (name === 'map')     loadMap();
   else if (name === 'profile') loadProfile(userId || (ME && ME.id));
@@ -1950,6 +2022,7 @@ function renderRecipeCard(r) {
         </button>
         <button class="report-btn" onclick="openReportModal('recipe',${r.id})" title="Report">⚑</button>
         <button onclick="openQuickBrew({id:${r.id},title:${JSON.stringify(r.title||'')},instructions:${JSON.stringify(r.instructions||'')},brewTime:${r.brewTime||5}})" title="Step-by-step guide" style="border:none;background:none;cursor:pointer;font-size:13px;color:var(--caramel,#A8621E);padding:5px 8px;border-radius:8px;transition:.15s" onmouseover="this.style.background='rgba(168,98,30,.1)'" onmouseout="this.style.background='none'">⚡ Easy Make</button>
+        ${ME ? `<button onclick="openAddToCollection(${r.id})" title="Save to collection" style="border:none;background:none;cursor:pointer;font-size:14px;color:var(--muted);padding:5px 8px;border-radius:8px;transition:.15s" onmouseover="this.style.color='var(--roast)'" onmouseout="this.style.color='var(--muted)'">📚</button>` : ''}
       </div>
     </div>`;
 }
@@ -2305,10 +2378,19 @@ async function openCafeDetail(id) {
             ${c.currentUserRating ? 'Update Rating' : 'Submit Rating'}
           </button>
         </div>` : `<p style="font-size:13px;color:var(--muted)"><a href="#" onclick="closeModal('cafe-detail-modal');openModal('login-modal')" style="color:var(--caramel);font-weight:700">Log in</a> to rate this cafe.</p>`}
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+          <div style="font-weight:800;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📍 Check-ins</div>
+          <div id="cafe-checkins-list-${c.id}" style="margin-bottom:10px"><div class="loading"><div class="spinner"></div></div></div>
+          ${ME ? `<div style="display:flex;gap:8px">
+            <input id="checkin-note-${c.id}" placeholder="Add a note… (optional)" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;font-family:inherit;background:var(--milk);color:var(--text)"/>
+            <button class="btn btn-primary" style="font-size:12px;padding:6px 14px" onclick="submitCheckin(${c.id})">Check In 📍</button>
+          </div>` : ''}
+        </div>
       </div>`;
 
     document._cafeRatings = document._cafeRatings || {};
     document._cafeRatings[c.id] = c.currentUserRating || 0;
+    loadCafeCheckins(c.id);
   } catch (e) {
     document.getElementById('cafe-detail-content').innerHTML = `<div class="modal-body"><p style="color:var(--danger)">${esc(e.message)}</p></div>`;
   }
@@ -2340,6 +2422,35 @@ async function submitRating(cafeId) {
     toast('Rating submitted!', 'ok');
     if (document.getElementById('page-cafes').classList.contains('active')) loadCafes();
   } catch (e) { toast(e.message, 'err'); }
+}
+
+async function loadCafeCheckins(cafeId) {
+  const el = document.getElementById(`cafe-checkins-list-${cafeId}`);
+  if (!el) return;
+  try {
+    const data = await api(`/api/cafes/${cafeId}/checkins`);
+    if (!data.length) { el.innerHTML = '<div style="font-size:12px;color:var(--muted)">No check-ins yet. Be the first!</div>'; return; }
+    el.innerHTML = data.map(ci => `
+      <div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+        ${avatarHtml(ci.username, ci.avatarUrl, 28)}
+        <div style="flex:1;min-width:0">
+          <span style="font-weight:700;font-size:13px">${esc(ci.username)}</span>
+          ${ci.note ? `<span style="font-size:12px;color:var(--muted)"> · ${esc(ci.note)}</span>` : ''}
+          <div style="font-size:11px;color:var(--muted)">${timeAgo(ci.createdAt)}</div>
+        </div>
+      </div>`).join('');
+  } catch(e) { if (el) el.innerHTML = ''; }
+}
+
+async function submitCheckin(cafeId) {
+  const input = document.getElementById(`checkin-note-${cafeId}`);
+  const note = input ? input.value.trim() : '';
+  try {
+    await api(`/api/cafes/${cafeId}/checkin`, {method:'POST', body:JSON.stringify({note})});
+    if (input) input.value = '';
+    await loadCafeCheckins(cafeId);
+    toast('Checked in! 📍');
+  } catch(e) { toast(e.message, 'err'); }
 }
 
 async function saveCafe() {
@@ -2383,9 +2494,10 @@ async function loadProfile(userId) {
   document.getElementById('profile-header').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
   document.getElementById('profile-tab-content').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
   try {
-    const [user, recipes] = await Promise.all([
+    const [user, recipes, achievements] = await Promise.all([
       api(`/api/users/${userId}`),
-      api(`/api/users/${userId}/recipes`)
+      api(`/api/users/${userId}/recipes`),
+      ME && ME.id === userId ? api('/api/achievements').catch(()=>[]) : Promise.resolve([])
     ]);
     const isMe        = ME && ME.id === userId;
     const isFollowing = user.isFollowing;
@@ -2423,6 +2535,22 @@ async function loadProfile(userId) {
           </button>
         ` : ''}
       </div>`;
+
+    // Badges section (only shown on own profile)
+    if (achievements.length) {
+      const earned = achievements.filter(a => a.earned);
+      const badgeHtml = earned.length
+        ? earned.map(a => `<div title="${esc(a.name)}: ${esc(a.description)}" style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 10px;background:var(--cream);border:1px solid var(--border);border-radius:10px;min-width:54px;cursor:default">
+            <span style="font-size:22px">${a.icon}</span>
+            <span style="font-size:10px;font-weight:700;color:var(--muted);text-align:center;line-height:1.2">${esc(a.name)}</span>
+          </div>`).join('')
+        : `<span style="font-size:13px;color:var(--muted)">No badges yet — keep brewing!</span>`;
+      document.getElementById('profile-header').innerHTML += `
+        <div style="padding:14px 0 0;border-top:1px solid var(--border);margin-top:14px;width:100%">
+          <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">🏅 Achievements</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">${badgeHtml}</div>
+        </div>`;
+    }
 
     document.getElementById('profile-tab-content').innerHTML =
       recipes.length ? recipes.map(r => renderRecipeCard(r)).join('') : emptyState('📖', 'No recipes yet');
@@ -2743,6 +2871,8 @@ function openNewJournalModal() {
     document.getElementById('j-'+k).value = 7;
     document.getElementById('jv-'+k).textContent = 7;
   });
+  document.getElementById('j-weather').value = '';
+  document.getElementById('j-weather-display').textContent = 'Weather not fetched';
   updateJournalRadar();
   openModal('journal-modal');
 }
@@ -2762,6 +2892,13 @@ function openEditJournal(id) {
   document.getElementById('j-yield').value  = e.yieldGrams || 36;
   document.getElementById('j-time').value   = e.brewTimeSec || 210;
   document.getElementById('j-notes').value  = e.notes || '';
+  document.getElementById('j-weather').value = e.weatherData || '';
+  try {
+    const w = e.weatherData ? JSON.parse(e.weatherData) : null;
+    document.getElementById('j-weather-display').textContent = w
+      ? `${w.condition} · ${w.temp}°C · ${w.humidity}% humidity`
+      : 'Weather not fetched';
+  } catch { document.getElementById('j-weather-display').textContent = 'Weather not fetched'; }
   const map = {aroma:e.ratingAroma, flavor:e.ratingFlavor, acidity:e.ratingAcidity,
                body:e.ratingBody, sweetness:e.ratingSweetness, finish:e.ratingFinish};
   Object.entries(map).forEach(([k,v]) => {
@@ -2802,6 +2939,7 @@ async function saveJournalEntry() {
     ratingSweetness:parseInt(document.getElementById('j-sweetness').value),
     ratingFinish:   parseInt(document.getElementById('j-finish').value),
     notes: document.getElementById('j-notes').value.trim(),
+    weatherData: document.getElementById('j-weather').value.trim(),
   };
   try {
     if (editId) {
@@ -2813,7 +2951,30 @@ async function saveJournalEntry() {
     }
     closeModal('journal-modal');
     loadJournal();
+    checkAchievements();
   } catch(e) { toast(e.message, 'err'); }
+}
+
+async function fetchJournalWeather() {
+  const display = document.getElementById('j-weather-display');
+  if (!navigator.geolocation) { display.textContent = 'Geolocation not supported'; return; }
+  display.textContent = 'Locating…';
+  navigator.geolocation.getCurrentPosition(async pos => {
+    try {
+      const {latitude: lat, longitude: lng} = pos.coords;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,weather_code`;
+      const r = await fetch(url);
+      const d = await r.json();
+      const c = d.current;
+      const wmo = {0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
+        45:'Foggy',51:'Drizzle',61:'Rain',71:'Snow',80:'Showers',95:'Thunderstorm'};
+      const condition = wmo[c.weather_code] || wmo[Math.floor(c.weather_code/10)*10] || 'Unknown';
+      const weather = {temp: Math.round(c.temperature_2m), humidity: c.relative_humidity_2m, condition};
+      document.getElementById('j-weather').value = JSON.stringify(weather);
+      display.textContent = `${condition} · ${weather.temp}°C · ${weather.humidity}% humidity`;
+      display.style.color = 'var(--roast)';
+    } catch(e) { display.textContent = 'Weather unavailable'; display.style.color = ''; }
+  }, () => { display.textContent = 'Location denied'; display.style.color = ''; });
 }
 
 async function deleteJournalEntry(id) {
@@ -2851,6 +3012,7 @@ function openJournalDetail(id) {
       </div>
     </div>
     ${e.notes?`<div class="section-label">Tasting Notes</div><p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px">${esc(e.notes)}</p>`:''}
+    ${e.weatherData ? (() => { try { const w = JSON.parse(e.weatherData); return `<div style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:8px 12px;background:var(--cream);border-radius:8px;font-size:13px;color:var(--muted)">🌤 <strong style="color:var(--roast)">${esc(w.condition)}</strong> · ${esc(String(w.temp))}°C · ${esc(String(w.humidity))}% humidity</div>`; } catch { return ''; } })() : ''}
     <div style="display:flex;align-items:center;gap:8px;margin-top:20px;padding-top:14px;border-top:1px solid var(--border)">
       <span style="font-size:16px">📅</span>
       <div>
@@ -3292,6 +3454,123 @@ function exportJournalCSV() {
   toast('CSV downloaded!');
 }
 
+// ── Recipe Collections ────────────────────────────────────────────────────────
+
+let COLLECTIONS = [];
+
+async function loadCollections() {
+  const grid = document.getElementById('collections-grid');
+  try {
+    COLLECTIONS = await api('/api/collections');
+    renderCollectionsGrid();
+  } catch(e) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">⚠️</div><div class="empty-msg">${esc(e.message)}</div></div>`;
+  }
+}
+
+function renderCollectionsGrid() {
+  const grid = document.getElementById('collections-grid');
+  if (!COLLECTIONS.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📚</div><div class="empty-msg">No collections yet. Create your first one!</div><button class="btn btn-primary" onclick="openNewCollectionModal()">+ New Collection</button></div>`;
+    return;
+  }
+  grid.innerHTML = COLLECTIONS.map(c => `
+    <div class="card card-hover" style="padding:16px;cursor:pointer" onclick="openCollectionDetail(${c.id})">
+      <div style="font-size:28px;margin-bottom:8px">📚</div>
+      <div style="font-weight:800;font-size:15px;margin-bottom:4px">${esc(c.name)}</div>
+      ${c.description ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px">${esc(c.description)}</div>` : ''}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)">
+        <span>📖 ${c.recipeCount} recipe${c.recipeCount!==1?'s':''}</span>
+        <button class="btn btn-sm btn-danger" style="padding:3px 8px;font-size:11px" onclick="event.stopPropagation();deleteCollectionConfirm(${c.id})">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+function openNewCollectionModal() {
+  document.getElementById('col-name').value = '';
+  document.getElementById('col-desc').value = '';
+  openModal('collection-new-modal');
+}
+
+async function saveCollection() {
+  const name = document.getElementById('col-name').value.trim();
+  if (!name) { toast('Collection name is required', 'err'); return; }
+  try {
+    await api('/api/collections', {method:'POST', body:JSON.stringify({name, description: document.getElementById('col-desc').value.trim(), isPublic: true})});
+    closeModal('collection-new-modal');
+    await loadCollections();
+    toast('Collection created!');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function deleteCollectionConfirm(id) {
+  if (!confirm('Delete this collection?')) return;
+  try {
+    await api(`/api/collections/${id}`, {method:'DELETE'});
+    await loadCollections();
+    toast('Deleted');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function openCollectionDetail(id) {
+  const col = COLLECTIONS.find(c => c.id === id);
+  if (col) document.getElementById('col-detail-title').textContent = `📚 ${col.name}`;
+  const content = document.getElementById('col-detail-content');
+  content.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  openModal('collection-detail-modal');
+  try {
+    const recipes = await api(`/api/collections/${id}/recipes`);
+    if (!recipes.length) {
+      content.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📖</div><div class="empty-msg">No recipes in this collection yet.</div></div>`;
+      return;
+    }
+    content.innerHTML = recipes.map(r => `
+      <div class="card card-hover" style="padding:12px;cursor:pointer" onclick="closeModal('collection-detail-modal');openRecipeDetail(${r.id})">
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px">${esc(r.title)}</div>
+        <div style="font-size:12px;color:var(--muted)">by ${esc(r.username)}</div>
+        <div style="display:flex;justify-content:flex-end;margin-top:8px">
+          <button class="btn btn-sm btn-danger" style="padding:3px 8px;font-size:11px" onclick="event.stopPropagation();removeFromCollection(${id},${r.id})">Remove</button>
+        </div>
+      </div>`).join('');
+  } catch(e) { content.innerHTML = `<p style="color:var(--danger)">${esc(e.message)}</p>`; }
+}
+
+async function removeFromCollection(collectionId, recipeId) {
+  try {
+    await api(`/api/collections/${collectionId}/recipes/${recipeId}`, {method:'DELETE'});
+    await openCollectionDetail(collectionId);
+    toast('Removed from collection');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function openAddToCollection(recipeId) {
+  document.getElementById('atc-recipe-id').value = recipeId;
+  const list = document.getElementById('atc-collections-list');
+  list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  openModal('add-to-col-modal');
+  try {
+    const cols = await api('/api/collections');
+    if (!cols.length) {
+      list.innerHTML = `<div style="font-size:13px;color:var(--muted)">No collections yet. <button class="btn btn-sm btn-primary" onclick="closeModal('add-to-col-modal');openNewCollectionModal()">Create one</button></div>`;
+      return;
+    }
+    list.innerHTML = cols.map(c => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:13px;font-weight:600">${esc(c.name)} <span style="font-weight:400;color:var(--muted)">(${c.recipeCount})</span></span>
+        <button class="btn btn-sm btn-primary" style="font-size:11px;padding:3px 10px" onclick="addToCollection(${c.id},${recipeId})">Add</button>
+      </div>`).join('');
+  } catch(e) { list.innerHTML = `<p style="color:var(--danger)">${esc(e.message)}</p>`; }
+}
+
+async function addToCollection(collectionId, recipeId) {
+  try {
+    await api(`/api/collections/${collectionId}/recipes`, {method:'POST', body:JSON.stringify({recipeId})});
+    closeModal('add-to-col-modal');
+    toast('Added to collection! 📚');
+    COLLECTIONS = [];  // invalidate cache
+  } catch(e) { toast(e.message, 'err'); }
+}
+
 // ── Brew Ratio Calculator ──────────────────────────────────────────────────────
 function rcUpdate() {
   const dose  = parseFloat(document.getElementById('rc-dose').value);
@@ -3351,6 +3630,20 @@ async function loadJournalStats() {
         scales:{y:{beginAtZero:false,min:0,max:10,ticks:{stepSize:2}}} }
     });
   } catch(e) { console.error('Stats error', e); }
+}
+
+// ── Achievements ──────────────────────────────────────────────────────────────
+
+async function checkAchievements() {
+  if (!ME) return;
+  try {
+    const newBadges = await api('/api/achievements/check', {method:'POST', body:'{}'});
+    if (!newBadges || !newBadges.length) return;
+    for (const badgeId of newBadges) {
+      await new Promise(r => setTimeout(r, 400));
+      toast('🏅 Achievement unlocked!', 'ok');
+    }
+  } catch(e) { /* silent — achievements are non-critical */ }
 }
 
 // ── Bean Bag Tracker ───────────────────────────────────────────────────────────
@@ -3450,6 +3743,7 @@ async function saveBeanBag() {
     closeModal('bean-modal');
     await loadBeans();
     toast('Bean saved!');
+    checkAchievements();
   } catch(e) { toast(e.message, 'err'); }
 }
 

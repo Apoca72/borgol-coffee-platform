@@ -219,6 +219,22 @@ public class BorgolApiServer {
         // Server-Sent Events (SSE) → хариуг үг бүрээр дамжуулна (streaming)
         app.post("/api/bean/chat", this::beanChat);
 
+        // Cafe Check-ins
+        app.post("/api/cafes/{id}/checkin",  this::cafeCheckin);
+        app.get ("/api/cafes/{id}/checkins", this::getCafeCheckins);
+
+        // Achievements
+        app.get ("/api/achievements",        this::getAchievements);
+        app.post("/api/achievements/check",  this::checkAchievements);
+
+        // Recipe Collections
+        app.get   ("/api/collections",                              this::getCollections);
+        app.post  ("/api/collections",                              this::createCollection);
+        app.delete("/api/collections/{id}",                         this::deleteCollection);
+        app.get   ("/api/collections/{id}/recipes",                 this::getCollectionRecipes);
+        app.post  ("/api/collections/{id}/recipes",                 this::addRecipeToCollection);
+        app.delete("/api/collections/{id}/recipes/{recipeId}",      this::removeRecipeFromCollection);
+
         // Block
         app.post  ("/api/users/{id}/block", this::blockUser);
         app.delete("/api/users/{id}/block", this::unblockUser);
@@ -668,7 +684,7 @@ public class BorgolApiServer {
                 req.roastLevel, req.brewMethod, req.grindSize, req.waterTempC,
                 req.doseGrams, req.yieldGrams, req.brewTimeSec,
                 req.ratingAroma, req.ratingFlavor, req.ratingAcidity,
-                req.ratingBody, req.ratingSweetness, req.ratingFinish, req.notes));
+                req.ratingBody, req.ratingSweetness, req.ratingFinish, req.notes, req.weatherData));
         } catch (IllegalArgumentException e) {
             ctx.status(400).json(err(e.getMessage()));
         }
@@ -684,7 +700,7 @@ public class BorgolApiServer {
                 req.roastLevel, req.brewMethod, req.grindSize, req.waterTempC,
                 req.doseGrams, req.yieldGrams, req.brewTimeSec,
                 req.ratingAroma, req.ratingFlavor, req.ratingAcidity,
-                req.ratingBody, req.ratingSweetness, req.ratingFinish, req.notes));
+                req.ratingBody, req.ratingSweetness, req.ratingFinish, req.notes, req.weatherData));
         } catch (IllegalArgumentException e) {
             ctx.status(400).json(err(e.getMessage()));
         }
@@ -1228,6 +1244,86 @@ public class BorgolApiServer {
         public String action; // "resolved" or "dismissed"
     }
 
+    // ── Cafe Check-in handlers ────────────────────────────────────────────────
+
+    private void cafeCheckin(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        var req = ctx.bodyAsClass(CheckinReq.class);
+        ctx.status(201).json(borgol.checkIn(intParam(ctx, "id"), userId, req.note));
+    }
+
+    private void getCafeCheckins(Context ctx) {
+        ctx.json(borgol.getCheckins(intParam(ctx, "id")));
+    }
+
+    // ── Achievement handlers ──────────────────────────────────────────────────
+
+    private void getAchievements(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.getAchievements(userId));
+    }
+
+    private void checkAchievements(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.checkAndAwardAchievements(userId));
+    }
+
+    // ── Collection handlers ───────────────────────────────────────────────────
+
+    private void getCollections(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.getCollections(userId));
+    }
+
+    private void createCollection(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        try {
+            var req = ctx.bodyAsClass(CollectionReq.class);
+            ctx.status(201).json(borgol.createCollection(userId, req.name, req.description, req.isPublic));
+        } catch (IllegalArgumentException e) { ctx.status(400).json(err(e.getMessage())); }
+    }
+
+    private void deleteCollection(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        borgol.deleteCollection(intParam(ctx, "id"), userId);
+        ctx.status(204);
+    }
+
+    private void getCollectionRecipes(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        ctx.json(borgol.getCollectionRecipes(intParam(ctx, "id")));
+    }
+
+    private void addRecipeToCollection(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        try {
+            var req = ctx.bodyAsClass(CollectionRecipeReq.class);
+            borgol.addRecipeToCollection(intParam(ctx, "id"), req.recipeId, userId);
+            ctx.status(204);
+        } catch (IllegalArgumentException e) { ctx.status(404).json(err(e.getMessage())); }
+    }
+
+    private void removeRecipeFromCollection(Context ctx) {
+        Integer userId = authRequired(ctx);
+        if (userId == null) return;
+        try {
+            borgol.removeRecipeFromCollection(intParam(ctx, "id"), intParam(ctx, "recipeId"), userId);
+            ctx.status(204);
+        } catch (IllegalArgumentException e) { ctx.status(404).json(err(e.getMessage())); }
+    }
+
+    public static class CheckinReq       { public String note = ""; }
+    public static class CollectionReq    { public String name = ""; public String description = ""; public boolean isPublic = true; }
+    public static class CollectionRecipeReq { public int recipeId = 0; }
+
     public static class BeanBagReq {
         public String name          = "";
         public String roaster       = "";
@@ -1256,5 +1352,6 @@ public class BorgolApiServer {
         public int    ratingSweetness = 5;
         public int    ratingFinish    = 5;
         public String notes       = "";
+        public String weatherData = "";
     }
 }

@@ -19,6 +19,7 @@ public class BrewJournalEntry {
     private int ratingSweetness;
     private int ratingFinish;
     private String notes;
+    private String weatherData;
     private String createdAt;
 
     public int getId() { return id; }
@@ -74,6 +75,9 @@ public class BrewJournalEntry {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+
+    public String getWeatherData() { return weatherData; }
+    public void setWeatherData(String weatherData) { this.weatherData = weatherData; }
 
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
