@@ -125,6 +125,10 @@ public class BrewGuideRepository implements BrewGuideRepositoryPort {
         return countNoParam("SELECT COUNT(*) FROM learn_articles WHERE category = 'Drinks'") > 0;
     }
 
+    public boolean isCafesSeeded() {
+        return countNoParam("SELECT COUNT(*) FROM cafes") > 0;
+    }
+
     // ── Mapping helpers ───────────────────────────────────────────────────────
 
     private BrewGuide mapBrewGuide(ResultSet rs) throws SQLException {
