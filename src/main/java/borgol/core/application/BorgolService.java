@@ -30,13 +30,13 @@ public class BorgolService {
     private final CafeService        cafeService;
     private final AchievementService achievementService;
 
-    // ── Package-visible getters for BorgolApiServer ───────────────────────────
-    UserService        getUserService()        { return userService; }
-    RecipeService      getRecipeService()      { return recipeService; }
-    BrewGuideService   getBrewGuideService()   { return brewGuideService; }
-    JournalService     getJournalService()     { return journalService; }
-    CafeService        getCafeService()        { return cafeService; }
-    AchievementService getAchievementService() { return achievementService; }
+    // ── Public getters for domain routers ───────────────────────────────────
+    public UserService        getUserService()        { return userService; }
+    public RecipeService      getRecipeService()      { return recipeService; }
+    public BrewGuideService   getBrewGuideService()   { return brewGuideService; }
+    public JournalService     getJournalService()     { return journalService; }
+    public CafeService        getCafeService()        { return cafeService; }
+    public AchievementService getAchievementService() { return achievementService; }
 
     // ── Shared DTOs (retained for backward compatibility with desktop UI) ─────
     public record AuthResult(String token, UserView user) {}
