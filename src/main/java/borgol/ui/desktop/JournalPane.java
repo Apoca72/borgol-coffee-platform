@@ -444,7 +444,7 @@ public class JournalPane {
                             roast.getValue(), method.getText().trim(), grind.getText().trim(),
                             parseInt(temp.getText(), 93), parseDouble(dose.getText(), 18),
                             parseDouble(yield.getText(), 36), parseInt(time.getText(), 0),
-                            r[0], r[1], r[2], r[3], r[4], r[5], notes.getText().trim());
+                            r[0], r[1], r[2], r[3], r[4], r[5], notes.getText().trim(), "");
                         if (created != null && (created.getCreatedAt() == null || created.getCreatedAt().isBlank())) {
                             created.setCreatedAt(createdAt);
                         }
@@ -455,7 +455,7 @@ public class JournalPane {
                             roast.getValue(), method.getText().trim(), grind.getText().trim(),
                             parseInt(temp.getText(), 93), parseDouble(dose.getText(), 18),
                             parseDouble(yield.getText(), 36), parseInt(time.getText(), 0),
-                            r[0], r[1], r[2], r[3], r[4], r[5], notes.getText().trim());
+                            r[0], r[1], r[2], r[3], r[4], r[5], notes.getText().trim(), "");
                         UiUtils.showToast("Entry updated!");
                     }
                     loadData();
