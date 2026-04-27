@@ -32,6 +32,14 @@ public class BorgolRepository {
         this.achievementRepo = new AchievementRepository(db);
     }
 
+    // ── Repository accessors (for domain service wiring) ─────────────────────
+    public UserRepository        getUserRepo()        { return userRepo; }
+    public RecipeRepository      getRecipeRepo()      { return recipeRepo; }
+    public BrewGuideRepository   getBrewGuideRepo()   { return brewGuideRepo; }
+    public JournalRepository     getJournalRepo()     { return journalRepo; }
+    public CafeRepository        getCafeRepo()        { return cafeRepo; }
+    public AchievementRepository getAchievementRepo() { return achievementRepo; }
+
     // ── User ─────────────────────────────────────────────────────────────────
     public Optional<User> findUserById(int id)                          { return userRepo.findUserById(id); }
     public Optional<User> findUserByEmail(String email)                 { return userRepo.findUserByEmail(email); }
