@@ -31,7 +31,50 @@
   --font-sans : 'DM Sans', -apple-system, sans-serif;
 }
 
+/* ── Dark theme ───────────────────────────────────────── */
+html.dark {
+  --espresso  : #F6E8CC;
+  --roast     : #FDFAF3;
+  --caramel   : #CB8840;
+  --caramel-lt: #A8621E;
+  --gold      : #C88020;
+  --amber     : #A06010;
+  --cream     : #1C1007;
+  --milk      : #140C04;
+  --surface   : #100A02;
+  --border    : #3A2810;
+  --muted     : #A89070;
+  --text      : #F6E8CC;
+  --success   : #52B288;
+  --error     : #E05040;
+  --shadow    : 0 2px 16px rgba(0,0,0,.3);
+  --shadow-md : 0 6px 30px rgba(0,0,0,.4);
+  --shadow-lg : 0 16px 56px rgba(0,0,0,.5);
+}
+@media (prefers-color-scheme: dark) {
+  html:not(.light) {
+    --espresso  : #F6E8CC;
+    --roast     : #FDFAF3;
+    --caramel   : #CB8840;
+    --caramel-lt: #A8621E;
+    --gold      : #C88020;
+    --amber     : #A06010;
+    --cream     : #1C1007;
+    --milk      : #140C04;
+    --surface   : #100A02;
+    --border    : #3A2810;
+    --muted     : #A89070;
+    --text      : #F6E8CC;
+    --success   : #52B288;
+    --error     : #E05040;
+    --shadow    : 0 2px 16px rgba(0,0,0,.3);
+    --shadow-md : 0 6px 30px rgba(0,0,0,.4);
+    --shadow-lg : 0 16px 56px rgba(0,0,0,.5);
+  }
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: var(--milk); }
 html, body {
   min-height: 100%; background: var(--milk); color: var(--text);
   font-family: var(--font-sans); overflow-x: hidden;
@@ -101,6 +144,38 @@ html, body {
 .method-name { font-size: .75rem; font-weight: 700; color: var(--roast); text-align: center; }
 .method-time { font-size: .65rem; color: var(--muted); }
 
+/* ── Drink type row ───────────────────────────────────── */
+.drink-type-row {
+  margin-bottom: 20px;
+}
+.drink-type-label {
+  font-size: .68rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--muted); margin-bottom: 8px;
+  display: flex; align-items: baseline; gap: 8px;
+}
+.drink-type-hint {
+  font-size: .68rem; font-weight: 400; text-transform: none;
+  letter-spacing: 0; color: var(--caramel-lt);
+}
+.drink-type-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 6px; }
+.drink-type-chip {
+  padding: 6px 14px; border-radius: 20px; font-size: .78rem; font-weight: 600;
+  background: var(--cream); border: 1.5px solid var(--border);
+  color: var(--caramel); cursor: pointer; transition: .15s;
+  font-family: var(--font-sans);
+}
+.drink-type-chip:hover { background: var(--border); }
+.drink-type-chip.active {
+  background: var(--caramel); color: #fff; border-color: var(--caramel);
+}
+.drink-type-chip .chip-ratio {
+  opacity: .75; font-weight: 400; font-size: .72rem; margin-left: 4px;
+}
+.drink-type-chip.active .chip-ratio { opacity: .85; }
+.drink-type-applied {
+  font-size: .7rem; color: var(--muted); padding-left: 2px; min-height: 1.2em;
+}
+
 /* ── Ratio calculator ─────────────────────────────────── */
 .ratio-card {
   background: var(--surface); border: 1px solid var(--border);
@@ -124,7 +199,7 @@ html, body {
 }
 .ratio-input::-webkit-inner-spin-button,
 .ratio-input::-webkit-outer-spin-button { -webkit-appearance: none; }
-.ratio-input:focus { border-color: var(--caramel); background: #fff; box-shadow: 0 0 0 3px rgba(168,98,30,.1); }
+.ratio-input:focus { border-color: var(--caramel); background: var(--surface); box-shadow: 0 0 0 3px rgba(168,98,30,.1); }
 .ratio-input.linked { background: rgba(168,98,30,.04); border-color: rgba(168,98,30,.3); }
 .ratio-unit { font-size: .7rem; color: var(--muted); margin-top: 2px; text-align: center; }
 .ratio-sep {
@@ -235,6 +310,16 @@ html, body {
   .ratio-card, .timer-card { padding: 20px 16px; }
 }
 </style>
+<script>
+// Apply saved theme before first paint to avoid flash
+(function() {
+  const saved = localStorage.getItem('borgol_dark');
+  const html  = document.documentElement;
+  if (saved === '1') html.classList.add('dark');
+  else if (saved === '0') html.classList.add('light');
+  else if (window.matchMedia('(prefers-color-scheme: dark)').matches) html.classList.add('dark');
+})();
+</script>
 </head>
 <body>
 
@@ -251,6 +336,16 @@ html, body {
 
   <!-- Method selection -->
   <div class="method-grid" id="method-grid"></div>
+
+  <!-- Drink type selector -->
+  <div class="drink-type-row">
+    <div class="drink-type-label">
+      Drink Type
+      <span class="drink-type-hint">— choose a style to set its ideal ratio</span>
+    </div>
+    <div class="drink-type-chips" id="drink-type-chips"></div>
+    <div class="drink-type-applied" id="drink-type-applied"></div>
+  </div>
 
   <!-- Ratio calculator -->
   <div class="ratio-card">
@@ -297,6 +392,7 @@ html, body {
     </div>
     <div class="timer-controls">
       <button class="timer-btn primary" id="btn-start" onclick="startTimer()">▶ Start</button>
+      <div id="start-ratio-hint" style="font-size:.7rem;color:var(--muted);margin-top:6px;"></div>
       <button class="timer-btn secondary" id="btn-reset" onclick="resetTimer()">↺ Reset</button>
     </div>
     <ul class="steps-list" id="steps-list"></ul>
@@ -310,7 +406,13 @@ html, body {
 const METHODS = [
   {
     id: 'v60', name: 'V60', icon: '🔺', time: '3–4 min',
-    defaultRatio: 15, ratioPresets: [{label:'1:15',r:15},{label:'1:16',r:16},{label:'1:17',r:17}],
+    defaultRatio: 15, defaultDrinkType: 'standard',
+    drinkTypes: [
+      { id: 'light',    label: 'Light',    ratio: 17 },
+      { id: 'standard', label: 'Standard', ratio: 15 },
+      { id: 'strong',   label: 'Strong',   ratio: 13 },
+    ],
+    ratioPresets: [{label:'1:15',r:15},{label:'1:16',r:16},{label:'1:17',r:17}],
     steps: [
       { t: 0,   label: 'Rinse & preheat', note: 'Rinse filter with hot water, discard' },
       { t: 15,  label: 'Bloom', note: '2× coffee weight of water (e.g. 40 ml), wait 30 s' },
@@ -322,7 +424,14 @@ const METHODS = [
   },
   {
     id: 'espresso', name: 'Espresso', icon: '☕', time: '25–30 s',
-    defaultRatio: 2.5, ratioPresets: [{label:'1:2',r:2},{label:'1:2.5',r:2.5},{label:'1:3',r:3}],
+    defaultRatio: 2, defaultDrinkType: 'espresso',
+    drinkTypes: [
+      { id: 'ristretto', label: 'Ristretto', ratio: 1   },
+      { id: 'espresso',  label: 'Espresso',  ratio: 2   },
+      { id: 'lungo',     label: 'Lungo',     ratio: 3   },
+      { id: 'americano', label: 'Americano', ratio: 6   },
+    ],
+    ratioPresets: [{label:'1:2',r:2},{label:'1:2.5',r:2.5},{label:'1:3',r:3}],
     steps: [
       { t: 0,  label: 'Dose & tamp', note: 'Grind fine, tamp level at 30 lbs' },
       { t: 5,  label: 'Pre-infusion', note: '3–4 s low-pressure pre-infuse' },
@@ -332,7 +441,13 @@ const METHODS = [
   },
   {
     id: 'frenchpress', name: 'French Press', icon: '🫖', time: '4 min',
-    defaultRatio: 12, ratioPresets: [{label:'1:10',r:10},{label:'1:12',r:12},{label:'1:15',r:15}],
+    defaultRatio: 12, defaultDrinkType: 'standard',
+    drinkTypes: [
+      { id: 'mild',     label: 'Mild',     ratio: 15 },
+      { id: 'standard', label: 'Standard', ratio: 12 },
+      { id: 'strong',   label: 'Strong',   ratio: 10 },
+    ],
+    ratioPresets: [{label:'1:10',r:10},{label:'1:12',r:12},{label:'1:15',r:15}],
     steps: [
       { t: 0,   label: 'Add grounds', note: 'Coarse grind — like raw sugar' },
       { t: 15,  label: 'Bloom pour', note: 'Add 2× coffee weight water, stir gently' },
@@ -344,7 +459,13 @@ const METHODS = [
   },
   {
     id: 'aeropress', name: 'AeroPress', icon: '🧪', time: '2 min',
-    defaultRatio: 13, ratioPresets: [{label:'1:10',r:10},{label:'1:13',r:13},{label:'1:16',r:16}],
+    defaultRatio: 12, defaultDrinkType: 'standard',
+    drinkTypes: [
+      { id: 'concentrate', label: 'Concentrate', ratio: 6  },
+      { id: 'standard',    label: 'Standard',    ratio: 12 },
+      { id: 'diluted',     label: 'Diluted',     ratio: 16 },
+    ],
+    ratioPresets: [{label:'1:10',r:10},{label:'1:13',r:13},{label:'1:16',r:16}],
     steps: [
       { t: 0,  label: 'Setup', note: 'Insert filter, rinse, place on cup (inverted)' },
       { t: 15, label: 'Add coffee', note: 'Medium-fine grind, 15–20 g' },
@@ -357,7 +478,12 @@ const METHODS = [
   },
   {
     id: 'moka', name: 'Moka Pot', icon: '🏺', time: '5 min',
-    defaultRatio: 7, ratioPresets: [{label:'1:7',r:7},{label:'1:8',r:8},{label:'1:9',r:9}],
+    defaultRatio: 7, defaultDrinkType: 'standard',
+    drinkTypes: [
+      { id: 'standard', label: 'Standard', ratio: 7 },
+      { id: 'mild',     label: 'Mild',     ratio: 9 },
+    ],
+    ratioPresets: [{label:'1:7',r:7},{label:'1:8',r:8},{label:'1:9',r:9}],
     steps: [
       { t: 0,   label: 'Fill bottom', note: 'Fill base with hot water to valve line' },
       { t: 30,  label: 'Add coffee', note: 'Fine grind, fill basket level (don\'t tamp)' },
@@ -369,7 +495,12 @@ const METHODS = [
   },
   {
     id: 'coldbrew', name: 'Cold Brew', icon: '🧊', time: '12–18 h',
-    defaultRatio: 6, ratioPresets: [{label:'1:5',r:5},{label:'1:6',r:6},{label:'1:8',r:8}],
+    defaultRatio: 8, defaultDrinkType: 'standard',
+    drinkTypes: [
+      { id: 'concentrate', label: 'Concentrate', ratio: 4 },
+      { id: 'standard',    label: 'Standard',    ratio: 8 },
+    ],
+    ratioPresets: [{label:'1:5',r:5},{label:'1:6',r:6},{label:'1:8',r:8}],
     steps: [
       { t: 0,     label: 'Coarse grind', note: 'Like very coarse sea salt' },
       { t: 30,    label: 'Combine', note: 'Mix coffee + cold water in jar, stir' },
@@ -381,9 +512,10 @@ const METHODS = [
 ];
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let currentMethod = METHODS[0];
+let currentMethod   = METHODS[0];
+let currentDrinkType = currentMethod.drinkTypes.find(d => d.id === currentMethod.defaultDrinkType);
 let coffeeG  = 20;
-let waterMl  = 300;
+let waterMl  = Math.round(coffeeG * currentDrinkType.ratio);
 let timerInterval = null;
 let elapsed  = 0;
 let totalSec = 0;
@@ -404,16 +536,47 @@ function buildMethodGrid() {
 
 function selectMethod(id) {
   currentMethod = METHODS.find(m => m.id === id);
+  currentDrinkType = currentMethod.drinkTypes.find(d => d.id === currentMethod.defaultDrinkType);
+  waterMl = Math.round(coffeeG * currentDrinkType.ratio);
+  document.getElementById('water-ml').value = waterMl;
   resetTimer();
   buildMethodGrid();
+  buildDrinkTypeChips();
   buildRatioPresets();
   updateRatioDisplay();
   buildSteps();
-  // Apply method's default ratio
-  const preset = currentMethod.defaultRatio;
-  waterMl = Math.round(coffeeG * preset);
+  updateStartBtn();
+}
+
+function selectDrinkType(id) {
+  currentDrinkType = currentMethod.drinkTypes.find(d => d.id === id);
+  waterMl = Math.round(coffeeG * currentDrinkType.ratio);
   document.getElementById('water-ml').value = waterMl;
+  buildDrinkTypeChips();
+  buildRatioPresets();
   updateRatioDisplay();
+  updateStartBtn();
+  document.getElementById('drink-type-applied').textContent =
+    `${currentDrinkType.label} selected — ideal ratio auto-applied. Adjust below if you like.`;
+}
+
+function buildDrinkTypeChips() {
+  const el = document.getElementById('drink-type-chips');
+  el.innerHTML = currentMethod.drinkTypes.map(d => `
+    <button class="drink-type-chip${currentDrinkType && d.id === currentDrinkType.id ? ' active' : ''}"
+      onclick="selectDrinkType('${d.id}')">
+      ${d.label}<span class="chip-ratio">1:${d.ratio}</span>
+    </button>`).join('');
+}
+
+function updateStartBtn() {
+  const btn = document.getElementById('btn-start');
+  if (btn.textContent.startsWith('▶')) {
+    document.getElementById('start-ratio-hint').textContent =
+      `${coffeeG}g coffee · ${waterMl}ml · ratio 1:${(waterMl / coffeeG).toFixed(1)}`;
+  } else {
+    document.getElementById('start-ratio-hint').textContent = '';
+  }
 }
 
 function buildRatioPresets() {
@@ -426,8 +589,15 @@ function buildRatioPresets() {
 function applyPreset(r) {
   waterMl = Math.round(coffeeG * r);
   document.getElementById('water-ml').value = waterMl;
+  // Re-match drink type if ratio aligns exactly
+  const match = currentMethod.drinkTypes.find(d => Math.abs(d.ratio - r) < 0.01);
+  currentDrinkType = match || null;
+  buildDrinkTypeChips();
   updateRatioDisplay();
   buildRatioPresets();
+  updateStartBtn();
+  document.getElementById('drink-type-applied').textContent =
+    match ? `${match.label} selected — ideal ratio auto-applied. Adjust below if you like.` : 'Custom ratio';
 }
 
 function updateRatioDisplay() {
@@ -444,14 +614,22 @@ document.getElementById('coffee-g').addEventListener('input', function() {
   const currentRatio = waterMl / prevCoffeeG;
   waterMl = Math.round(coffeeG * currentRatio);
   document.getElementById('water-ml').value = waterMl;
+  currentDrinkType = null;
+  buildDrinkTypeChips();
   updateRatioDisplay();
   buildRatioPresets();
+  updateStartBtn();
+  document.getElementById('drink-type-applied').textContent = 'Custom ratio';
 });
 
 document.getElementById('water-ml').addEventListener('input', function() {
   waterMl = parseFloat(this.value) || 1;
+  currentDrinkType = null;
+  buildDrinkTypeChips();
   updateRatioDisplay();
   buildRatioPresets();
+  updateStartBtn();
+  document.getElementById('drink-type-applied').textContent = 'Custom ratio';
 });
 
 // ── Step builder ──────────────────────────────────────────────────────────────
@@ -503,6 +681,7 @@ function startTimer() {
 
   running = true;
   document.getElementById('btn-start').textContent = '⏸ Pause';
+  document.getElementById('start-ratio-hint').textContent = '';
   document.getElementById('done-banner').classList.remove('show');
 
   timerInterval = setInterval(() => {
@@ -527,6 +706,7 @@ function resetTimer() {
   document.getElementById('done-banner').classList.remove('show');
   updateTimerDisplay();
   buildSteps();
+  updateStartBtn();
 }
 
 function updateTimerDisplay() {
@@ -589,11 +769,14 @@ function formatTime(secs) {
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init() {
   buildMethodGrid();
+  buildDrinkTypeChips();
   buildRatioPresets();
   updateRatioDisplay();
   buildSteps();
   updateTimerDisplay();
-
+  updateStartBtn();
+  document.getElementById('drink-type-applied').textContent =
+    currentDrinkType ? `${currentDrinkType.label} selected — ideal ratio auto-applied. Adjust below if you like.` : '';
   // Notification permission is requested on first Start button click (user gesture required)
 }
 
