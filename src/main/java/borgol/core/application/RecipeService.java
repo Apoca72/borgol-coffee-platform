@@ -6,6 +6,7 @@ import borgol.core.domain.RecipeComment;
 import borgol.core.ports.RecipeRepositoryPort;
 import borgol.core.ports.UserRepositoryPort;
 import borgol.infrastructure.cache.CacheKeyBuilder;
+import borgol.infrastructure.cache.CacheStatus;
 import borgol.infrastructure.cache.RedisClient;
 import borgol.infrastructure.messaging.RedisEventBus;
 import com.google.gson.Gson;
@@ -44,13 +45,15 @@ public class RecipeService {
         try {
             String json = RedisClient.get().get(key);
             if (json != null) {
-                log.debug("[Cache HIT] {}", key);
+                log.info("[Cache HIT] {}", key);
+                CacheStatus.set(CacheStatus.Value.HIT);
                 return gson.fromJson(json, type);
             }
         } catch (Exception e) {
-            log.debug("[Cache] Redis уншихад алдаа: {} — {}", key, e.getMessage());
+            log.info("[Cache] Redis уншихад алдаа: {} — {}", key, e.getMessage());
         }
-        log.debug("[Cache MISS] {}", key);
+        log.info("[Cache MISS] {}", key);
+        CacheStatus.set(CacheStatus.Value.MISS);
         return null;
     }
 

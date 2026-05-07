@@ -111,7 +111,9 @@ public class GatewayProxyRouter {
                 String cached = RedisClient.get().get(cacheKey);
                 if (cached != null) {
                     log.info("[Gateway] Cache HIT  — {}", cacheKey);
-                    ctx.status(200).contentType("application/json").result(cached);
+                    ctx.status(200).contentType("application/json")
+                       .header("X-Cache", "HIT")
+                       .result(cached);
                     ctx.skipRemainingHandlers();
                     return;
                 }
@@ -131,7 +133,9 @@ public class GatewayProxyRouter {
                     log.warn("[Gateway] Redis бичихэд алдаа: {}", e.getMessage());
                 }
             }
-            ctx.status(result.status()).contentType("application/json").result(result.body());
+            ctx.status(result.status()).contentType("application/json")
+               .header("X-Cache", "MISS")
+               .result(result.body());
             ctx.skipRemainingHandlers();
 
         } else {

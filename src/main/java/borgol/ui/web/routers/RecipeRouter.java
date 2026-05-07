@@ -2,6 +2,7 @@ package borgol.ui.web.routers;
 
 import borgol.core.application.RecipeService;
 import borgol.core.application.UserService;
+import borgol.infrastructure.cache.CacheStatus;
 import borgol.ui.web.ApiGateway;
 import borgol.ui.web.dto.CollectionReq;
 import borgol.ui.web.dto.CollectionRecipeReq;
@@ -85,7 +86,11 @@ public class RecipeRouter {
         try {
             int id        = intParam(ctx, "id");
             int currentId = authOptional(ctx);
-            ctx.json(svc.getRecipe(id, currentId));
+            var recipe    = svc.getRecipe(id, currentId);
+            String xCache = CacheStatus.headerValue();
+            if (xCache != null) ctx.header("X-Cache", xCache);
+            CacheStatus.clear();
+            ctx.json(recipe);
         } catch (IllegalArgumentException e) {
             ctx.status(404).json(err(e.getMessage()));
         }
@@ -159,7 +164,11 @@ public class RecipeRouter {
     private void getFeed(Context ctx) {
         Integer userId = authRequired(ctx);
         if (userId == null) return;
-        ctx.json(svc.getFeed(userId));
+        var feed      = svc.getFeed(userId);
+        String xCache = CacheStatus.headerValue();
+        if (xCache != null) ctx.header("X-Cache", xCache);
+        CacheStatus.clear();
+        ctx.json(feed);
     }
 
     // ── Save handlers ────────────────────────────────────────────────────────
