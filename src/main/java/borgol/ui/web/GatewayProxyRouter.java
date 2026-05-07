@@ -112,7 +112,7 @@ public class GatewayProxyRouter {
                 if (cached != null) {
                     log.info("[Gateway] Cache HIT  — {}", cacheKey);
                     ctx.status(200).contentType("application/json")
-                       .header("X-Cache", "HIT")
+                       .header("X-Borgol-Cache", "HIT")
                        .result(cached);
                     ctx.skipRemainingHandlers();
                     return;
@@ -134,7 +134,7 @@ public class GatewayProxyRouter {
                 }
             }
             ctx.status(result.status()).contentType("application/json")
-               .header("X-Cache", "MISS")
+               .header("X-Borgol-Cache", "MISS")
                .result(result.body());
             ctx.skipRemainingHandlers();
 
