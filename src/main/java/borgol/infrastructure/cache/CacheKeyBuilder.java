@@ -76,4 +76,27 @@ public final class CacheKeyBuilder {
                 + String.format("%.4f", lat) + ":"
                 + String.format("%.4f", lng);
     }
+
+    /**
+     * SOAP token баталгаажуулалтын кэш түлхүүр.
+     * Бодит token-г хадгалахгүй — hashCode()-г ашиглана (богино, аюулгүй).
+     * TTL: 300 секунд (5 минут)
+     *
+     * @param tokenHash Integer.toHexString(token.hashCode())-ийн утга
+     * @return жишээ: "borgol:soap:token:1a2b3c4d"
+     */
+    public static String forSoapToken(String tokenHash) {
+        return PREFIX + "soap:token:" + tokenHash;
+    }
+
+    /**
+     * Ойролцоох кафены кэшийн бүх түлхүүрийг олох хэв загвар.
+     * RedisClient.deleteByPattern()-д шилжүүлнэ.
+     */
+    public static final String NEARBY_PATTERN = PREFIX + "cafes:nearby:*";
+
+    /**
+     * Gateway proxy кэшийн бүх түлхүүрийг олох хэв загвар.
+     */
+    public static final String GATEWAY_CACHE_PATTERN = PREFIX + "gw:*";
 }

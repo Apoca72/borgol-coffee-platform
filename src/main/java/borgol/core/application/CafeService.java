@@ -50,6 +50,20 @@ public class CafeService {
         }
     }
 
+    /**
+     * Ойролцоох кафены бүх кэш оруулгыг устгана.
+     * Шинэ кафе нэмэх эсвэл үнэлгээ өөрчлөхөд дуудагдана.
+     * SCAN аргаар хайна — KEYS-г биш (production-safe).
+     */
+    private void cacheEvictNearby() {
+        try {
+            long n = RedisClient.get().deleteByPattern(CacheKeyBuilder.NEARBY_PATTERN);
+            if (n > 0) log.debug("[Cache EVICT] {} borgol:cafes:nearby:* entries cleared", n);
+        } catch (Exception e) {
+            log.debug("[Cache] Nearby eviction error: {}", e.getMessage());
+        }
+    }
+
     // ── Cafes ─────────────────────────────────────────────────────────────────
 
     public List<CafeListing> getCafes(int currentUserId, String search, String district) {
@@ -76,12 +90,15 @@ public class CafeService {
         c.setHours(hours);
         c.setImageUrl(imageUrl != null ? imageUrl : "");
         c.setSubmittedBy(submittedBy);
-        return repo.createCafe(c);
+        CafeListing created = repo.createCafe(c);
+        cacheEvictNearby();   // шинэ кафе нэмэгдсэн → nearby кэш хуучирсан
+        return created;
     }
 
     public CafeListing rateCafe(int userId, int cafeId, int rating, String review) {
         repo.rateCafe(userId, cafeId, rating, review);
         achievements.checkAndAwardAchievements(userId);
+        cacheEvictNearby();   // үнэлгээ өөрчлөгдсөн → nearby жагсаалт шинэчлэгдэж болно
         return getCafe(cafeId, userId);
     }
 

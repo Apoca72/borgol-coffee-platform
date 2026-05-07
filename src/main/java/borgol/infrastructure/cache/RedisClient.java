@@ -131,6 +131,34 @@ public class RedisClient {
     }
 
     /**
+     * Устгах хэв загварт тохирох бүх түлхүүрийг устгана.
+     * SCAN командаар давтан хайна — KEYS-г ашиглахгүй (production-safe).
+     *
+     * @param pattern Redis glob хэв загвар, жишээ нь "borgol:cafes:nearby:*"
+     * @return        устгасан түлхүүрийн тоо
+     */
+    public long deleteByPattern(String pattern) {
+        long deleted = 0;
+        try (Jedis jedis = pool.getResource()) {
+            String cursor = "0";
+            do {
+                redis.clients.jedis.params.ScanParams params =
+                    new redis.clients.jedis.params.ScanParams().match(pattern).count(100);
+                redis.clients.jedis.resps.ScanResult<String> result =
+                    jedis.scan(cursor, params);
+                cursor = result.getCursor();
+                if (!result.getResult().isEmpty()) {
+                    jedis.del(result.getResult().toArray(new String[0]));
+                    deleted += result.getResult().size();
+                }
+            } while (!"0".equals(cursor));
+        } catch (Exception e) {
+            System.err.println("[Redis] deleteByPattern error: " + e.getMessage());
+        }
+        return deleted;
+    }
+
+    /**
      * Холболтын сангийн нөөцийг чөлөөлнэ.
      * Программ зогсохдоо дуудаж болно.
      */

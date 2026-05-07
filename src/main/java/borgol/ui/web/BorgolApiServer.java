@@ -36,11 +36,12 @@ import java.util.function.Consumer;
  */
 public class BorgolApiServer {
 
-    private final BorgolService  borgol;
-    private final MenuService    menuService;
-    private final Javalin        app;
-    private final ApiGateway     gateway;
-    private final RedisEventBus  eventBus;
+    private final BorgolService      borgol;
+    private final MenuService        menuService;
+    private final Javalin            app;
+    private final ApiGateway         gateway;
+    private final RedisEventBus      eventBus;
+    private final GatewayProxyRouter proxyRouter;
 
     public BorgolApiServer(BorgolService borgol, MenuService menuService,
                            ApiGateway gateway, RedisEventBus eventBus) {
@@ -55,6 +56,8 @@ public class BorgolApiServer {
                 h.setMaxFormContentSize(8 * 1024 * 1024));
         });
         gateway.registerFilters(app);
+        this.proxyRouter = new GatewayProxyRouter();
+        proxyRouter.register(app);   // proxy before()-filters fire BEFORE internal routes
         registerRoutes();
     }
 

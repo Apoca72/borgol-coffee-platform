@@ -130,13 +130,41 @@ public class SoapAuthClient {
     // ── ValidateToken ──────────────────────────────────────────────────────────
 
     /**
-     * Calls SOAP ValidateToken.
-     * Returns valid=false if the token is bad or SOAP is unreachable.
+     * Calls SOAP ValidateToken with Redis caching.
+     *
+     * Cache strategy (SOAP Cache Management — Lab 08 Bonus):
+     *   Cache Hit  → "valid|userId|username" string parse хийж буцаана (SOAP дуудахгүй)
+     *   Cache Miss → SOAP дуудаж, valid=true бол Redis-д 300 секунд хадгална
+     *
+     * Зөвхөн valid=true хариуг кэшэлнэ.
+     * Шалтгаан: invalid token-уудыг дахин хурдан татгалздаг тул кэш хэрэггүй.
+     *
+     * Кэш түлхүүр: "borgol:soap:token:{hex(hashCode)}" — token-г хадгалахгүй.
      */
     public ValidationResult validateToken(String token) {
         if (token == null || token.isBlank())
             return new ValidationResult(false, null, null);
 
+        // ── Cache Hit ────────────────────────────────────────────────────────
+        String cacheKey = borgol.infrastructure.cache.CacheKeyBuilder.forSoapToken(
+                Integer.toHexString(token.hashCode()));
+        try {
+            String cached = borgol.infrastructure.cache.RedisClient.get().get(cacheKey);
+            if (cached != null) {
+                // Формат: "true|42|coffee_master"
+                String[] parts    = cached.split("\\|", 3);
+                boolean  valid    = Boolean.parseBoolean(parts[0]);
+                Integer  userId   = parts[1].isEmpty() ? null : Integer.parseInt(parts[1]);
+                String   username = parts[2].isEmpty() ? null : parts[2];
+                System.out.println("  [SOAP Cache HIT] token hash=" +
+                    Integer.toHexString(token.hashCode()));
+                return new ValidationResult(valid, userId, username);
+            }
+        } catch (Exception ignored) {
+            // Redis унасан → SOAP дуудлага руу унана
+        }
+
+        // ── Cache Miss — SOAP дуудах ─────────────────────────────────────────
         String body = soapEnvelope("""
             <auth:ValidateTokenRequest xmlns:auth="%s">
               <auth:token>%s</auth:token>
@@ -148,11 +176,40 @@ public class SoapAuthClient {
             String  uidStr   = extractTag(xml,  "userId");
             String  username = extractTag(xml,  "username");
             Integer userId   = uidStr != null ? Integer.parseInt(uidStr) : null;
+
+            // Зөвхөн valid token-г кэшэлнэ
+            if (valid) {
+                try {
+                    String value = valid + "|" + (userId != null ? userId : "") +
+                                   "|" + (username != null ? username : "");
+                    borgol.infrastructure.cache.RedisClient.get().setex(cacheKey, 300, value);
+                    System.out.println("  [SOAP Cache MISS→stored] token hash=" +
+                        Integer.toHexString(token.hashCode()));
+                } catch (Exception ignored) { }
+            }
             return new ValidationResult(valid, userId, username);
         } catch (Exception e) {
-            // SOAP unavailable – fall back to local JWT (handled in BorgolApiServer)
+            // SOAP unavailable — fall back to local JWT (handled in ApiGateway)
             return new ValidationResult(false, null, null);
         }
+    }
+
+    /**
+     * SOAP token кэшийг устгана — Cache Invalidation (Lab 08 Bonus).
+     * Хэрэглэгч гарсан эсвэл token хүчингүй болсон үед дуудна.
+     * Дараагийн хүсэлт Redis-г тойрч SOAP сервист баталгаажуулна.
+     *
+     * @param token устгах токен
+     */
+    public void invalidateSoapToken(String token) {
+        if (token == null || token.isBlank()) return;
+        String cacheKey = borgol.infrastructure.cache.CacheKeyBuilder.forSoapToken(
+                Integer.toHexString(token.hashCode()));
+        try {
+            borgol.infrastructure.cache.RedisClient.get().del(cacheKey);
+            System.out.println("  [SOAP Cache EVICT] token hash=" +
+                Integer.toHexString(token.hashCode()));
+        } catch (Exception ignored) { }
     }
 
     // ── Private helpers ────────────────────────────────────────────────────────
