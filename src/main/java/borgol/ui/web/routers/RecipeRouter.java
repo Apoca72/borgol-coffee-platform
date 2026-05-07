@@ -88,7 +88,7 @@ public class RecipeRouter {
             int currentId = authOptional(ctx);
             var recipe    = svc.getRecipe(id, currentId);
             String xCache = CacheStatus.headerValue();
-            if (xCache != null) ctx.header("X-Borgol-Cache", xCache);
+            ctx.header("X-Borgol-Cache", xCache != null ? xCache : "MISS");
             CacheStatus.clear();
             ctx.json(recipe);
         } catch (IllegalArgumentException e) {
