@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Register – Borgol Coffee</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600;1,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet"/>
 <style>
 :root {
   --espresso  : #0C0400;
@@ -13,6 +13,7 @@
   --caramel   : #A8621E;
   --caramel-lt: #CB8840;
   --gold      : #E8A030;
+  --amber     : #F5C060;
   --cream     : #F6E8CC;
   --milk      : #FDFAF3;
   --surface   : #FFFEF8;
@@ -21,237 +22,450 @@
   --text      : #180F08;
   --success   : #2D6A4F;
   --error     : #B5321E;
-  --shadow-lg : 0 20px 60px rgba(12,4,0,.18);
-  --radius    : 14px;
-  --radius-lg : 20px;
   --font-serif: 'Playfair Display', Georgia, serif;
   --font-sans : 'DM Sans', -apple-system, sans-serif;
+  --font-light: 'Cormorant Garamond', Georgia, serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; background: var(--milk); color: var(--text); font-family: var(--font-sans); overflow-x: hidden; }
+html, body { height: 100%; font-family: var(--font-sans); }
 
-@keyframes slideDown { from { opacity:0; transform:translateY(-14px) } to { opacity:1; transform:none } }
-@keyframes cardIn    { from { opacity:0; transform:translateY(28px) } to { opacity:1; transform:translateY(0) } }
-@keyframes slideIn   { from { opacity:0; transform:translateY(-8px) } to { opacity:1; transform:translateY(0) } }
-@keyframes spin      { to { transform:rotate(360deg) } }
-@keyframes pulse     { 0%,100%{opacity:1} 50%{opacity:.3} }
+@keyframes spin    { to { transform:rotate(360deg) } }
+@keyframes slideIn { from { opacity:0; transform:translateY(-8px) } to { opacity:1; transform:translateY(0) } }
+@keyframes formIn  { from { opacity:0; transform:translateX(32px) } to { opacity:1; transform:translateX(0) } }
+@keyframes panelIn { from { opacity:0; transform:translateX(-24px) } to { opacity:1; transform:translateX(0) } }
+@keyframes ringPulse { 0%,100% { opacity:.16; transform:scale(1) } 50% { opacity:.28; transform:scale(1.04) } }
+@keyframes floatUp { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-10px) } }
+@keyframes drip {
+  0%   { height: 0; opacity: 0; }
+  20%  { opacity: 1; }
+  60%  { height: 32px; opacity: .8; }
+  100% { height: 32px; opacity: 0; transform: translateY(12px); }
+}
+@keyframes steam {
+  0%   { opacity:0; transform:translateY(0) scaleX(1) }
+  30%  { opacity:.55 }
+  70%  { opacity:.25; transform:translateY(-36px) scaleX(1.3) }
+  100% { opacity:0; transform:translateY(-60px) scaleX(.8) }
+}
 
-/* ── Navbar ───────────────────────────────────────────── */
-.navbar {
-  background: linear-gradient(135deg, var(--espresso) 0%, #1A0800 100%);
-  height: 62px; display: flex; align-items: center;
-  padding: 0 28px; gap: 16px;
-  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
-  box-shadow: 0 2px 24px rgba(0,0,0,.45);
-  animation: slideDown .4s ease;
-}
-.nav-brand {
-  display: flex; align-items: center; gap: 8px;
-  font-family: var(--font-serif); font-size: 19px; font-weight: 700; color: #fff;
-}
-.nav-brand span { font-size: 24px; }
-.nav-right { margin-left: auto; }
-.nav-out-link {
-  padding: 7px 18px; border: 1.5px solid rgba(255,255,255,.25);
-  border-radius: 20px; font-size: 13px; font-weight: 600;
-  color: rgba(255,255,255,.8); text-decoration: none; transition: .2s;
-}
-.nav-out-link:hover { background: rgba(255,255,255,.1); color: #fff; border-color: rgba(255,255,255,.5); }
-
-/* ── Page ─────────────────────────────────────────────── */
-.page {
+/* ── Layout ─────────────────────────────────────────────── */
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  padding: 80px 20px 48px;
-  background:
-    radial-gradient(ellipse 55% 45% at 10% 90%, rgba(168,98,30,.08) 0%, transparent 60%),
-    radial-gradient(ellipse 45% 35% at 90% 10%, rgba(12,4,0,.04) 0%, transparent 55%);
 }
 
-/* ── Card ─────────────────────────────────────────────── */
-.card {
-  width: 100%; max-width: 460px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 48px 44px;
-  box-shadow: var(--shadow-lg);
-  animation: cardIn .7s cubic-bezier(.16,1,.3,1) both;
+/* ── Left panel ─────────────────────────────────────────── */
+.panel-left {
+  background: linear-gradient(170deg, #1A0800 0%, var(--espresso) 60%, #0A0300 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 44px 52px;
+  animation: panelIn .8s cubic-bezier(.16,1,.3,1) both;
 }
 
-/* ── Card header ──────────────────────────────────────── */
-.card-header { text-align: center; margin-bottom: 32px; }
-.icon-circle {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 68px; height: 68px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--caramel), var(--caramel-lt));
-  font-size: 30px; margin-bottom: 18px;
-  box-shadow: 0 8px 28px rgba(168,98,30,.3);
+.panel-left::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.055'/%3E%3C/svg%3E");
+  background-size: 180px;
+  pointer-events: none;
+  z-index: 1;
 }
-.card-title {
+.panel-left::after {
+  content: '';
+  position: absolute;
+  top: -100px;
+  right: -120px;
+  width: 440px;
+  height: 440px;
+  background: radial-gradient(circle, rgba(232,160,48,.1) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(232,160,48,.12);
+  animation: ringPulse 5s ease-in-out infinite;
+}
+.ring-1 { width: 320px; height: 320px; bottom: -100px; right: -130px; animation-delay: 0s; }
+.ring-2 { width: 200px; height: 200px; bottom: -40px; right: -60px; animation-delay: 1.2s; border-color: rgba(232,160,48,.2); }
+.ring-3 { width: 160px; height: 160px; top: 30%; left: -80px; animation-delay: 2.4s; }
+
+.panel-content { position: relative; z-index: 2; }
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-family: var(--font-serif);
-  font-size: 2rem; font-weight: 700; color: var(--roast);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--cream);
 }
-.card-sub {
-  font-size: .78rem; color: var(--muted);
-  letter-spacing: .09em; text-transform: uppercase; margin-top: 5px;
+.brand-dot {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--caramel), var(--caramel-lt));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+
+.panel-headline { margin-top: 80px; }
+
+.headline-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--caramel-lt);
+  margin-bottom: 20px;
+}
+.headline-title {
+  font-family: var(--font-serif);
+  font-size: clamp(2.2rem, 3.2vw, 3rem);
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.14;
+  margin-bottom: 22px;
+}
+.headline-title em { font-style: italic; color: var(--amber); }
+
+.headline-sub {
+  font-family: var(--font-light);
+  font-size: 1.05rem;
+  font-weight: 300;
+  color: rgba(246,232,204,.5);
+  line-height: 1.7;
+  max-width: 300px;
+}
+
+/* features list */
+.features {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: .83rem;
+  color: rgba(246,232,204,.6);
+  font-weight: 400;
+}
+.feature-icon {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: rgba(246,232,204,.08);
+  border: 1px solid rgba(246,232,204,.12);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+/* coffee drip art */
+.drip-art {
+  position: absolute;
+  bottom: 60px;
+  right: 52px;
+  z-index: 2;
+  animation: floatUp 7s ease-in-out infinite;
+}
+.drip-container {
+  position: relative;
+  width: 60px;
+  height: 100px;
+}
+.drip-cup {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 36px;
+  border: 1.5px solid rgba(246,232,204,.2);
+  border-top: none;
+  border-radius: 0 0 14px 14px;
+  background: rgba(168,98,30,.2);
+}
+.drip-filter {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48px;
+  height: 38px;
+  border: 1.5px solid rgba(246,232,204,.18);
+  border-radius: 4px 4px 20px 20px;
+  background: rgba(246,232,204,.06);
+}
+.drip-line {
+  position: absolute;
+  top: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  background: rgba(168,98,30,.5);
+  border-radius: 0 0 2px 2px;
+  animation: drip 1.8s ease-in-out infinite;
+}
+
+.panel-footer {
+  position: relative;
+  z-index: 2;
+  font-size: 11px;
+  color: rgba(246,232,204,.28);
+  letter-spacing: .04em;
+}
+
+/* ── Right panel ─────────────────────────────────────────── */
+.panel-right {
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 52px;
+  overflow-y: auto;
+  animation: formIn .8s cubic-bezier(.16,1,.3,1) .1s both;
+}
+
+.form-wrap { width: 100%; max-width: 390px; }
+
+.form-header { margin-bottom: 32px; }
+.form-title {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--roast);
+  margin-bottom: 6px;
+}
+.form-subtitle {
+  font-size: .83rem;
+  color: var(--muted);
+  line-height: 1.5;
 }
 .service-badge {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 4px 12px; border-radius: 20px;
+  padding: 5px 12px; border-radius: 20px;
   background: var(--cream); border: 1px solid var(--border);
-  font-size: .7rem; color: var(--muted); margin-top: 12px;
+  font-size: .69rem; color: var(--muted); margin-top: 14px; font-weight: 500;
 }
-.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); animation: pulse 2s ease-in-out infinite; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); animation: ringPulse 2s ease-in-out infinite; }
 
-/* ── Alert ────────────────────────────────────────────── */
 .alert {
-  padding: 12px 16px; border-radius: 10px;
-  font-size: .875rem; margin-bottom: 20px;
-  display: none; animation: slideIn .3s ease both;
+  padding: 11px 15px; border-radius: 10px;
+  font-size: .86rem; margin-bottom: 20px;
+  display: none; animation: slideIn .3s ease both; line-height: 1.45;
 }
-.alert-error   { background: rgba(181,50,30,.08); border: 1px solid rgba(181,50,30,.25); color: var(--error);   display: block; }
-.alert-success { background: rgba(45,106,79,.08);  border: 1px solid rgba(45,106,79,.25);  color: var(--success); display: block; }
+.alert-error   { background: rgba(181,50,30,.07); border: 1px solid rgba(181,50,30,.22); color: var(--error); display: block; }
+.alert-success { background: rgba(45,106,79,.07);  border: 1px solid rgba(45,106,79,.22);  color: var(--success); display: block; }
 
-/* ── Form ─────────────────────────────────────────────── */
 .form-group { margin-bottom: 18px; position: relative; }
 
-label {
-  display: block; margin-bottom: 6px;
-  font-size: .74rem; font-weight: 700;
-  letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
+.field-label {
+  display: block; margin-bottom: 7px;
+  font-size: .72rem; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+}
+.field-label .opt {
+  color: var(--caramel-lt); font-weight: 400;
+  text-transform: none; letter-spacing: 0;
 }
 
-input {
-  width: 100%; padding: 12px 14px;
+.field-input {
+  width: 100%; padding: 13px 16px;
   background: var(--milk); border: 1.5px solid var(--border);
-  border-radius: var(--radius); color: var(--text);
+  border-radius: 12px; color: var(--text);
   font-family: var(--font-sans); font-size: .95rem;
-  outline: none; transition: all .2s;
+  outline: none; transition: border-color .2s, box-shadow .2s, background .2s;
 }
-input::placeholder { color: rgba(138,112,84,.45); }
-input:focus {
+.field-input::placeholder { color: rgba(138,112,84,.4); }
+.field-input:focus {
   border-color: var(--caramel); background: #fff;
-  box-shadow: 0 0 0 3px rgba(168,98,30,.12);
+  box-shadow: 0 0 0 3.5px rgba(168,98,30,.1);
 }
 
-/* ── Password strength ────────────────────────────────── */
+/* strength bar */
 .strength-bar {
   height: 3px; border-radius: 2px;
   background: var(--border); margin-top: 8px; overflow: hidden;
 }
 .strength-fill { height: 100%; border-radius: 2px; transition: width .3s, background .3s; width: 0%; }
 
-/* ── Button ───────────────────────────────────────────── */
-.btn {
-  width: 100%; padding: 13px; margin-top: 8px;
-  background: linear-gradient(135deg, var(--caramel) 0%, var(--caramel-lt) 100%);
-  border: none; border-radius: var(--radius);
-  color: #fff; font-family: var(--font-sans);
+.btn-submit {
+  width: 100%; padding: 14px; margin-top: 10px;
+  background: linear-gradient(135deg, var(--roast) 0%, #3D1A08 100%);
+  border: none; border-radius: 12px;
+  color: var(--cream); font-family: var(--font-sans);
   font-size: .95rem; font-weight: 700;
   cursor: pointer; position: relative; overflow: hidden;
   transition: transform .18s, box-shadow .18s;
-  box-shadow: 0 4px 16px rgba(168,98,30,.3);
+  box-shadow: 0 4px 20px rgba(12,4,0,.28);
+  letter-spacing: .03em;
 }
-.btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(168,98,30,.4); }
-.btn:active { transform: translateY(0); }
-.btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.btn-submit::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(232,160,48,.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+.btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(12,4,0,.36); }
+.btn-submit:active { transform: translateY(0); }
+.btn-submit:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
 .btn-spinner {
-  display: inline-block; width: 15px; height: 15px;
-  border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid rgba(246,232,204,.3); border-top-color: var(--cream);
   border-radius: 50%; animation: spin .7s linear infinite;
   margin-right: 8px; vertical-align: middle;
 }
 
-/* ── Divider ──────────────────────────────────────────── */
 .divider {
-  text-align: center; margin: 24px 0;
-  position: relative; color: var(--muted); font-size: .78rem;
+  text-align: center; margin: 22px 0;
+  position: relative; color: var(--muted); font-size: .76rem;
 }
 .divider::before {
   content: ''; position: absolute; left: 0; right: 0; top: 50%;
   height: 1px; background: var(--border);
 }
-.divider span { position: relative; background: var(--surface); padding: 0 12px; }
+.divider span { position: relative; background: var(--surface); padding: 0 14px; }
 
-/* ── Footer link ──────────────────────────────────────── */
-.footer-link { text-align: center; font-size: .875rem; color: var(--muted); margin-top: 20px; }
-.footer-link a { color: var(--caramel); text-decoration: none; font-weight: 600; }
-.footer-link a:hover { color: var(--roast); }
-
-/* ── Mobile ───────────────────────────────────────────── */
-@media (max-width: 600px) {
-  .navbar { padding: 0 16px; height: 56px; }
-  .page { padding: 72px 14px 36px; }
-  .card { padding: 36px 20px; border-radius: var(--radius); }
-  .card-title { font-size: 1.7rem; }
-  .icon-circle { width: 58px; height: 58px; font-size: 26px; }
-  input { font-size: 1rem; padding: 13px 14px; }
-  .btn  { font-size: 1rem; padding: 14px; }
-  .form-group { margin-bottom: 14px; }
+.form-footer {
+  text-align: center; font-size: .875rem;
+  color: var(--muted); margin-top: 18px;
 }
-@media (max-width: 360px) {
-  .card { padding: 28px 14px; }
-  .card-title { font-size: 1.5rem; }
+.form-footer a { color: var(--caramel); text-decoration: none; font-weight: 600; }
+.form-footer a:hover { color: var(--roast); text-decoration: underline; }
+
+/* ── Mobile ─────────────────────────────────────────────── */
+@media (max-width: 800px) {
+  .split { grid-template-columns: 1fr; }
+  .panel-left { min-height: 200px; padding: 32px 28px; }
+  .panel-headline { margin-top: 28px; }
+  .headline-title { font-size: 1.9rem; }
+  .features, .drip-art, .ring-3, .panel-footer { display: none; }
+  .panel-right { padding: 36px 22px 56px; }
+  .form-wrap { max-width: 100%; }
 }
 </style>
 </head>
 <body>
 
-<nav class="navbar">
-  <div class="nav-brand"><span>☕</span> Borgol</div>
-  <div class="nav-right">
-    <a href="/login.html" class="nav-out-link">Sign In</a>
-  </div>
-</nav>
+<div class="split">
 
-<div class="page">
-  <div class="card">
+  <!-- ── Left panel ── -->
+  <div class="panel-left">
+    <div class="ring ring-1"></div>
+    <div class="ring ring-2"></div>
+    <div class="ring ring-3"></div>
 
-    <div class="card-header">
-      <div class="icon-circle">☕</div>
-      <div class="card-title">Create Account</div>
-      <div class="card-sub">Borgol Coffee Platform</div>
-      <div style="margin-top:10px;">
-        <span class="service-badge">
-          <span class="dot"></span>
-          Auth via SOAP Service
-        </span>
+    <div class="panel-content">
+      <div class="brand">
+        <div class="brand-dot">☕</div>
+        Borgol
+      </div>
+
+      <div class="panel-headline">
+        <div class="headline-label">Join the Community</div>
+        <h1 class="headline-title">
+          Your coffee<br>
+          story <em>starts</em><br>
+          today.
+        </h1>
+        <p class="headline-sub">
+          A platform for those who believe every cup tells a story worth sharing.
+        </p>
+      </div>
+
+      <div class="features">
+        <div class="feature-item">
+          <div class="feature-icon">📖</div>
+          Share & discover brew recipes
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🗺️</div>
+          Explore cafés in Ulaanbaatar
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">📊</div>
+          Track your brew journal
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🤖</div>
+          Chat with Bean AI assistant
+        </div>
       </div>
     </div>
 
-    <div id="alert" class="alert"></div>
-
-    <form id="registerForm" autocomplete="off">
-      <div class="form-group">
-        <label for="username">Username</label>
-        <input id="username" type="text" placeholder="coffee_master" required/>
+    <div class="drip-art">
+      <div class="drip-container">
+        <div class="drip-filter"></div>
+        <div class="drip-line"></div>
+        <div class="drip-cup"></div>
       </div>
-      <div class="form-group">
-        <label for="email">Email Address</label>
-        <input id="email" type="email" placeholder="you@borgol.mn" required/>
-      </div>
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input id="password" type="password" placeholder="At least 6 characters" required/>
-        <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
-      </div>
-      <div class="form-group" style="margin-bottom:28px;">
-        <label for="bio">Short Bio <span style="color:var(--caramel-lt);font-weight:400;">(optional)</span></label>
-        <input id="bio" type="text" placeholder="Espresso enthusiast from Ulaanbaatar"/>
-      </div>
-      <button type="submit" class="btn" id="submitBtn">Create Account</button>
-    </form>
-
-    <div class="divider"><span>or</span></div>
-
-    <div class="footer-link">
-      Already have an account? <a href="/login.html">Sign in</a>
     </div>
 
+    <div class="panel-footer">
+      © 2025 Borgol · ICSI486 · С.Тэмүүлэн
+    </div>
   </div>
+
+  <!-- ── Right panel ── -->
+  <div class="panel-right">
+    <div class="form-wrap">
+
+      <div class="form-header">
+        <h2 class="form-title">Create account</h2>
+        <p class="form-subtitle">Free forever. No credit card required.</p>
+        <div>
+          <span class="service-badge">
+            <span class="dot"></span>
+            Auth via SOAP Service
+          </span>
+        </div>
+      </div>
+
+      <div id="alert" class="alert"></div>
+
+      <form id="registerForm" autocomplete="off">
+        <div class="form-group">
+          <label class="field-label" for="username">Username</label>
+          <input class="field-input" id="username" type="text" placeholder="coffee_master" required/>
+        </div>
+        <div class="form-group">
+          <label class="field-label" for="email">Email Address</label>
+          <input class="field-input" id="email" type="email" placeholder="you@borgol.mn" required/>
+        </div>
+        <div class="form-group">
+          <label class="field-label" for="password">Password</label>
+          <input class="field-input" id="password" type="password" placeholder="At least 6 characters" required/>
+          <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+        </div>
+        <div class="form-group" style="margin-bottom:28px;">
+          <label class="field-label" for="bio">Short Bio <span class="opt">(optional)</span></label>
+          <input class="field-input" id="bio" type="text" placeholder="Espresso enthusiast from Ulaanbaatar"/>
+        </div>
+        <button type="submit" class="btn-submit" id="submitBtn">Create Account</button>
+      </form>
+
+      <div class="divider"><span>or</span></div>
+
+      <div class="form-footer">
+        Already have an account? <a href="/login.html">Sign in</a>
+      </div>
+
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -316,7 +530,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
       });
     }
 
-    alert.textContent = '✓ Account created! Redirecting to your profile…';
+    alert.textContent = '✓ Account created! Redirecting…';
     alert.className   = 'alert alert-success';
     btn.innerHTML     = '✓ Success';
 
