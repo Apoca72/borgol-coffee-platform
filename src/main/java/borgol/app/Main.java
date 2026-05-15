@@ -1,7 +1,9 @@
 package borgol.app;
 
 import borgol.core.application.BorgolService;
+import borgol.core.application.FileService;
 import borgol.core.application.MenuService;
+import borgol.infrastructure.storage.S3FileStorage;
 import borgol.core.domain.MenuCategory;
 import borgol.core.ports.IMenuRepository;
 import borgol.infrastructure.cache.RedisClient;
@@ -96,7 +98,9 @@ public class Main {
             int port = Integer.parseInt(
                 System.getenv().getOrDefault("PORT", "7000"));
             System.out.println("  [MODE] Web server mode — port " + port);
-            BorgolApiServer server = new BorgolApiServer(borgolService, menuService, gateway, eventBus);
+            // Lab 07: File Manager Service — S3-compatible object storage
+            FileService fileService = new FileService(new S3FileStorage());
+            BorgolApiServer server = new BorgolApiServer(borgolService, menuService, gateway, eventBus, fileService);
             server.start(port);
             // Javalin/Jetty нь ард (background thread)-д ажиллана
             // main thread-г унтраахгүйн тулд join() хийнэ

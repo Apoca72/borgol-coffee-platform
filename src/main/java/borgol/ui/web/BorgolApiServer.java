@@ -8,15 +8,22 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import borgol.core.application.BorgolService;
+import borgol.core.application.FileService;
 import borgol.core.application.MenuService;
 import borgol.core.domain.MenuCategory;
 import borgol.infrastructure.messaging.RedisEventBus;
 import borgol.infrastructure.security.SoapAuthClient;
 // SoapAuthClient is imported only for its result record types — instantiation lives in ApiGateway
 
+import io.javalin.http.UploadedFile;
+import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import jakarta.servlet.MultipartConfigElement;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -81,14 +88,17 @@ public class BorgolApiServer {
 
     private final BorgolService  borgol;       // бизнесийн логик
     private final MenuService    menuService;  // legacy цэсний сервис
+    private final FileService    fileService;  // Lab 07 — File Manager Service
     private final Javalin        app;          // Javalin/Jetty HTTP сервер
     private final ApiGateway     gateway;      // нэвтрэлт, хурд хязгаарлалт, CORS, SOAP subnet
     private final RedisEventBus  eventBus;     // Pub/Sub SSE мэдэгдэл
 
     public BorgolApiServer(BorgolService borgol, MenuService menuService,
-                           ApiGateway gateway, RedisEventBus eventBus) {
+                           ApiGateway gateway, RedisEventBus eventBus,
+                           FileService fileService) {
         this.borgol      = borgol;
         this.menuService = menuService;
+        this.fileService = fileService;
         this.gateway     = gateway;
         this.eventBus    = eventBus;
         this.app = Javalin.create(cfg -> {
@@ -215,6 +225,14 @@ public class BorgolApiServer {
         // ── Bean AI — Google Gemini 1.5 Flash-д суурилсан чат туслагч ───────
         // Server-Sent Events (SSE) → хариуг үг бүрээр дамжуулна (streaming)
         app.post("/api/bean/chat", this::beanChat);
+
+        // ── Lab 07: File Manager Service — multipart image upload ────────────
+        // Jetty needs MultipartConfigElement set BEFORE the handler reads the parts
+        app.before("/api/files/upload", ctx ->
+            ctx.req().setAttribute("org.eclipse.jetty.multipartConfig",
+                new MultipartConfigElement(System.getProperty("java.io.tmpdir"),
+                    8 * 1024 * 1024L, 8 * 1024 * 1024L, 512 * 1024)));
+        app.post("/api/files/upload", this::uploadFile);
 
         // Block
         app.post  ("/api/users/{id}/block", this::blockUser);
@@ -731,6 +749,40 @@ public class BorgolApiServer {
             borgol.deleteUserBean(id, userId);
             ctx.status(204);
         } catch (Exception e) { ctx.status(404).result(e.getMessage()); }
+    }
+
+    // ── Lab 07: File upload handler ───────────────────────────────────────────
+
+    private void uploadFile(Context ctx) {
+        // SOAP token validation — required by Lab 07
+        int userId = gateway.authenticate(ctx, true);
+
+        if (!fileService.isConfigured()) {
+            ctx.status(503).json(err("File storage not configured"));
+            return;
+        }
+
+        List<UploadedFile> files = ctx.uploadedFiles("file");
+        if (files.isEmpty()) {
+            ctx.status(400).json(err("No file uploaded (field name: 'file')"));
+            return;
+        }
+        UploadedFile upload = files.get(0);
+
+        try (InputStream stream = upload.content()) {
+            String url = fileService.uploadImage(
+                userId,
+                upload.filename(),
+                upload.contentType(),
+                stream,
+                upload.size()
+            );
+            ctx.status(201).json(Map.of("url", url));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(err(e.getMessage()));
+        } catch (Exception e) {
+            ctx.status(500).json(err("Upload failed: " + e.getMessage()));
+        }
     }
 
     // ── Equipment handlers ────────────────────────────────────────────────────

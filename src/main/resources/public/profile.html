@@ -630,38 +630,62 @@ function setAvatar(dataUrl) {
     : (userData ? (userData.username || 'U').charAt(0).toUpperCase() : 'U');
 }
 
-// ── File picker handler ───────────────────────────────────────────────────────
+// ── File picker handler (Lab 07: File Manager Service) ───────────────────────
 document.getElementById('avatarFileInput').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
   if (!file.type.startsWith('image/')) { showToast('Please select an image file', 'error'); return; }
 
-  const hint = document.querySelector('.avatar-upload-hint');
-  hint.textContent = 'Compressing…';
+  const hint  = document.querySelector('.avatar-upload-hint');
+  const token = localStorage.getItem('borgol_token');
+  hint.textContent = 'Uploading…';
 
   try {
-    const compressed = await compressImage(file);
-    const kb = Math.round((compressed.length * 3) / 4 / 1024);
-    localStorage.setItem('borgol_avatar', compressed);
-    setAvatar(compressed);
-    hint.textContent = `${kb} KB · saved`;
+    let avatarUrl;
+
+    // Try S3 upload first; fall back to local base64 if storage not configured (503)
+    if (token) {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(`${JSON_BASE}/api/files/upload`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: form
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        avatarUrl = data.url;
+      } else if (res.status === 503) {
+        // Storage not configured — compress and store as base64 locally
+        hint.textContent = 'Compressing…';
+        avatarUrl = await compressImage(file);
+      } else {
+        throw new Error(await res.text());
+      }
+    } else {
+      avatarUrl = await compressImage(file);
+    }
+
+    localStorage.setItem('borgol_avatar', avatarUrl);
+    setAvatar(avatarUrl);
+    hint.textContent = 'Photo updated';
     setTimeout(() => { hint.textContent = 'Tap to change'; }, 2500);
 
-    // Persist to server
-    const token = localStorage.getItem('borgol_token');
+    // Persist URL to user profile
     if (token) {
       fetch(`${JSON_BASE}/api/users/me`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ avatarUrl: compressed })
-      }).catch(() => {}); // best-effort; avatar already saved locally
+        body: JSON.stringify({ avatarUrl })
+      }).catch(() => {});
     }
     showToast('✓ Photo updated', 'success');
   } catch (err) {
     hint.textContent = 'Tap to change';
-    showToast('✗ Failed to process image', 'error');
+    showToast('✗ Failed to upload image', 'error');
   }
-  e.target.value = ''; // reset so same file can be re-selected
+  e.target.value = '';
 });
 
 // ── Mobile nav ──────────────────────────────────────────────────────────────
