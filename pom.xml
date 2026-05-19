@@ -126,6 +126,19 @@
       <artifactId>gson</artifactId>
       <version>2.10.1</version>
     </dependency>
+
+    <!-- AWS SDK v2 — File Manager Service: S3-compatible object storage (DigitalOcean Spaces / Cloudflare R2 / AWS S3) -->
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3</artifactId>
+      <version>2.25.70</version>
+    </dependency>
+    <!-- URL Connection HTTP client (lightweight sync client required by AWS SDK v2) -->
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>url-connection-client</artifactId>
+      <version>2.25.70</version>
+    </dependency>
   </dependencies>
 
   <build>

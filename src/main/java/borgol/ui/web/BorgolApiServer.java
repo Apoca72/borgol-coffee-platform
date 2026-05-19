@@ -11,12 +11,14 @@ import borgol.core.application.MenuService;
 import borgol.core.domain.MenuCategory;
 import borgol.infrastructure.messaging.RedisEventBus;
 import borgol.infrastructure.security.SoapAuthClient;
+import borgol.infrastructure.storage.S3StorageService;
 import borgol.ui.web.routers.UserRouter;
 import borgol.ui.web.routers.RecipeRouter;
 import borgol.ui.web.routers.BrewGuideRouter;
 import borgol.ui.web.routers.JournalRouter;
 import borgol.ui.web.routers.CafeRouter;
 import borgol.ui.web.routers.AchievementRouter;
+import borgol.ui.web.routers.FileManagerRouter;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -52,8 +54,9 @@ public class BorgolApiServer {
         this.app = Javalin.create(cfg -> {
             cfg.staticFiles.add("/public");
             cfg.showJavalinBanner = false;
+            // 10 MB limit — covers compressed avatar uploads + recipe images
             cfg.jetty.modifyServletContextHandler(h ->
-                h.setMaxFormContentSize(8 * 1024 * 1024));
+                h.setMaxFormContentSize(10 * 1024 * 1024));
         });
         gateway.registerFilters(app);
         this.proxyRouter = new GatewayProxyRouter();
@@ -85,6 +88,12 @@ public class BorgolApiServer {
         new JournalRouter(borgol, gateway).register(app);
         new CafeRouter(borgol.getCafeService(), gateway).register(app);
         new AchievementRouter(borgol.getAchievementService(), gateway).register(app);
+
+        // ── File Manager Service (Lab 07) — S3-compatible object storage ────
+        // Instantiates S3StorageService only when env vars are present; passes null
+        // otherwise so the router returns 503 gracefully in local dev.
+        S3StorageService s3 = S3StorageService.isConfigured() ? new S3StorageService() : null;
+        new FileManagerRouter(s3, gateway).register(app);
 
         // ── SOAP auth (SOA lab — kept in coordinator) ───────────────────────
         app.post("/api/soap/register", this::soapRegister);

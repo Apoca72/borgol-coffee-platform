@@ -4,7 +4,7 @@
     {
       "name": "Borgol Coffee Platform",
       "runtimeExecutable": "cmd",
-      "runtimeArgs": ["/c", "mvnw.cmd", "exec:java"],
+      "runtimeArgs": ["/c", "mvnw.cmd", "javafx:run"],
       "port": 7000
     }
   ]

@@ -727,29 +727,53 @@ document.getElementById('avatarFileInput').addEventListener('change', async (e) 
   if (!file.type.startsWith('image/')) { showToast('Please select an image file', 'error'); return; }
 
   const hint = document.querySelector('.avatar-upload-hint');
-  hint.textContent = 'Compressing…';
+  hint.textContent = 'Uploading…';
 
   try {
+    const token = localStorage.getItem('borgol_token');
+
+    // Step 1: Compress client-side (240 px, 0.75 JPEG) to reduce transfer size
     const compressed = await compressImage(file);
-    const kb = Math.round((compressed.length * 3) / 4 / 1024);
-    localStorage.setItem('borgol_avatar', compressed);
-    setAvatar(compressed);
-    hint.textContent = `${kb} KB · saved`;
+
+    // Step 2: Convert compressed data URL → Blob for multipart upload
+    const blob = await fetch(compressed).then(r => r.blob());
+    const formData = new FormData();
+    formData.append('file', blob, 'avatar.jpg');
+
+    // Step 3: POST to File Manager Service (SOAP ValidateToken runs server-side)
+    const uploadRes = await fetch(`${JSON_BASE}/api/files/upload?type=avatar`, {
+      method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      // Note: do NOT set Content-Type — browser sets it with the multipart boundary
+      body: formData
+    });
+
+    if (!uploadRes.ok) {
+      const errData = await uploadRes.json().catch(() => ({}));
+      throw new Error(errData.error || `Upload failed (HTTP ${uploadRes.status})`);
+    }
+
+    const { url } = await uploadRes.json();
+
+    // Step 4: Store the S3 URL (not base64) in localStorage and display it
+    localStorage.setItem('borgol_avatar', url);
+    setAvatar(url);
+    hint.textContent = 'Photo updated';
     setTimeout(() => { hint.textContent = 'Tap to change'; }, 2500);
 
-    // Persist to server
-    const token = localStorage.getItem('borgol_token');
+    // Step 5: Persist the S3 URL to the user profile in the database (Gap 3)
     if (token) {
       fetch(`${JSON_BASE}/api/users/me`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ avatarUrl: compressed })
-      }).catch(() => {}); // best-effort; avatar already saved locally
+        body: JSON.stringify({ avatarUrl: url })
+      }).catch(() => {});
     }
+
     showToast('✓ Photo updated', 'success');
   } catch (err) {
     hint.textContent = 'Tap to change';
-    showToast('✗ Failed to process image', 'error');
+    showToast(`✗ ${err.message || 'Failed to upload image'}`, 'error');
   }
   e.target.value = ''; // reset so same file can be re-selected
 });
